@@ -1,0 +1,25 @@
+# Loại bỏ tất cả thư mục node_modules
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# Loại bỏ các file build/output
+dist/
+build/
+.next/
+out/
+
+# Loại bỏ file tạm
+*.log
+*.tmp
+*.cache
+
+# Loại bỏ file môi trường
+.env
+.env.local
+.env.development
+.env.production
+
+# Loại bỏ các file hệ thống
+.DS_Store
+Thumbs.db

@@ -1,0 +1,21 @@
+(localhost:5001)- food-service
+-(user interface)
+- thanh nav:
+	-LEFT : logo (FoodDELI).
+	-RIGHT: + giỏ hàng(cart)
+		+ Đăng nhập/ đki (Button)
+		+ chuyển ngữ (dropdown selector)
+- hộp thoại:
+	+ tin nhắn (random)
+	+ msg hỏi chuyển hang tới đâu?
+	+ địa điểm (yêu cầu phải login vào)
+	+ tìm kiếm (button)
+
+- (backend, tối ưu hoá, API)
+	+ SECTION1: Các món ưu đãi (hang chờ, coupon giảm giá, etc...)
+	+ SECTION2: Đề xuất món ăn (random?)
+
+- làm them content chèn dưới
+
+- 1 thanh footer mini (text có thể để placeholder)
+- thanh footer thông thường (tên web/app, giới thiệu, watermark, tải, ..)
