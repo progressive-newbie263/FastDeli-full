@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "./src/context/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,10 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="vi">
-      <body className={`${inter.className} antialiased`}>
-        {children}
-      </body>
-    </html>
+    <AuthProvider>
+      {children}
+    </AuthProvider>
   );
 }

@@ -1,15 +1,17 @@
+"use client"
+
 import React from 'react';
 import Link from 'next/link';
-import useNavigate from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   return (

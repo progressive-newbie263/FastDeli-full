@@ -1,3 +1,5 @@
+"use client"
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import authAPI from '../utils/api';
 import { formatErrorMessage } from '../utils/helpers'; //default
