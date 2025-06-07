@@ -24,30 +24,21 @@ const Home: FC = () => {
           <Blog
             image="/assets/blog-images/blog-1.png" 
             title="FastDeli - Giải pháp di chuyển và giao hàng toàn diện cho cuộc sống hiện đại"
-            description="
-              FastDeli là dịch vụ vận chuyển bằng xe máy, giúp bạn di chuyển nhanh chóng và tiện lợi đến mọi nơi trong thành phố. 
-              Hãy cùng khám phá lý do vì sao FastDeli lại trở thành sự lựa chọn số một của hàng triệu người dùng mỗi ngày!
-            "
+            description="FastDeli là dịch vụ vận chuyển bằng xe máy, giúp bạn di chuyển nhanh chóng và tiện lợi đến mọi nơi trong thành phố. Hãy cùng khám phá lý do vì sao FastDeli lại trở thành sự lựa chọn số một của hàng triệu người dùng mỗi ngày!"
             href="/blog/blog-1"
           />
           
           <Blog
             image="/assets/blog-images/blog-2.jpg" 
             title="FoodDeli - Giao Đồ Ăn Mọi Lúc, Mọi Nơi"
-            description="
-              Trong nhịp sống bận rộn, Grab Food mang đến cho bạn sự tiện lợi tuyệt vời khi bạn
-              muốn thưởng thức món ăn yêu thích ngay tại nhà hay nơi làm việc.
-            "
+            description="Trong nhịp sống bận rộn, Grab Food mang đến cho bạn sự tiện lợi tuyệt vời khi bạn muốn thưởng thức món ăn yêu thích ngay tại nhà hay nơi làm việc."
             href="/blog/blog-2"
           />
           
           <Blog
             image="/assets/blog-images/blog-3.jpg" 
             title="ShipDeli - Gửi Hàng Nhanh Chóng Và An Toàn"
-            description="
-              Với ShipDeli, bạn có thể gửi hàng đến bất kỳ đâu trong thành phố chỉ trong một khoảng thời gian ngắn. 
-              Dù là tài liệu quan trọng, món quà sinh nhật, hay đồ dùng cá nhân, ShipDeli sẽ giúp bạn gửi đi một cách nhanh chóng và an toàn.
-            "
+            description="Với ShipDeli, bạn có thể gửi hàng đến bất kỳ đâu trong thành phố chỉ trong một khoảng thời gian ngắn. Dù là tài liệu quan trọng, món quà sinh nhật, hay đồ dùng cá nhân, ShipDeli sẽ giúp bạn gửi đi một cách nhanh chóng và an toàn."
             href="/blog/blog-3"
           />
 

@@ -7,8 +7,12 @@ import Image from 'next/image';
 import Intro from '@/components/landing-bike/Intro';
 import Guidance from '@/components/landing-bike/Guidance';
 
+import { useRouter } from 'next/navigation';
+
 // CODE NÀY LÀ LANDING PAGE CỦA FOOD SERVICE. NÓ NHƯ CÁI INTRO ẤY, Đ PHẢI PAGE CHÍNH.
 export default function FoodPage() {
+  const router = useRouter();
+
   return (
     <div className="bg-white min-h-screen text-black">
       <Navbar />
@@ -30,7 +34,7 @@ export default function FoodPage() {
             <p className='mt-2 text-[18px]'>Thèm món gì, đặt ngay món đó!</p>
 
             <button
-              onClick={() => window.location.href = '/food-service'}
+              onClick={() => router.push('/food-service')}
               className="w-48 bg-green-600 py-2 rounded-md text-[16px] hover:bg-green-700 cursor-pointer duration-300 ease-in-out mt-16 mb-4"
             >
               Đặt hàng ngay

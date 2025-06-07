@@ -9,40 +9,35 @@ const Footer = () => {
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-1">
             <Link href="/" className="flex items-center">
-              <img src="/logo.png" alt="GrabFood" className="h-12" />
-              <span className="text-xl font-bold text-white ml-2">GrabFood</span>
+              <img src="/logo/fooddeli-logo.png" alt="GrabFood" className="h-10" />
             </Link>
-
-            <p className="mt-4 text-gray-400">
-              Dịch vụ giao đồ ăn nhanh chóng và tiện lợi.
-            </p>
           </div>
 
           {/* Quick Links */}
           <div className="col-span-1">
-            <h3 className="text-lg font-semibold mb-4">Nhanh chóng</h3>
+            <h3 className="text-lg font-semibold mb-4">Giới thiệu</h3>
             
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white">
+                <Link href="/food-service" className="text-gray-400 hover:text-white">
                   Trang chủ
                 </Link>
               </li>
               
               <li>
-                <Link href="/restaurants" className="text-gray-400 hover:text-white">
+                <Link href="/food-service/restaurants" className="text-gray-400 hover:text-white">
                   Nhà hàng
                 </Link>
               </li>
               
               <li>
-                <Link href="/promotions" className="text-gray-400 hover:text-white">
+                <Link href="/food-service/promotions" className="text-gray-400 hover:text-white">
                   Khuyến mãi
                 </Link>
               </li>
               
               <li>
-                <Link href="/about" className="text-gray-400 hover:text-white">
+                <Link href="/food-service/about" className="text-gray-400 hover:text-white">
                   Về chúng tôi
                 </Link>
               </li>
@@ -52,21 +47,22 @@ const Footer = () => {
           {/* Legal */}
           <div className="col-span-1">
             <h3 className="text-lg font-semibold mb-4">Pháp lý</h3>
+
             <ul className="space-y-2">
               <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white">
+                <Link href="#" className="text-gray-400 hover:text-white">
                   Điều khoản sử dụng
                 </Link>
               </li>
               
               <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white">
+                <Link href="#" className="text-gray-400 hover:text-white">
                   Chính sách bảo mật
                 </Link>
               </li>
               
               <li>
-                <Link href="/refunds" className="text-gray-400 hover:text-white">
+                <Link href="#" className="text-gray-400 hover:text-white">
                   Chính sách hoàn tiền
                 </Link>
               </li>
@@ -78,15 +74,15 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-4">Liên hệ</h3>
             <ul className="space-y-2">
               <li className="text-gray-400">
-                <strong className="text-white">Địa chỉ:</strong> 123 Đường ABC, Quận 1, TP.HCM
+                <strong className="text-white">Địa chỉ:</strong> 123 Đường ABC, Hà Nội, Việt Nam
               </li>
               
               <li className="text-gray-400">
-                <strong className="text-white">Điện thoại:</strong> 1900 1234
+                <strong className="text-white">Điện thoại:</strong> 0123-456-789
               </li>
               
               <li className="text-gray-400">
-                <strong className="text-white">Email:</strong> support@grabfood.com
+                <strong className="text-white">Email:</strong> support@food-deli.com
               </li>
             </ul>
 
