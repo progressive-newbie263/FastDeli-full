@@ -5,6 +5,14 @@ import HomePage from '@/components/HomePage';
 import Services from '@/components/Services';
 import Blog from '@/components/Blog';
 
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "FastDeli - Vận chuyển hoả tốc",
+  description:
+    "Đi lại, ăn uống, vận chuyển hàng hoá một cách nhanh chóng ... chúng tôi sẽ cung cấp tất cả cho bạn",
+};
+
 // Define the Home component as a Functional Component (FC)
 const Home: FC = () => {
 

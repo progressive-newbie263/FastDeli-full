@@ -1,34 +1,21 @@
 /*
   -------------------------------------------------------------------------------
-  note: 
+  Layout cho food-service với metadata riêng
   -----------------------------------------------------------------------------
-  'next/font' đang có 1 lỗi khó hiểu. Tốt nhất lên google font import thẳng về, xài cho nhanh.
 */
+// import type { Metadata } from "next";
+import ClientLayout from './ClientLayout';
 
-'use client';
+// Metadata chỉ có thể export trong server component
+// export const metadata: Metadata = {
+//   title: "FoodDeli - Đặt đồ ăn trực tuyến",
+//   description: "Đặt món ăn yêu thích với FastDeli Food - Giao hàng nhanh chóng, đa dạng món ăn từ các nhà hàng uy tín",
+// };
 
-import { usePathname } from 'next/navigation';
-import { AuthProvider } from '@food/context/AuthContext';
-import Header from '@food/components/layout/Header';
-import Footer from '@food/components/layout/Footer';
-import './globals.css';
-
-export default function RootLayout({
+export default function FoodServiceLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-
-  const isAuthPage = pathname === '/food-service/auth/login' || pathname === '/food-service/auth/register';
-
-  return (
-    <AuthProvider>
-      {!isAuthPage && <Header />}
-      
-      <main>{children}</main>
-
-      {!isAuthPage && <Footer />}
-    </AuthProvider>
-  );
+  return <ClientLayout>{children}</ClientLayout>;
 }

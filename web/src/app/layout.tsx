@@ -8,11 +8,11 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export const metadata: Metadata = {
-  title: "FastDeli - Vận chuyển hoả tốc",
-  description:
-    "Đi lại, ăn uống, vận chuyển hàng hoá một cách nhanh chóng ... chúng tôi sẽ cung cấp tất cả cho bạn",
-};
+// export const metadata: Metadata = {
+//   title: "FastDeli - Vận chuyển hoả tốc",
+//   description:
+//     "Đi lại, ăn uống, vận chuyển hàng hoá một cách nhanh chóng ... chúng tôi sẽ cung cấp tất cả cho bạn",
+// };
 
 export default function RootLayout({
   children,

@@ -5,9 +5,14 @@ import Footer from '@/components/Footer';
 
 //bộ icon các mạng xã hội
 import SocialMedia from '@/components/SocialMedia';
+import { Metadata } from 'next';
 
-
-
+export const metadata: Metadata = {
+  title: "FastDeli - Giải pháp di chuyển và giao hàng toàn diện cho cuộc sống hiện đại",
+  description:
+    "Đi lại, ăn uống, vận chuyển hàng hoá một cách nhanh chóng ... chúng tôi sẽ cung cấp tất cả cho bạn",
+};
+    
 export default function Blog1() {
   return (
     <div className="bg-white min-h-screen">

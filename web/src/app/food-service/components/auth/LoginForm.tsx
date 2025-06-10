@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import axios from 'axios';
 import { useAuth } from '@food/context/AuthContext';
 
 interface FormData {
@@ -22,7 +21,9 @@ const LoginForm = () => {
   const [mounted, setMounted] = useState<boolean>(false);
   const router = useRouter();
 
-  const { setCurrentUser } = useAuth();
+  // import cái useAuth từ AuthContext, nó sẽ giúp set cái state của thanh Header
+  // từ đó tự động cập nhật thanh Header khi đăng nhập thành công
+  const { login } = useAuth();
 
   useEffect(() => {
     setMounted(true);
@@ -54,23 +55,17 @@ const LoginForm = () => {
 
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('userData', JSON.stringify(response.data.user));
-      }
-      setCurrentUser(response.data.user);
-
-      //await 
-      router.push('/food-service');
-    } catch (error: any) {
-      console.error('Login error:', error);
-      if (error.response && error.response.data) {
-        setErrors({ ...errors, server: error.response.data.message || 'Đăng nhập thất bại. Vui lòng thử lại.' });
+      const result = await login(formData);
+      
+      if (result.success) {
+        console.log('Đăng nhập thành công, vui lòng chờ đợi...');
+        router.push('/food-service');
       } else {
-        setErrors({ ...errors, server: 'Lỗi kết nối. Vui lòng kiểm tra kết nối mạng và thử lại.' });
+        setErrors({ ...errors, server: result.error || 'Đăng nhập thất bại. Vui lòng thử lại.' });
       }
+    } catch (error: any) {
+      console.error('Đăng nhập thất bại:', error);
+      setErrors({ ...errors, server: 'Lỗi kết nối. Vui lòng kiểm tra kết nối mạng và thử lại.' });
     } finally {
       setLoading(false);
     }

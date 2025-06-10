@@ -4,6 +4,13 @@ import Image from 'next/image';
 import Footer from '@/components/Footer';
 
 import SocialMedia from '@/components/SocialMedia';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Dịch vụ chăm sóc khách hàng cùng FastDeli",
+  description:
+    "Chúng tôi cam kết chăm sóc khách hàng tận tâm và chuyên nghiệp",
+};
 
 export default function Blog4() {
   return (

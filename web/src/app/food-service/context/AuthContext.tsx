@@ -70,14 +70,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, []);
 
-  // Load user data from API when token is available
+  // Load user data
   useEffect(() => {
     const loadUser = async () => {
       if (token && !currentUser) {
         try {
           const { user } = await authAPI.getCurrentUser();
           setCurrentUser(user);
-          // Update localStorage with fresh data
           localStorage.setItem('userData', JSON.stringify(user));
         } catch (error) {
           console.error('Error loading user:', error);

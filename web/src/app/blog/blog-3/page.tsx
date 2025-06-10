@@ -4,6 +4,13 @@ import Image from 'next/image';
 import Footer from '@/components/Footer';
 
 import SocialMedia from '@/components/SocialMedia';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "ShipDeli - Gửi Hàng Nhanh Chóng Và An Toàn",
+  description:
+    "ShipDeli mang đến giải pháp gửi hàng nhanh chóng, tiết kiệm và an toàn, phục vụ cho nhu cầu giao hàng trong ngày của bạn.",
+};
 
 export default function Blog3() {
   return (
