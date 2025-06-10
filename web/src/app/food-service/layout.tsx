@@ -5,29 +5,30 @@
   'next/font' đang có 1 lỗi khó hiểu. Tốt nhất lên google font import thẳng về, xài cho nhanh.
 */
 
-import type { Metadata } from "next";
-import "./globals.css";
-import { AuthProvider } from "@food/context/AuthContext";
-// import Header from "@food/components/layout/Header";
-// import Footer from "@food/components/layout/Footer";
+'use client';
 
-export const metadata: Metadata = {
-  title: "FoodDeli - Ăn uống thả ga",
-  description: "Thoải mái gọi những món ăn ngon nhất từ các nhà hàng đối tác của chúng tôi. Chúng tôi sẽ giao tận nơi cho bạn.",
-};
+import { usePathname } from 'next/navigation';
+import { AuthProvider } from '@food/context/AuthContext';
+import Header from '@food/components/layout/Header';
+import Footer from '@food/components/layout/Footer';
+import './globals.css';
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  const isAuthPage = pathname === '/food-service/auth/login' || pathname === '/food-service/auth/register';
+
   return (
     <AuthProvider>
-      {/* <Header /> */}
-
-      <main>{children}</main>
+      {!isAuthPage && <Header />}
       
-      {/* <Footer /> */}
+      <main>{children}</main>
+
+      {!isAuthPage && <Footer />}
     </AuthProvider>
   );
 }

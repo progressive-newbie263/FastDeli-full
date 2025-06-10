@@ -8,8 +8,6 @@ import Home from '@food/home/page';
 import Login from '@food/auth/login/page';
 import Register from '@food/auth/register/page';
 import Profile from '@food/profile/page';
-import Header from '@food/components/layout/Header';
-import Footer from '@food/components/layout/Footer';
 
 export default function App() {
   const [isChecking, setIsChecking] = useState(true);
@@ -18,85 +16,55 @@ export default function App() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (authLoading) {
+    if (authLoading) return;
+
+    const isAuthRoute = pathname === '/food-service/auth/login' || pathname === '/food-service/auth/register';
+    const isProtectedRoute = pathname === '/food-service/profile';
+
+    if (isAuthRoute && isAuthenticated) {
+      router.replace('/food-service');
       return;
     }
 
-    // Handle route protection and redirects
-    const handleRouteProtection = () => {
-      const isAuthRoute = pathname === '/food-service/auth/login' || pathname === '/food-service/auth/register';
-      const isProtectedRoute = pathname === '/food-service/profile';
+    if (isProtectedRoute && !isAuthenticated) {
+      router.replace('/food-service/auth/login');
+      return;
+    }
 
-      if (isAuthRoute && isAuthenticated) {
-        router.replace('/food-service');
-        return;
-      }
+    const validRoutes = [
+      '/food-service',
+      '/food-service/auth/login',
+      '/food-service/auth/register',
+      '/food-service/profile'
+    ];
 
-      if (isProtectedRoute && !isAuthenticated) {
-        router.replace('/food-service/auth/login');
-        return;
-      }
+    if (!validRoutes.includes(pathname)) {
+      router.replace('/food-service');
+      return;
+    }
 
-      // If we're not on a valid route, redirect to home
-      const validRoutes = [
-        '/food-service',
-        '/food-service/auth/login',
-        '/food-service/auth/register',
-        '/food-service/profile'
-      ];
-
-      if (!validRoutes.includes(pathname)) {
-        router.replace('/food-service');
-        return;
-      }
-
-      setIsChecking(false);
-    };
-
-    handleRouteProtection();
+    setIsChecking(false);
   }, [pathname, isAuthenticated, authLoading, router]);
 
-  // Show loading while checking auth or redirecting
   if (authLoading || isChecking) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-          
           <p className="mt-4 text-gray-600">Đang tải...</p>
         </div>
       </div>
     );
   }
 
-  // Render components based on current path
-  const renderContent = () => {
-    switch (pathname) {
-      case '/food-service/auth/login':
-        return <Login />;
-      
-      case '/food-service/auth/register':
-        return <Register />;
-      
-      case '/food-service/profile':
-        return (
-          <>
-            <Header />
-            <Profile />
-            <Footer />
-          </>
-        );
-      
-      default:
-        return (
-          <>
-            <Header />
-            <Home />
-            <Footer />
-          </>
-        );
-    }
-  };
-
-  return renderContent();
+  switch (pathname) {
+    case '/food-service/auth/login':
+      return <Login />;
+    case '/food-service/auth/register':
+      return <Register />;
+    case '/food-service/profile':
+      return <Profile />;
+    default:
+      return <Home />;
+  }
 }

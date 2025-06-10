@@ -49,9 +49,11 @@ const Home = () => {
                 </Link>
               </div>
             ) : (
-              <div className="px-6 py-3 bg-white text-orange-500 rounded-lg inline-block">
-                <Link href="/food-service/profile">Xem thông tin tài khoản</Link>
-              </div>
+              <Link href="/food-service/profile">
+                <div className="px-6 py-3 bg-white text-orange-500 rounded-lg inline-block">
+                  Xem thông tin tài khoản
+                </div>
+              </Link>
             )}
           </div>
         </div>

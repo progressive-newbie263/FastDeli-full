@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-//import Link from 'next/link';
+import Link from 'next/link';
 
 // tạm thời hủy bỏ tính năng tài khoản. Có vẻ thiết kế kiểu, chuyển khoản trực tiếp qua ngân hàng sẽ tiện hơn.
 interface UserData {
@@ -164,7 +164,7 @@ const Profile = () => {
             <button 
               onClick={loadUserProfile}
               className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 
-                rounded-xl hover:from-green-600 hover:to-emerald-600 cursor-pointer
+                rounded-xl hover:from-green-600 hover:to-emerald-600 
                 transition-all duration-200 transform hover:scale-105 font-medium shadow-lg"
             >
               Thử lại
@@ -172,8 +172,7 @@ const Profile = () => {
 
             <button 
               onClick={handleLogout}
-              className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-200 
-                cursor-pointer transition-all duration-200 font-medium border border-gray-200"
+              className="bg-gray-100 text-gray-700 px-6 py-3 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium border border-gray-200"
             >
               Đăng xuất
             </button>
@@ -198,7 +197,7 @@ const Profile = () => {
           <button 
             onClick={loadUserProfile} 
             className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl 
-              hover:from-green-600 hover:to-emerald-600 transition-all duration-200 cursor-pointer
+              hover:from-green-600 hover:to-emerald-600 transition-all duration-200 
               transform hover:scale-105 font-medium shadow-lg"
           >
             Tải lại
@@ -210,11 +209,11 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50">
-      {/* <div className='h-20 w-full bg-white'>
+      <div className='h-20 w-full bg-white'>
         <Link href="/food-service" className="flex items-center justify-center">
           <img src="/logo/fooddeli-logo.png" className='w-60 h-20'/>
         </Link>
-      </div> */}
+      </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Card */}
@@ -230,13 +229,11 @@ const Profile = () => {
                 
               <button 
                 onClick={handleLogout}
-                className="mt-6 lg:mt-0 bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl hover:bg-white/30 
-                  transition-all duration-200 font-medium border border-white/30 flex items-center space-x-2 cursor-pointer"
+                className="mt-6 lg:mt-0 bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl hover:bg-white/30 transition-all duration-200 font-medium border border-white/30 flex items-center space-x-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-
                 <span>Đăng xuất</span>
               </button>
             </div>
@@ -267,16 +264,13 @@ const Profile = () => {
               
               <div className="flex-1 text-center lg:text-left">
                 <h2 className="text-3xl font-bold text-gray-800 mb-2">{userData.full_name || 'Chưa cập nhật'}</h2>
-                
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center justify-center lg:justify-start space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
                     </svg>
-                    
                     <span className="text-gray-600">{userData.email || 'Chưa cập nhật'}</span>
                   </div>
-                  
                   {userData.phone_number && (
                     <div className="flex items-center justify-center lg:justify-start space-x-2">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -286,15 +280,10 @@ const Profile = () => {
                     </div>
                   )}
                 </div>
-
-                <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl 
-                  hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 
-                  font-medium shadow-lg flex items-center space-x-2 mx-auto lg:mx-0 cursor-pointer"
-                >
+                <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 font-medium shadow-lg flex items-center space-x-2 mx-auto lg:mx-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-
                   <span>Cập nhật ảnh đại diện</span>
                 </button>
               </div>
@@ -311,7 +300,6 @@ const Profile = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
-
               <h3 className="text-2xl font-bold text-gray-800">Thông tin cá nhân</h3>
             </div>
           </div>
@@ -326,9 +314,7 @@ const Profile = () => {
                 { label: 'Ngày sinh', value: formatDate(userData.date_of_birth), icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
                 { label: 'ID người dùng', value: userData.user_id || userData.id || 'N/A', icon: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' }
               ].map((item, index) => (
-                <div key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 
-                  hover:shadow-md transition-shadow duration-200  cursor-pointer
-                ">
+                <div key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 hover:shadow-md transition-shadow duration-200">
                   <div className="flex items-start space-x-4">
                     <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -347,10 +333,7 @@ const Profile = () => {
             </div>
             
             <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-xl
-                hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 font-medium 
-                shadow-lg flex items-center justify-center space-x-2  cursor-pointer"
-              >
+              <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-8 py-4 rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 font-medium shadow-lg flex items-center justify-center space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
@@ -358,9 +341,7 @@ const Profile = () => {
                 <span>Cập nhật thông tin</span>
               </button>
               
-              <button className="bg-white text-green-600 px-8 py-4 rounded-xl hover:bg-green-50 transition-all duration-200 
-                font-medium border-2 border-green-200 hover:border-green-300 flex items-center justify-center space-x-2 cursor-pointer"
-              >
+              <button className="bg-white text-green-600 px-8 py-4 rounded-xl hover:bg-green-50 transition-all duration-200 font-medium border-2 border-green-200 hover:border-green-300 flex items-center justify-center space-x-2">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
@@ -394,20 +375,16 @@ const Profile = () => {
                 { title: 'Thông báo', icon: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' },
                 { title: 'Hỗ trợ', icon: 'M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
               ].map((item, index) => (
-                <button key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 
-                  hover:shadow-md hover:from-green-100 hover:to-emerald-100 transition-all duration-200 text-left group  cursor-pointer
-                ">
+                <button key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border border-green-100 hover:shadow-md hover:from-green-100 hover:to-emerald-100 transition-all duration-200 text-left group">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                       </svg>
                     </div>
-
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-800 group-hover:text-green-600 transition-colors">{item.title}</h4>
                     </div>
-                    
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 group-hover:text-green-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>
