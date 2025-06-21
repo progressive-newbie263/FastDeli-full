@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo and Description */}
           <div className="col-span-1 md:col-span-1">
-            <Link href="/" className="flex items-center">
+            <Link href="/food-service" className="flex items-center">
               <img src="/logo/fooddeli-logo.png" alt="GrabFood" className="h-10" />
             </Link>
           </div>

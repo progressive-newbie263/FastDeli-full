@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 //import Link from 'next/link';
@@ -24,6 +24,9 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  
+  // xử lí input chèn ảnh avatar người dùng.
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     document.title = 'Tài khoản | FoodDeli';
@@ -32,8 +35,7 @@ const Profile = () => {
 
   const loadUserProfile = async () => {
     try {
-      // token từ local storage
-      // chưa đăng nhập (chưa có token) thì tự cút về route login
+      // token từ local storage, chưa đăng nhập (chưa có token) thì tự cút về route login
       const token = localStorage.getItem('token');
       if (!token) {
         console.log('No token found, redirecting to login');
@@ -103,6 +105,34 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Tính năng upload avatar từ nhap.tsx
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('folder', 'avatars');
+
+    try {
+      const res = await axios.post('http://localhost:5000/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      const imageUrl = res.data.url;
+      setUserData(prev => prev ? { ...prev, avatar_url: imageUrl } : prev);
+      const updated = { ...userData, avatar_url: imageUrl };
+      localStorage.setItem('userData', JSON.stringify(updated));
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Tải ảnh thất bại.');
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   // xóa token + data khi đăng xuất
@@ -218,7 +248,7 @@ const Profile = () => {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header Card */}
-        <div className="bg-white rounded-3xl shadow-xl border border-green-100 overflow-hidden mb-8">
+        <div className="bg-white rounded-3xl shadow-xl border border-green-100 overflow-hidden mb-8 mt-20">
           <div className="bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 text-white p-8 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 to-teal-600/20"></div>
             <div className="absolute -top-4 -right-4 w-32 h-32 bg-white/10 rounded-full"></div>
@@ -257,12 +287,22 @@ const Profile = () => {
                     }}
                   />
                 </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-green-600 transition-colors">
+                <button
+                  onClick={triggerFileInput}
+                  className="absolute -bottom-2 -right-2 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-green-600 transition-colors"
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                </div>
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                />
               </div>
               
               <div className="flex-1 text-center lg:text-left">
@@ -287,9 +327,11 @@ const Profile = () => {
                   )}
                 </div>
 
-                <button className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl 
-                  hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 
-                  font-medium shadow-lg flex items-center space-x-2 mx-auto lg:mx-0 cursor-pointer"
+                <button 
+                  onClick={triggerFileInput}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-3 rounded-xl 
+                    hover:from-green-600 hover:to-emerald-600 transition-all duration-200 transform hover:scale-105 
+                    font-medium shadow-lg flex items-center space-x-2 mx-auto lg:mx-0 cursor-pointer"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

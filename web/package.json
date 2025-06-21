@@ -11,6 +11,8 @@
   "dependencies": {
     "autoprefixer": "^10.4.21",
     "axios": "^1.9.0",
+    "cloudinary": "^2.7.0",
+    "multer": "^2.0.1",
     "next": "15.3.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

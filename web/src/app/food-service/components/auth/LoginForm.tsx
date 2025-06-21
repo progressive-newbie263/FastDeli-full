@@ -86,7 +86,7 @@ const LoginForm = () => {
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-gray-600">
-      <h2 className="text-2xl font-bold mb-6 text-center text-orange-500">Đăng Nhập</h2>
+      <h2 className="text-3xl font-bold mb-6 text-black">Đăng Nhập</h2>
 
       {errors.server && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -130,19 +130,21 @@ const LoginForm = () => {
         <button
           type="submit"
           disabled={loading || !mounted}
-          className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:bg-orange-300"
+          className="w-full bg-yellow-300 text-gray-600 py-2 px-4 rounded-full hover:bg-yellow-400
+            focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-orange-300
+            cursor-pointer duration-300"
         >
           {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
         </button>
       </form>
 
       <div className="mt-4 text-center">
-        <Link href="#" className="text-orange-500 hover:text-orange-600 text-sm">Quên mật khẩu?</Link>
+        <Link href="#" className="text-blue-800 hover:underline text-sm">Quên mật khẩu?</Link>
       </div>
 
       <div className="mt-6 text-center text-gray-600 text-sm">
         Chưa có tài khoản?{' '}
-        <Link href="/food-service/auth/register" className="text-orange-500 hover:text-orange-600 font-medium">
+        <Link href="/food-service/auth/register" className="text-blue-800 hover:underline font-medium">
           Đăng ký ngay
         </Link>
       </div>

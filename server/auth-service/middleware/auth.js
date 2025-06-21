@@ -4,22 +4,19 @@ const User = require('../models/userModel');
 
 const auth = async (req, res, next) => {
   try {
-    // token jwt từ header.
-    const token = req.header('Authorization').replace('Bearer ', '');
-    
-    if (!token) {
+    const authHeader = req.header('Authorization');
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        message: 'No auth token provided'
+        message: 'No or invalid auth token provided'
       });
     }
 
-    // Verify token
+    const token = authHeader.replace('Bearer ', '');
     const decoded = jwt.verify(token, config.jwtSecret);
-    
-    // dò user theo ID của họ
     const user = await User.findById(decoded.id);
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -27,7 +24,6 @@ const auth = async (req, res, next) => {
       });
     }
 
-    // Check if user is active
     if (!user.is_active) {
       return res.status(401).json({
         success: false,
@@ -35,10 +31,9 @@ const auth = async (req, res, next) => {
       });
     }
 
-    // Add user to request object
     req.user = user;
     req.userId = user.user_id;
-    
+
     next();
   } catch (error) {
     console.error('Auth middleware error:', error.message);

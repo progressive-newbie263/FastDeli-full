@@ -2,20 +2,30 @@ const express = require('express');
 const cors = require('cors');
 const config = require('./config/config');
 
-// Create Express app
+const restaurantRoutes = require('./routes/restaurants');
+const foodRoutes = require('./routes/foods');
+// const orderRoutes = require('./routes/orders');
+// const categoryRoutes = require('./routes/categories');
+// const bannerRoutes = require('./routes/banners');
+// const featuredItemRoutes = require('./routes/featuredItems');
+
 const app = express();
 
-// Enable CORS
+// Middleware
 app.use(cors());
-
-// Body parser
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/foods', foodRoutes);
+// app.use('/api/orders', orderRoutes);
+// app.use('/api/categories', categoryRoutes);
+// app.use('/api/banners', bannerRoutes);
+// app.use('/api/featured-items', featuredItemRoutes);
 
-// Health check route
+app.get('/food-service/restaurants/:id');
+
 app.get('/', (req, res) => {
   res.json({ message: 'API is running...' });
 });
@@ -25,13 +35,14 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({
     success: false,
-    message: 'Server Error',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    message: 'Đã xảy ra lỗi server!',
+    error: process.env.NODE_ENV === 'development' ? err.message : {}
   });
 });
 
+
 // Start server
-const PORT = config.port || 5000;
+const PORT = config.port || 5001;
 app.listen(PORT, () => {
   console.log(`Server running in ${config.env} mode on port ${PORT}`);
 });

@@ -177,7 +177,9 @@ const RegisterForm = () => {
             <div className="h-10 bg-gray-200 rounded"></div>
             <div className="h-10 bg-gray-200 rounded"></div>
           </div>
+
           <div className="h-10 bg-gray-200 rounded mt-4 mb-4"></div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="h-10 bg-gray-200 rounded"></div>
             <div className="h-10 bg-gray-200 rounded"></div>
@@ -189,7 +191,7 @@ const RegisterForm = () => {
 
   return (
     <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-lg">
-      <h2 className="text-2xl font-bold mb-6 text-center text-orange-500">Đăng Ký</h2>
+      <h2 className="text-3xl font-bold mb-6 text-black">Đăng ký tài khoản</h2>
       
       {errors.server && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -199,10 +201,11 @@ const RegisterForm = () => {
       
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="mb-4">
+          <div className="mb-2">
             <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
               Email <span className="text-red-500">*</span>
             </label>
+
             <input
               type="email"
               id="email"
@@ -210,17 +213,19 @@ const RegisterForm = () => {
               value={formData.email}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.email ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-orange-300'
+                errors.email ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-300'
               }`}
               placeholder="Nhập email của bạn"
             />
+
             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
           </div>
           
-          <div className="mb-4">
+          <div className="mb-2">
             <label htmlFor="phone_number" className="block text-gray-700 font-medium mb-2">
               Số điện thoại <span className="text-red-500">*</span>
             </label>
+
             <input
               type="tel"
               id="phone_number"
@@ -228,7 +233,7 @@ const RegisterForm = () => {
               value={formData.phone_number}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.phone_number ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-orange-300'
+                errors.phone_number ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-300'
               }`}
               placeholder="VD: 0901234567"
             />
@@ -236,7 +241,7 @@ const RegisterForm = () => {
           </div>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-2">
           <label htmlFor="full_name" className="block text-gray-700 font-medium mb-2">
             Họ và tên <span className="text-red-500">*</span>
           </label>
@@ -247,7 +252,7 @@ const RegisterForm = () => {
             value={formData.full_name}
             onChange={handleChange}
             className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-              errors.full_name ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-orange-300'
+              errors.full_name ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-300'
             }`}
             placeholder="Nhập họ và tên đầy đủ"
           />
@@ -255,17 +260,18 @@ const RegisterForm = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="mb-4">
+          <div className="mb-2">
             <label htmlFor="gender" className="block text-gray-700 font-medium mb-2">
               Giới tính <span className="text-red-500">*</span>
             </label>
+
             <select
               id="gender"
               name="gender"
               value={formData.gender}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.gender ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-orange-300'
+                errors.gender ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-300'
               }`}
             >
               <option value="">-- Chọn giới tính --</option>
@@ -276,7 +282,7 @@ const RegisterForm = () => {
             {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender}</p>}
           </div>
           
-          <div className="mb-4">
+          <div className="mb-2">
             <label htmlFor="date_of_birth" className="block text-gray-700 font-medium mb-2">
               Ngày sinh <span className="text-red-500">*</span>
             </label>
@@ -287,7 +293,7 @@ const RegisterForm = () => {
               value={formData.date_of_birth}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.date_of_birth ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-orange-300'
+                errors.date_of_birth ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-300'
               }`}
             />
             {errors.date_of_birth && <p className="text-red-500 text-sm mt-1">{errors.date_of_birth}</p>}
@@ -295,7 +301,7 @@ const RegisterForm = () => {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="mb-4">
+          <div className="mb-2">
             <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
               Mật khẩu <span className="text-red-500">*</span>
             </label>
@@ -306,7 +312,7 @@ const RegisterForm = () => {
               value={formData.password}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-orange-300'
+                errors.password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-300'
               }`}
               placeholder="Tối thiểu 6 ký tự"
             />
@@ -324,7 +330,7 @@ const RegisterForm = () => {
               value={formData.confirm_password}
               onChange={handleChange}
               className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                errors.confirm_password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-orange-300'
+                errors.confirm_password ? 'border-red-500 focus:ring-red-300' : 'border-gray-300 focus:ring-blue-300'
               }`}
               placeholder="Nhập lại mật khẩu"
             />
@@ -335,7 +341,10 @@ const RegisterForm = () => {
         <button
           type="submit"
           disabled={loading || !mounted}
-          className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:bg-orange-300"
+          className="w-full bg-yellow-300 text-gray-600 py-2 px-4 rounded-full hover:bg-yellow-400
+            focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-orange-300
+            cursor-pointer duration-300
+          "
         >
           {loading ? 'Đang xử lý...' : 'Đăng Ký'}
         </button>
@@ -343,16 +352,16 @@ const RegisterForm = () => {
       
       <div className="mt-6 text-center text-gray-600 text-sm">
         Đã có tài khoản?{' '}
-        <Link href="/login" className="text-orange-500 hover:text-orange-600 font-medium">
+        <Link href="/food-service/auth/login" className="text-blue-800 hover:underline font-medium">
           Đăng nhập ngay
         </Link>
       </div>
       
       <div className="mt-4 text-center text-gray-500 text-xs">
         Bằng việc đăng ký, bạn đã đồng ý với các{' '}
-        <a href="#" className="text-orange-500 hover:text-orange-600">Điều khoản dịch vụ</a>
+        <a href="#" className="text-blue-800 hover:underline">Điều khoản dịch vụ</a>
         {' '}và{' '}
-        <a href="#" className="text-orange-500 hover:text-orange-600">Chính sách bảo mật</a>
+        <a href="#" className="text-blue-800 hover:underline">Chính sách bảo mật</a>
         {' '}của chúng tôi.
       </div>
     </div>

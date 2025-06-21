@@ -14,7 +14,7 @@ export default function Login() {
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="max-w-md w-full">      
         <Link href="/food-service" className="flex justify-center mb-8">
-          <img src="/logo/fooddeli-logo.png" className="h-20 w-72" alt="FoodDeli Logo" />
+          <img src="/logo/fooddeli-logo.png" className="h-14 w-48" alt="FoodDeli Logo" />
         </Link>
 
         <LoginForm />
@@ -22,7 +22,7 @@ export default function Login() {
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
             Gặp sự cố khi đăng nhập?{' '}
-            <a href="#" className="text-orange-500 hover:text-orange-600">
+            <a href="#" className="text-blue-800 hover:underline">
               Liên hệ hỗ trợ
             </a>
           </p>

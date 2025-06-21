@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import RegisterForm from '@food/components/auth/RegisterForm';
+import Link from 'next/link';
 
 const Register = () => {
   useEffect(() => {
@@ -12,19 +13,18 @@ const Register = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-100 my-2 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="max-w-lg w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-orange-500 text-3xl font-bold">GrabFood</h1>
-          <p className="mt-2 text-gray-600">Tạo tài khoản mới</p>
-        </div>
+        <Link href="/food-service" className="flex justify-center mb-4">
+          <img src="/logo/fooddeli-logo.png" className="h-14 w-48" alt="FoodDeli Logo" />
+        </Link>
         
         <RegisterForm />
         
         <div className="mt-8 text-center text-sm text-gray-500">
           <p>
             Cần trợ giúp?{' '}
-            <a href="#" className="text-orange-500 hover:text-orange-600">
+            <a href="#" className="text-blue-800 hover:underline">
               Liên hệ hỗ trợ
             </a>
           </p>

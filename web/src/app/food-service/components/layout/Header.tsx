@@ -21,7 +21,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   };
 
   return (
-    <header className="bg-white shadow-md">
+    <header className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <Link href="/food-service" className="flex items-center">
           <img src="/logo/fooddeli-logo.png" alt="FoodDeli" className="h-10" />
@@ -49,7 +49,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
               
               <button 
                 onClick={handleLogout}
-                className="text-gray-700 hover:text-[#00B14F] border border-gray-300 px-3 py-1 rounded transition-colors"
+                className="text-gray-700 hover:text-[#00B14F] border border-gray-300 px-3 py-1 rounded transition-colors cursor-pointer duration-300"
               >
                 Đăng xuất
               </button>

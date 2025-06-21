@@ -1,0 +1,2 @@
+- mở file bằng cách vào trong pgadmin: Tools => ERD Tool. Ở giao diện ERD Tool thì ctrl + O rồi chọn sơ đồ erd muốn mở
+- đây chỉ là mấy file .pgerd mà tôi tạo ra và chỉnh sửa nhìn cho nó gọn và dễ nhìn hơn. Ko quan trọng lắm. 
