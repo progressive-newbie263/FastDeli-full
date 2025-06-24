@@ -111,9 +111,17 @@ const Profile = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
+
     const formData = new FormData();
     formData.append('image', file);
-    formData.append('folder', 'avatars');
+
+    if (!userData?.user_id) {
+      alert('Không tìm thấy ID người dùng.');
+      return;
+    }
+    formData.append('user_id', userData.user_id.toString());
+
+    // formData.append('folder', 'avatars');
 
     try {
       const res = await axios.post('http://localhost:5000/api/upload', formData, {
@@ -121,8 +129,10 @@ const Profile = () => {
           'Content-Type': 'multipart/form-data'
         }
       });
+
       const imageUrl = res.data.url;
       setUserData(prev => prev ? { ...prev, avatar_url: imageUrl } : prev);
+
       const updated = { ...userData, avatar_url: imageUrl };
       localStorage.setItem('userData', JSON.stringify(updated));
     } catch (error) {

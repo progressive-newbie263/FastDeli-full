@@ -37,11 +37,14 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
           {isAuthenticated && currentUser ? (
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <img 
-                  src={currentUser?.avatar_url || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'} 
-                  alt={currentUser?.full_name || 'User'} 
-                  className="h-8 w-8 rounded-full object-cover"
-                />
+                <Link href="/food-service/profile" className="text-gray-700 hover:text-[#00B14F]">
+                  <img 
+                    src={currentUser?.avatar_url || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg'} 
+                    alt={currentUser?.full_name || 'User'} 
+                    className="h-10 w-10 rounded-full object-cover cursor-pointer"
+                  />
+                </Link>
+
                 <Link href="/food-service/profile" className="text-gray-700 hover:text-[#00B14F]">
                   {currentUser?.full_name || 'User'}
                 </Link>

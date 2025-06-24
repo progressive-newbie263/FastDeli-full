@@ -1,30 +1,36 @@
 const express = require('express');
 const multer = require('multer');
-const cloudinary = require('../utils/cloudinary');
-const fs = require('fs');
-
+const { uploadToCloudinary } = require('../utils/cloudinary');
 const router = express.Router();
+const pool = require('../config/db'); // database connection để lưu URL ảnh
+
 const upload = multer({ dest: 'uploads/' });
 
+// API upload avatar và lưu vào Cloudinary: /avatars/user_{id}.jpg
 router.post('/', upload.single('image'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file received' });
+    const file = req.file;
+    const userId = req.body.user_id;
+
+    console.log('Received file:', file);
+    console.log('Received user_id:', userId);
+
+    if (!file || !userId) {
+      return res.status(400).json({ success: false, message: 'File or user ID missing' });
     }
 
-    console.log('File received:', req.file);
-    console.log('Folder:', req.body.folder);
+    const result = await uploadToCloudinary(file.path, userId);
+    const imageUrl = result.secure_url;
 
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: req.body.folder || 'general'
-    });
+    await pool.query(
+      'UPDATE users SET avatar_url = $1 WHERE user_id = $2',
+      [imageUrl, userId]
+    );
 
-    fs.unlinkSync(req.file.path);
-
-    res.json({ success: true, url: result.secure_url });
+    return res.json({ success: true, url: imageUrl });
   } catch (err) {
-    console.error('Upload error:', err);
-    res.status(500).json({ success: false, message: 'Upload failed' });
+    console.error('❌ Upload error:', err);
+    return res.status(500).json({ success: false, message: 'Upload failed' });
   }
 });
 
