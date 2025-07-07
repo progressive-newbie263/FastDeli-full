@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const config = require('./config/config');
 
+//food category routes
+const foodCategoryRoutes = require('./routes/foodCategories');
 const restaurantRoutes = require('./routes/restaurants');
 const foodRoutes = require('./routes/foods');
 // const orderRoutes = require('./routes/orders');
@@ -11,6 +13,7 @@ const foodRoutes = require('./routes/foods');
 
 const app = express();
 
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -19,16 +22,18 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/foods', foodRoutes);
+app.use('/api/categories', foodCategoryRoutes);
 // app.use('/api/orders', orderRoutes);
 // app.use('/api/categories', categoryRoutes);
 // app.use('/api/banners', bannerRoutes);
 // app.use('/api/featured-items', featuredItemRoutes);
 
 app.get('/food-service/restaurants/:id');
-
 app.get('/', (req, res) => {
   res.json({ message: 'API is running...' });
 });
+
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {

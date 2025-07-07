@@ -14,3 +14,13 @@ GIT PUSH, 21-6-2025 highlights:
 - kết nối cloudinary (điện toán đám mây cho phép người dùng upload ảnh avatar mong muốn)
 và tích hợp với frontend.
 - chưa nối backend, nên tại push 21-6-2025 ảnh đại diện tự mất sau khi đăng xuất
+
+--------------------------------------------------------------------------------
+GIT PUSH, 24-6-2025 highlights:
+- hoàn thiện tính năng 'avatar' của người dùng.
+
+--------------------------------------------------------------------------------
+GIT PUSH, 7-7-2025 highlights:
+- build 1 vài nhà hàng clone để test thử.
+- lưu ý cách dùng của 'container' trong tailwind.
+- thay nó bằng : "w-full  max-w-screen-2xl  mx-auto" 

@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 import React, { useEffect, useState } from 'react';
-import RestaurantList, { Restaurant } from './Restaurants';
-
+import RestaurantList from './Restaurants';
+import { Restaurant } from '../interfaces';
 
 
 const Page = () => {
@@ -20,7 +20,7 @@ const Page = () => {
   }, []);
 
   return (
-    <main className="container mx-auto py-24 lg:px-32 md:px-24 px-12">
+    <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">
       <h1 className="text-3xl font-bold">Danh sách nhà hàng</h1>
       
       <RestaurantList restaurants={restaurants} />

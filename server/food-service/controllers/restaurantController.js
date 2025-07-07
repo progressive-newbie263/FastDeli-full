@@ -2,6 +2,7 @@ const Restaurant = require('../models/Restaurants');
 const { successResponse, errorResponse } = require('../utils/response');
 
 class RestaurantController {
+  // controller cho phép lấy danh sách tất cả nhà hàng 
   static async getAllRestaurants(req, res) {
     try {
       const { search, is_featured, limit } = req.query;
@@ -22,6 +23,7 @@ class RestaurantController {
     }
   }
 
+  //controller rút id nhà hàng và lấy ra thông tin của nhà hàng đó
   static async getRestaurantById(req, res) {
     try {
       const { id } = req.params;
@@ -37,6 +39,46 @@ class RestaurantController {
     }
   }
 
+  // Controller lấy nhà hàng theo ID và danh sách món ăn
+  static async getFoodsByRestaurant(req, res) {
+    try {
+      const { id } = req.params;
+
+      const filters = {
+        primary_category_id: req.query.primary_category_id ? parseInt(req.query.primary_category_id) : null,
+        secondary_category_id: req.query.secondary_category_id ? parseInt(req.query.secondary_category_id) : null,
+        search: req.query.search,
+        min_price: req.query.min_price ? parseFloat(req.query.min_price) : null,
+        max_price: req.query.max_price ? parseFloat(req.query.max_price) : null,
+        limit: req.query.limit ? parseInt(req.query.limit) : null
+      };
+
+      // Xoá các key không hợp lệ/null
+      Object.keys(filters).forEach(key => {
+        if (filters[key] === null || filters[key] === undefined || filters[key] === '') {
+          delete filters[key];
+        }
+      });
+
+      const { foods, total_foods } = await Restaurant.getFoodsByRestaurantId(id, filters);
+
+      res.json({
+        success: true,
+        data: foods,
+        total_foods
+      });
+
+    } catch (error) {
+      console.error('Error in getFoodsByRestaurant:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Lỗi server khi lấy danh sách món ăn'
+      });
+    }
+  }
+
+
+  //controller tạo nhà hàng mới (POST /restaurants)
   static async createRestaurant(req, res) {
     try {
       const restaurant = await Restaurant.create(req.body);
@@ -46,6 +88,8 @@ class RestaurantController {
     }
   }
 
+
+  //controller cập nhật thông tin nhà hàng (PUT /restaurants/:id)
   static async updateRestaurant(req, res) {
     try {
       const { id } = req.params;

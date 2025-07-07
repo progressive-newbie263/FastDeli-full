@@ -2,6 +2,8 @@ const { foodPool } = require('../config/db');
 
 class Food {
   // Lấy tất cả món ăn với filters
+  // do có khá nhiều trường hợp cần lọc, nên có thể đặt sẵn 1 query gốc trước. 
+  // phần sau (AND x) sẽ trám vào từ từ sau, tùy vào các trường hợp cần lọc.
   static async getAll(filters = {}) {
     let query = `
       SELECT f.*, 

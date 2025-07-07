@@ -69,7 +69,7 @@ const Footer = () => {
             <h3 className="text-md font-bold mb-4">Dịch vụ</h3>
 
             <ul className="text-sm space-y-2">
-              <li><a href="/food-landing-page" className="hover:underline">FoodDeli</a></li>
+              <li><a href="/food-service/landing" className="hover:underline">FoodDeli</a></li>
               <li><a href="/delivery-landing-page" className="hover:underline">ShipDeli</a></li>
               <li><a href="/bike-landing-page" className="hover:underline">BikeDeli</a></li>
             </ul>

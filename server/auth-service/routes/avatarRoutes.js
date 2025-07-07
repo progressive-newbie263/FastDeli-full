@@ -6,14 +6,15 @@ const pool = require('../config/db'); // database connection để lưu URL ản
 
 const upload = multer({ dest: 'uploads/' });
 
-// API upload avatar và lưu vào Cloudinary: /avatars/user_{id}.jpg
+// người dùng (khách hàng)
+// API upload avatar và lưu vào Cloudinary: /avatars/customers/user_{id}.jpg
 router.post('/', upload.single('image'), async (req, res) => {
   try {
     const file = req.file;
     const userId = req.body.user_id;
 
-    console.log('Received file:', file);
-    console.log('Received user_id:', userId);
+    //console.log('Received file:', file);
+    //console.log('Received user_id:', userId);
 
     if (!file || !userId) {
       return res.status(400).json({ success: false, message: 'File or user ID missing' });

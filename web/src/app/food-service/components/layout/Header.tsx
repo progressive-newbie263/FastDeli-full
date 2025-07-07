@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@food/context/AuthContext';
+import { IoCartOutline } from "react-icons/io5";
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -22,7 +23,10 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
-      <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+      {/* note bỏ container đi để ko bị lỗi giao diện khi có resize */}
+      <div className="w-full max-w-screen-2xl mx-auto  
+        px-4 py-3 flex justify-between items-center
+      ">
         <Link href="/food-service" className="flex items-center">
           <img src="/logo/fooddeli-logo.png" alt="FoodDeli" className="h-10" />
         </Link>
@@ -34,6 +38,12 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
         </nav>
 
         <div className="flex items-center space-x-4">
+          <Link
+            href="/food-service/#"
+            className="text-gray-700 hover:text-[#00B14F] text-2xl border border-gray-300 px-2 py-2 rounded transition-colors"
+          >
+            <IoCartOutline />
+          </Link>
           {isAuthenticated && currentUser ? (
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
@@ -45,9 +55,9 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
                   />
                 </Link>
 
-                <Link href="/food-service/profile" className="text-gray-700 hover:text-[#00B14F]">
+                {/* <Link href="/food-service/profile" className="text-gray-700 hover:text-[#00B14F]">
                   {currentUser?.full_name || 'User'}
-                </Link>
+                </Link> */}
               </div>
               
               <button 

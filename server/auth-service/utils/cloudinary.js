@@ -10,13 +10,15 @@ cloudinary.config({
 /*
   function này giúp ghi đè avatar mới lên cái avatar cũ của người dùng
   Giúp tiết kiệm dung lượng lưu trữ trên Cloudinary
+
+  Chỉ áp dụng cho khách hàng.
 */
 const uploadToCloudinary = (filePath, userId) => {
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload(
       filePath,
       {
-        folder: 'avatars',
+        folder: 'avatars/customers',
         public_id: `user_${userId}`,
         overwrite: true,
         use_filename: true,
