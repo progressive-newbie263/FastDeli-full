@@ -42,7 +42,7 @@ CREATE TABLE foods (
   food_id SERIAL PRIMARY KEY,
   restaurant_id INTEGER NOT NULL REFERENCES restaurants(restaurant_id),
   food_name VARCHAR(150) NOT NULL,
-  description TEXT,
+  description TEXT DEFAULT 'Chưa có mô tả về món ăn này',
   price DECIMAL(10, 2) NOT NULL,
   image_url TEXT DEFAULT 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHCva-afP1vczYjMkGUFt4QQ51zwKM2q3GcQ&s',
   is_available BOOLEAN DEFAULT TRUE,
@@ -52,7 +52,7 @@ CREATE TABLE foods (
   -- bổ sung 2 thuộc tính này:
   -- Lưu ý quan trọng. Ko đặt thẳng not null từ đầu. Hãy làm kiểu, ko ghi gì, sau chèn dữ liệu rồi alter cái primary sang not null sau.
   primary_category_id INTEGER REFERENCES food_categories(category_id),
-  secondary_category_id INTEGER REFERENCES food_categories(category_id)
+  secondary_category_id INTEGER REFERENCES food_categories(category_id),
 );
 
 -- Món ăn mẫu

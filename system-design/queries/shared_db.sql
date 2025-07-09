@@ -1,8 +1,8 @@
 -- TẠO DATABASE
-CREATE DATABASE db_shared_deli;
+CREATE DATABASE db-shared-deli;
 
 -- KẾT NỐI VỚI DATABASE
--- \c db_shared_deli;
+-- \c db-shared-deli;
 
 -- BẢNG USERS (dùng chung cho tất cả dịch vụ)
 CREATE TABLE users (
@@ -17,6 +17,15 @@ CREATE TABLE users (
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- -- BẢNG USER ROLES (phân quyền người dùng)
+CREATE TABLE user_roles (
+  role_id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(user_id),
+  role_name VARCHAR(50) NOT NULL, -- customer, driver, merchant, admin
+  service VARCHAR(50) NOT NULL, -- food, bike, express, all
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -38,14 +47,7 @@ CREATE TABLE users (
 --   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 -- );
 
--- -- BẢNG USER ROLES (phân quyền người dùng)
-CREATE TABLE user_roles (
-  role_id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL REFERENCES users(user_id),
-  role_name VARCHAR(50) NOT NULL, -- customer, driver, merchant, admin
-  service VARCHAR(50) NOT NULL, -- food, bike, express, all
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+
 
 -- -- BẢNG PAYMENT METHODS (phương thức thanh toán của người dùng)
 -- CREATE TABLE payment_methods (
