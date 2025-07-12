@@ -6,11 +6,23 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@food/context/AuthContext';
 import { IoCartOutline } from "react-icons/io5";
 
+// cart item trong localStroage chỉ lấy ra food-id 
+// và quantity đi kèm tương ứng của nó 
+interface CartItem {
+  food_id: number;
+  quantity: number;
+}
 
+// phân nhánh và chia nhỏ 2 thg này tạm ra
+interface Cart {
+  [restaurant_id: string]: CartItem[];
+}
 interface HeaderProps {
   isAuthenticated?: boolean;
 }
 
+
+// main event
 const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   const { currentUser, isAuthenticated: contextIsAuthenticated, logout } = useAuth();
   const router = useRouter();
@@ -19,18 +31,32 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   // 👉 Lấy số lượng tổng trong localStorage
   const [cartCount, setCartCount] = useState(0);
 
+  // Hàm tính tổng số món trong cart với cấu trúc mới
+  const getTotalItemsFromCart = (): number => {
+    const savedCart = localStorage.getItem('cart');
+    if (!savedCart) return 0;
+    
+    try {
+      const cart = JSON.parse(savedCart) as Cart;
+      let total = 0;
+      
+      Object.values(cart).forEach(restaurantItems => {
+        restaurantItems.forEach(item => {
+          total += item.quantity;
+        });
+      });
+      
+      return total;
+    } catch (error) {
+      console.error('Error calculating total items:', error);
+      return 0;
+    }
+  };
+
   useEffect(() => {
     const updateCartCount = () => {
-      const stored = localStorage.getItem('cartQuantities');
-
-      // JSON.parse() trả về kiểu unknown, dùng .reduce() trên nó mà không ép kiểu rõ ràng sẽ lỗi.
-      if (stored) {
-        const parsed = JSON.parse(stored) as { [key: string]: number };
-        const total = Object.values(parsed).reduce((sum, qty) => sum + qty, 0);
-        setCartCount(total);
-      } else {
-        setCartCount(0);
-      }
+      const total = getTotalItemsFromCart();
+      setCartCount(total);
     };
 
     updateCartCount();
@@ -39,6 +65,12 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   }, []);
 
   const handleLogout = () => {
+    // trước hết thì đây là 1 hạn chế lớn, cần lưu ý.
+    // khi đăng xuất nếu ko xóa cart thì ở cùng 1 thiết bị, người dùng tiếp theo vẫn dính cái giỏ cũ.
+    // khá phiền phức. Nhưng nếu xóa cart thì người dùng trước đó cũng sẽ mất giỏ hàng của mình.
+    // đây là cái giá phải đánh đổi. Cách fix là phải làm cart + cart_items và lưu vào server. hiện tại chưa làm được, để nguyên ở đó.
+    localStorage.removeItem('cart'); 
+    setCartCount(0); // tự động cho về 0 khi logout (vì đã xóa cart rồi)
     logout();
     router.push('/food-service');
   };

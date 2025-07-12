@@ -9,6 +9,16 @@ import { useAuth } from '@food/context/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Type cho cart structure
+interface CartItem {
+  food_id: number;
+  quantity: number;
+}
+
+interface Cart {
+  [restaurant_id: string]: CartItem[];
+}
+
 export default function RestaurantDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -41,15 +51,80 @@ export default function RestaurantDetailPage() {
       .catch(err => console.error('Error fetching foods:', err));
   }, [id]);
 
-
-  // Lấy số lượng món ăn từ localStorage ngay khi thêm/bớt món.
+  // Load cart data từ localStorage khi component mount
   useEffect(() => {
-    localStorage.setItem('cartQuantities', JSON.stringify(quantities));
-    window.dispatchEvent(new Event('storage')); // cập nhật ngay Header
-  }, [quantities]);
+    if (!id) return;
 
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        const parsedCart = JSON.parse(savedCart) as Cart;
+        const restaurantId = id.toString();
+        
+        // Lấy dữ liệu cart của restaurant hiện tại
+        if (parsedCart[restaurantId]) {
+          const restaurantCart = parsedCart[restaurantId];
+          const quantityMap: { [foodId: number]: number } = {};
+          
+          restaurantCart.forEach(item => {
+            quantityMap[item.food_id] = item.quantity;
+          });
+          
+          setQuantities(quantityMap);
+        }
+      } catch (error) {
+        console.error("Lỗi khi parse cart:", error);
+      }
+    }
+  }, [id]);
+
+  // Hàm cập nhật localStorage với structure mới
+  const updateCartInLocalStorage = (newQuantities: { [foodId: number]: number }) => {
+    if (!id) return;
+
+    const restaurantId = id.toString();
+    const savedCart = localStorage.getItem('cart');
+    let cart: Cart = {};
+    
+    if (savedCart) {
+      try {
+        cart = JSON.parse(savedCart) as Cart;
+      } catch (error) {
+        console.error("Lỗi khi parse cart:", error);
+        cart = {};
+      }
+    }
+
+    // Tạo array CartItem từ quantities
+    const cartItems: CartItem[] = Object.entries(newQuantities)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([foodId, quantity]) => ({
+        food_id: parseInt(foodId),
+        quantity: quantity
+      }));
+
+    // Cập nhật cart cho restaurant hiện tại
+    if (cartItems.length > 0) {
+      cart[restaurantId] = cartItems;
+    } else {
+      // Nếu không có món nào, xóa restaurant khỏi cart
+      delete cart[restaurantId];
+    }
+
+    // Lưu vào localStorage
+    localStorage.setItem('cart', JSON.stringify(cart));
+    
+    // Dispatch event để cập nhật các component khác
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  // Cập nhật localStorage mỗi khi quantities thay đổi
+  useEffect(() => {
+    updateCartInLocalStorage(quantities);
+  }, [quantities, id]);
 
   const handleAddToCart = (foodId: number) => {
+    // chưa đăng nhập sẽ hiện thông báo lỗi (1 cái toast/pop-up)
     if (!isAuthenticated) {
       toast.error('Bạn cần đăng nhập để thêm món vào giỏ hàng.', {
         position: 'top-center',
