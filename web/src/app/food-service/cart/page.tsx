@@ -3,34 +3,26 @@
 import React, { useEffect, useState } from 'react';
 import { Food } from '../interfaces';
 import Image from 'next/image';
-
 import OrderDetailPopup from './OrderDetailPopup';
 
-interface StoredCartItem {
-  food_id: number;
-  quantity: number;
-}
+// icon sử dụng (react-icons)
+import { FaUtensils } from 'react-icons/fa';
+import { MdOutlineShoppingCart } from "react-icons/md";
 
-interface FullCart {
-  [restaurantId: string]: StoredCartItem[];
-}
 
-interface CartItem {
-  restaurant_id: string;
-  food_id: number;
-  food_name: string;
-  price: number;
-  image_url: string | null;
-  description?: string;
-  quantity: number;
-}
+import {
+  RestaurantGroup,
+  FullCart,
+  CartItem,
 
-interface RestaurantGroup {
-  restaurant_id: string;
-  restaurant_name: string;
-  restaurant_image?: string; // Thêm ảnh nhà hàng
-  items: CartItem[];
-}
+  getGroupTotal,
+  getTotalCart,
+  handleIncrease,
+  handleDecrease
+} from '../utils/cartHandler';
+import Link from 'next/link';
+
+
 
 const Page = () => {
   const [groupedCart, setGroupedCart] = useState<RestaurantGroup[]>([]);
@@ -95,67 +87,12 @@ const Page = () => {
     }
   }, []);
 
-  // Hàm tính tổng tiền cho 1 đơn từ 1 nhà hàng
-  const getGroupTotal = (group: RestaurantGroup) => {
-    return group.items.reduce(
-      (sum, item) => sum + item.quantity * item.price,
-      0
-    );
-  };
-
-  // Hàm tính tổng tiền toàn bộ giỏ hàng
-  const getTotalCart = () => {
-    return groupedCart.reduce((sum, group) => sum + getGroupTotal(group), 0);
-  };
-
   const increase = (food_id: number, restaurant_id: string) => {
-    setGroupedCart(prev => prev.map(group => {
-      if (group.restaurant_id !== restaurant_id) return group;
-
-      const updatedItems = group.items.map(item => item.food_id === food_id 
-        ? { ...item, quantity: item.quantity + 1 } : item 
-      );
-
-      return { ...group, items: updatedItems };
-    }));
-
-    // Cập nhật selectedRestaurant nếu đang xem chi tiết
-    if (selectedRestaurant && selectedRestaurant.restaurant_id === restaurant_id) {
-      setSelectedRestaurant(prev => ({
-        ...prev!,
-        items: prev!.items.map(item => item.food_id === food_id 
-          ? { ...item, quantity: item.quantity + 1 } : item 
-        )
-      }));
-    }
+    handleIncrease(groupedCart, setGroupedCart, selectedRestaurant, setSelectedRestaurant, food_id, restaurant_id);
   };
 
   const decrease = (food_id: number, restaurant_id: string) => {
-    setGroupedCart(prev => prev.map(group => {
-      if (group.restaurant_id !== restaurant_id) return group;
-
-      const updatedItems = group.items.map(item => item.food_id === food_id
-        ? { ...item, quantity: item.quantity - 1 } : item
-      ).filter(item => item.quantity > 0); 
-
-      return { ...group, items: updatedItems };
-    }).filter(group => group.items.length > 0));
-
-    // Cập nhật selectedRestaurant nếu đang xem chi tiết
-    if (selectedRestaurant && selectedRestaurant.restaurant_id === restaurant_id) {
-      const updatedItems = selectedRestaurant.items.map(item => item.food_id === food_id
-        ? { ...item, quantity: item.quantity - 1 } : item
-      ).filter(item => item.quantity > 0);
-
-      if (updatedItems.length === 0) {
-        setSelectedRestaurant(null); // Đóng popup nếu không còn món nào
-      } else {
-        setSelectedRestaurant({
-          ...selectedRestaurant,
-          items: updatedItems
-        });
-      }
-    }
+    handleDecrease(groupedCart, setGroupedCart, selectedRestaurant, setSelectedRestaurant, food_id, restaurant_id);
   };
 
   const handleCheckout = (restaurant_id: string) => {
@@ -191,46 +128,68 @@ const Page = () => {
 
   return (
     <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">
-      <h1 className="text-3xl font-bold mb-8">🛒 Món ăn đã chọn</h1>
+      <h1 className="text-3xl font-bold mb-8">🛒 Giỏ hàng của bạn</h1>
 
       {groupedCart.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🍽️</div>
-          <p className="text-gray-500 text-lg">Giỏ hàng của bạn đang trống.</p>
-          <p className="text-gray-400 text-sm mt-2">Hãy chọn một số món ăn ngon để bắt đầu!</p>
+        <div className="text-center py-12 items-center w-[300px] mx-auto">
+          <Link href="/food-service/restaurants">
+            <div className="text-6xl mb-4 flex justify-center">
+              <MdOutlineShoppingCart />
+            </div>
+
+            <p className="text-gray-500 text-lg">Giỏ hàng của bạn đang trống.</p>
+            
+            <p className="text-gray-400 text-sm mt-2">Hãy chọn một số món ăn ngon để bắt đầu!</p>
+          </Link>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 text-center sm:text-left">
           {groupedCart.map(group => (
             <div 
               key={group.restaurant_id}
-              className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <img
-                    src={group.restaurant_image || 'https://via.placeholder.com/80'}
-                    alt={group.restaurant_name}
-                    className="w-16 h-16 object-cover rounded-lg"
-                  />
+              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow
+              w-[300px] sm:w-full mx-auto
+            ">
+              <div className="flex justify-between flex-col 
+                sm:flex-row sm:items-center 
+              ">
+                <div className="flex items-center gap-4 flex-col sm:flex-row">
+                  <Link className='flex gap-2' href={`/food-service/restaurants/${group.restaurant_id}`}>
+                    <img
+                      src={group.restaurant_image || 'https://via.placeholder.com/80'}
+                      alt={group.restaurant_name}
+                      className="
+                        sm:w-20 sm:h-20 object-cover rounded-lg
+                        w-64 h-48
+                      "
+                    />
+                  </Link>
 
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-800">
-                      🍽️ {group.restaurant_name}
+                  <div className='flex flex-col'>
+                    <h3 className="font-bold text-2xl sm:text-lg text-gray-800 flex gap-2 mb-3 items-center">
+                      <FaUtensils className="text-xl text-green-600" />
+                      {group.restaurant_name}
                     </h3>
                     
-                    <p className="text-gray-600 text-sm">
+                    <p className="text-gray-600 sm:text-sm text-md">
                       {group.items.length} món • {getGroupTotal(group).toLocaleString()} đ
+                    </p>
+
+                    <p className="text-gray-600 sm:text-sm text-md">
+                      {group.items.reduce((total, item) => total + item.quantity, 0)} phần ăn
                     </p>
                   </div>
                 </div>
                 
                 <button
                   onClick={() => setSelectedRestaurant(group)}
-                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 cursor-pointer"
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 cursor-pointer
+                    mt-4 sm:mt-0 
+                    mx-auto sm:mx-0
+                  "
                 >
                   Xem đơn hàng
-                  <span className="text-sm">→</span>
+                  <span className="text-sm">→</span> {/* windows + dấu chấm để tìm mũi tên kia. */}
                 </button>
               </div>
             </div>
@@ -239,8 +198,9 @@ const Page = () => {
           {/* Tổng cộng toàn bộ giỏ hàng */}
           <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
             <p className="text-xl font-bold text-gray-800 mb-2">
-              Tổng cộng toàn bộ: {getTotalCart().toLocaleString()} đ
+              Tổng cộng toàn bộ: {getTotalCart(groupedCart).toLocaleString()} đ
             </p>
+
             <p className="text-gray-600 text-sm">
               Bạn có {groupedCart.length} đơn hàng từ {groupedCart.length} nhà hàng
             </p>

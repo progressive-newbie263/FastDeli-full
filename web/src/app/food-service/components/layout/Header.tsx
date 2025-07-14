@@ -2,9 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@food/context/AuthContext';
 import { IoCartOutline } from "react-icons/io5";
+
+import { FullCart } from '../../utils/cartHandler';
 
 // cart item trong localStroage chỉ lấy ra food-id 
 // và quantity đi kèm tương ứng của nó 
@@ -29,48 +32,48 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   const isAuthenticated = contextIsAuthenticated ?? propIsAuthenticated ?? false;
 
   // 👉 Lấy số lượng tổng trong localStorage
-  const [cartCount, setCartCount] = useState(0);
+  const [cartQuantity, setCartQuantity] = useState(0);
 
   // Hàm tính tổng số món trong cart với cấu trúc mới
   const getTotalItemsFromCart = (): number => {
-    const savedCart = localStorage.getItem('cart');
-    if (!savedCart) return 0;
-    
+    const raw = localStorage.getItem('cart');
+    if (!raw) return 0;
+
     try {
-      const cart = JSON.parse(savedCart) as Cart;
-      let total = 0;
-      
-      Object.values(cart).forEach(restaurantItems => {
-        restaurantItems.forEach(item => {
-          total += item.quantity;
-        });
-      });
-      
-      return total;
-    } catch (error) {
-      console.error('Error calculating total items:', error);
+      const parsed: FullCart = JSON.parse(raw);
+      return Object.values(parsed).flat().reduce((sum, item) => sum + item.quantity, 0);
+    } catch {
       return 0;
     }
   };
 
   useEffect(() => {
-    const updateCartCount = () => {
+    const updateCartQuantityHeader = () => {
       const total = getTotalItemsFromCart();
-      setCartCount(total);
+      setCartQuantity(total);
     };
 
-    updateCartCount();
-    window.addEventListener('storage', updateCartCount); // catch changes across tabs
-    return () => window.removeEventListener('storage', updateCartCount);
+    updateCartQuantityHeader();
+    window.addEventListener('storage', updateCartQuantityHeader);
+    window.addEventListener('cart-updated', updateCartQuantityHeader); // 👈 thêm dòng này
+
+    return () => {
+      window.removeEventListener('storage', updateCartQuantityHeader);
+      window.removeEventListener('cart-updated', updateCartQuantityHeader); // 👈 và cả đây
+    };
   }, []);
 
+
   const handleLogout = () => {
-    // trước hết thì đây là 1 hạn chế lớn, cần lưu ý.
-    // khi đăng xuất nếu ko xóa cart thì ở cùng 1 thiết bị, người dùng tiếp theo vẫn dính cái giỏ cũ.
-    // khá phiền phức. Nhưng nếu xóa cart thì người dùng trước đó cũng sẽ mất giỏ hàng của mình.
-    // đây là cái giá phải đánh đổi. Cách fix là phải làm cart + cart_items và lưu vào server. hiện tại chưa làm được, để nguyên ở đó.
+    /* trước hết thì đây là 1 hạn chế lớn, cần lưu ý:
+      - Khi đăng xuất nếu ko xóa cart thì ở cùng 1 thiết bị, người dùng tiếp theo vẫn dính cái giỏ cũ.
+      - Khá phiền phức. Nhưng nếu xóa cart thì người dùng trước đó cũng sẽ mất giỏ hàng của mình.
+      - Đây là cái giá phải đánh đổi. Cách fix là phải làm cart + cart_items và lưu vào server. 
+      Hiện tại chưa làm được, để nguyên ở đó.
+    */
     localStorage.removeItem('cart'); 
-    setCartCount(0); // tự động cho về 0 khi logout (vì đã xóa cart rồi)
+    setCartQuantity(0); // tự động cho về 0 khi logout (vì đã xóa cart rồi)
+    
     logout();
     router.push('/food-service');
   };
@@ -96,9 +99,9 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
             <div className='relative'>
               <IoCartOutline />
 
-              {cartCount > 0 && (
+              {cartQuantity > 0 && (
                 <span className="bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center absolute -top-4 -right-4">
-                  {cartCount}
+                  {cartQuantity}
                 </span>
               )}
             </div> 

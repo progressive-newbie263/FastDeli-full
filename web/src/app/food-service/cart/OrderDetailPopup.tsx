@@ -1,21 +1,8 @@
 import React from 'react';
+import { FaUtensils } from 'react-icons/fa';
 
-interface CartItem {
-  restaurant_id: string;
-  food_id: number;
-  food_name: string;
-  price: number;
-  image_url: string | null;
-  description?: string;
-  quantity: number;
-}
-
-interface RestaurantGroup {
-  restaurant_id: string;
-  restaurant_name: string;
-  restaurant_image?: string;
-  items: CartItem[];
-}
+import { RestaurantGroup } from '../utils/cartHandler';
+import Link from 'next/link';
 
 interface Props {
   restaurant: RestaurantGroup;
@@ -36,30 +23,41 @@ const OrderDetailPopup: React.FC<Props> = ({
 }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop mờ */}
+      {/* 
+        Backdrop mờ. blur-xs là nhỏ nhất/ nét nhất theo mặc định (4px) nên để [2px] sẽ giúp nó nét hơn xs 1 tí.
+        
+          - Áp đặt lớp backdrop này lên toàn trang. 
+      */}
       <div 
-        className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+        className="absolute top-16 inset-x-0 bottom-0 bg-opacity-50 backdrop-blur-[2px]"
         onClick={onClose}
       />
       
-      {/* Modal content */}
       <div className="relative bg-white rounded-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden shadow-2xl">
-        {/* Header */}
         <div className="bg-gradient-to-r from-green-500 to-green-800 text-white p-6 relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-white hover:text-gray-200 transition-colors text-2xl w-8 h-8 flex items-center justify-center"
-          >
-            ×
+            className="absolute top-2 right-2 text-white transition-colors text-xl w-8 h-8 flex items-center justify-center
+              cursor-pointer hover:text-gray-300 duration-100 
+          ">
+            X
           </button>
+
           <div className="flex items-center gap-4">
             <img
               src={restaurant.restaurant_image || 'https://via.placeholder.com/60'}
               alt={restaurant.restaurant_name}
               className="w-16 h-16 object-cover rounded-lg border-2 border-white/20"
             />
+
             <div>
-              <h2 className="text-2xl font-bold">🍽️ {restaurant.restaurant_name}</h2>
+              <h2 className="text-2xl font-bold flex items-center gap-2 mb-3">
+                <Link className='flex items-center gap-2' href={`/food-service/restaurants/${restaurant.restaurant_id}`}>
+                  <FaUtensils className="text-xl text-gray-300" />
+                  {restaurant.restaurant_name}
+                </Link>
+              </h2>
+
               <p className="text-green-100 text-sm">
                 {restaurant.items.length} món trong đơn hàng
               </p>
@@ -68,7 +66,7 @@ const OrderDetailPopup: React.FC<Props> = ({
         </div>
 
         {/* Body - Danh sách món ăn */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        <div className="p-6 max-h-[40vh] overflow-y-auto">
           <div className="space-y-4">
             {restaurant.items.map(item => (
               <div
@@ -102,9 +100,11 @@ const OrderDetailPopup: React.FC<Props> = ({
                   >
                     -
                   </button>
+
                   <span className="font-semibold text-lg w-8 text-center">
                     {item.quantity}
                   </span>
+                  
                   <button
                     onClick={() => onIncrease(item.food_id, item.restaurant_id)}
                     className="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
@@ -115,7 +115,16 @@ const OrderDetailPopup: React.FC<Props> = ({
               </div>
             ))}
           </div>
+
+          {/* nút gọi thêm món (điều hướng về nhà hàng chủ quản để chọn thêm các món từ nhà hàng đó.) */}
+          <div className='hover:underline text-green-600 font-semibold duration-150 w-fit mx-auto'>
+            <Link className='flex gap-2' href={`/food-service/restaurants/${restaurant.restaurant_id}`}>
+              + Gọi thêm món
+            </Link>
+          </div>
         </div>
+
+
 
         {/* Footer */}
         <div className="bg-gray-50 p-6 border-t border-gray-200">
@@ -123,6 +132,7 @@ const OrderDetailPopup: React.FC<Props> = ({
             <span className="text-lg font-semibold text-gray-700">
               Tổng cộng:
             </span>
+
             <span className="text-2xl font-bold text-green-600">
               {getGroupTotal(restaurant).toLocaleString()} đ
             </span>
@@ -135,6 +145,8 @@ const OrderDetailPopup: React.FC<Props> = ({
             >
               Đóng
             </button>
+
+            {/* tạm thời cứ để checkout là xóa đi (coi như ko cần chuyển tiền, nó xong luôn) */}
             <button
               onClick={() => onCheckout(restaurant.restaurant_id)}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors"
