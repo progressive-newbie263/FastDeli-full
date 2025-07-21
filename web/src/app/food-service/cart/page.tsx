@@ -27,6 +27,7 @@ import Link from 'next/link';
 const Page = () => {
   const [groupedCart, setGroupedCart] = useState<RestaurantGroup[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<RestaurantGroup | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const userCart = localStorage.getItem('cart');
@@ -77,7 +78,6 @@ const Page = () => {
             });
           }
         }
-
         setGroupedCart(groups);
       };
 
@@ -86,6 +86,12 @@ const Page = () => {
       console.error('Lỗi xử lý cart:', err);
     }
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+  }, []);
+
 
   const increase = (food_id: number, restaurant_id: string) => {
     handleIncrease(groupedCart, setGroupedCart, selectedRestaurant, setSelectedRestaurant, food_id, restaurant_id);
@@ -130,7 +136,26 @@ const Page = () => {
     <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">
       <h1 className="text-3xl font-bold mb-8">🛒 Giỏ hàng của bạn</h1>
 
-      {groupedCart.length === 0 ? (
+      {!isAuthenticated ? (
+        <div className="text-center py-12 items-center w-[300px] mx-auto">
+          <Link href="/food-service/restaurants">
+            <div className="text-6xl mb-4 flex justify-center">
+              <MdOutlineShoppingCart />
+            </div>
+
+            <p className="text-gray-500 text-lg">Người dùng chưa đăng nhập.</p>
+
+            <p className="text-gray-400 text-sm mt-2">
+              Quý khách có thể thỏa thích xem danh sách nhà hàng và món ăn mà không cần đăng nhập. 
+              Tuy nhiên, để đặt món và sử dụng giỏ hàng, quý khách sẽ cần đăng nhập vào dịch vụ của chúng tôi.
+            </p>
+          </Link>
+          
+          <Link href="/food-service/auth/login" className="inline-block mt-4 px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white">
+            Đăng nhập ngay
+          </Link>
+        </div>
+      ) : groupedCart.length === 0 ? (
         <div className="text-center py-12 items-center w-[300px] mx-auto">
           <Link href="/food-service/restaurants">
             <div className="text-6xl mb-4 flex justify-center">

@@ -126,7 +126,7 @@ export default function RestaurantDetailPage() {
   const handleAddToCart = (foodId: number) => {
     // chưa đăng nhập sẽ hiện thông báo lỗi (1 cái toast/pop-up)
     if (!isAuthenticated) {
-      toast.error('Bạn cần đăng nhập để thêm món vào giỏ hàng.', {
+      toast.error('Vui lòng đăng nhập để thêm món vào giỏ hàng.', {
         position: 'top-center',
         autoClose: 3000,
         closeOnClick: true,

@@ -25,7 +25,6 @@ const OrderDetailPopup: React.FC<Props> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* 
         Backdrop mờ. blur-xs là nhỏ nhất/ nét nhất theo mặc định (4px) nên để [2px] sẽ giúp nó nét hơn xs 1 tí.
-        
           - Áp đặt lớp backdrop này lên toàn trang. 
       */}
       <div 
@@ -141,7 +140,7 @@ const OrderDetailPopup: React.FC<Props> = ({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors"
+              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-3 rounded-lg font-medium transition-colors cursor-pointer duration-150"
             >
               Đóng
             </button>
@@ -149,7 +148,7 @@ const OrderDetailPopup: React.FC<Props> = ({
             {/* tạm thời cứ để checkout là xóa đi (coi như ko cần chuyển tiền, nó xong luôn) */}
             <button
               onClick={() => onCheckout(restaurant.restaurant_id)}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors cursor-pointer duration-150"
             >
               Thanh toán đơn này
             </button>

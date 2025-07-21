@@ -24,3 +24,15 @@ GIT PUSH, 7-7-2025 highlights:
 - build 1 vài nhà hàng clone để test thử.
 - lưu ý cách dùng của 'container' trong tailwind.
 - thay nó bằng : "w-full  max-w-screen-2xl  mx-auto" 
+
+--------------------------------------------------------------------------------
+GIT PUSH, 21-7-2025 highlights: 
+- bản vá quan trọng.
+- dùng "OpenStreetMap" làm tính năng bản đồ: `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=vi`
+- Lí do chọn nó thay vì "google map API": Thử nghiệm lần đầu nên chưa có kinh nghiệm. 
+Open street map dễ dùng, chả cần cài đặt gì cả. Quan trọng nhất là mình ko cần nhập thẻ
+tín dụng hay tài khoản ngân hàng gì cả
+- Đã có 1 vài xác nhận cụ thể: Nếu cho phép lấy địa chỉ thì mới lấy được địa chỉ người dùng.
+Còn nếu họ ko cho phép, sẽ chưa lấy được địa chỉ của họ.
+- Tiếp theo nhiệm vụ sẽ là tìm cách lấy ra địa chỉ của mình và dùng nó app vào tính các
+địa chỉ lân cận (khoảng cách giữa nhà hàng đến địa chỉ hiện tại của mình).

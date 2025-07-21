@@ -47,6 +47,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
     }
   };
 
+  // đảm bảo cập nhật cả cart quantity trên thanh header
   useEffect(() => {
     const updateCartQuantityHeader = () => {
       const total = getTotalItemsFromCart();
@@ -55,11 +56,11 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
 
     updateCartQuantityHeader();
     window.addEventListener('storage', updateCartQuantityHeader);
-    window.addEventListener('cart-updated', updateCartQuantityHeader); // 👈 thêm dòng này
+    window.addEventListener('cart-updated', updateCartQuantityHeader); 
 
     return () => {
       window.removeEventListener('storage', updateCartQuantityHeader);
-      window.removeEventListener('cart-updated', updateCartQuantityHeader); // 👈 và cả đây
+      window.removeEventListener('cart-updated', updateCartQuantityHeader); 
     };
   }, []);
 
@@ -70,12 +71,21 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
       - Khá phiền phức. Nhưng nếu xóa cart thì người dùng trước đó cũng sẽ mất giỏ hàng của mình.
       - Đây là cái giá phải đánh đổi. Cách fix là phải làm cart + cart_items và lưu vào server. 
       Hiện tại chưa làm được, để nguyên ở đó.
+
+      - router.refresh giúp đăng xuất trả về ngay trang đang hiển thị.
     */
     localStorage.removeItem('cart'); 
     setCartQuantity(0); // tự động cho về 0 khi logout (vì đã xóa cart rồi)
     
     logout();
-    router.push('/food-service');
+    router.refresh();
+  };
+
+  const handleLoginClick = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('redirectAfterLogin', window.location.pathname + window.location.search);
+    }
+    router.push('/food-service/auth/login');
   };
 
   return (
@@ -130,6 +140,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
               <Link
                 href="/food-service/auth/login"
                 className="text-gray-700 hover:text-[#00B14F] border border-gray-300 px-4 py-2 rounded transition-colors"
+                onClick={handleLoginClick}
               >
                 Đăng nhập
               </Link>

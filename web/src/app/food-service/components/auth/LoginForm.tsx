@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -21,8 +23,6 @@ const LoginForm = () => {
   const [mounted, setMounted] = useState<boolean>(false);
   const router = useRouter();
 
-  // import cái useAuth từ AuthContext, nó sẽ giúp set cái state của thanh Header
-  // từ đó tự động cập nhật thanh Header khi đăng nhập thành công
   const { login } = useAuth();
 
   useEffect(() => {
@@ -56,10 +56,17 @@ const LoginForm = () => {
     setLoading(true);
     try {
       const result = await login(formData);
-      
+
       if (result.success) {
         console.log('Đăng nhập thành công, vui lòng chờ đợi...');
-        router.push('/food-service');
+        const savedRedirect = localStorage.getItem('redirectAfterLogin');
+
+        if (savedRedirect) {
+          localStorage.removeItem('redirectAfterLogin');
+          router.push(savedRedirect);
+        } else {
+          router.push('/food-service');
+        }
       } else {
         setErrors({ ...errors, server: result.error || 'Đăng nhập thất bại. Vui lòng thử lại.' });
       }
