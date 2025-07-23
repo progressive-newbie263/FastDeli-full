@@ -36,3 +36,10 @@ tín dụng hay tài khoản ngân hàng gì cả
 Còn nếu họ ko cho phép, sẽ chưa lấy được địa chỉ của họ.
 - Tiếp theo nhiệm vụ sẽ là tìm cách lấy ra địa chỉ của mình và dùng nó app vào tính các
 địa chỉ lân cận (khoảng cách giữa nhà hàng đến địa chỉ hiện tại của mình).
+
+
+--------------------------------------------------------------------------------
+GIT PUSH, 23-7-2025 highlights: 
+- bản vá nhỏ/microupdate
+- sửa UX 1 chút. thay đổi các alert thành các toast
+- thêm tính năng tạm thời anti-spam. Khi đang tìm địa chỉ nó fix sang icon loading.

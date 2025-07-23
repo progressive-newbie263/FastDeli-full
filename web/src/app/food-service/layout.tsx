@@ -5,6 +5,7 @@
 */
 // import type { Metadata } from "next";
 import ClientLayout from './ClientLayout';
+import { ToastContainer } from 'react-toastify';
 
 // Metadata chỉ có thể export trong server component
 // export const metadata: Metadata = {
@@ -17,5 +18,10 @@ export default function FoodServiceLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <ClientLayout>{children}</ClientLayout>;
+  return (
+    <ClientLayout>
+      {children}
+      <ToastContainer position="top-center" autoClose={3000} />
+    </ClientLayout>
+  );
 }
