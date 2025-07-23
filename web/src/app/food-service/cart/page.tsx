@@ -9,7 +9,6 @@ import OrderDetailPopup from './OrderDetailPopup';
 import { FaUtensils } from 'react-icons/fa';
 import { MdOutlineShoppingCart } from "react-icons/md";
 
-
 import {
   RestaurantGroup,
   FullCart,
@@ -18,7 +17,8 @@ import {
   getGroupTotal,
   getTotalCart,
   handleIncrease,
-  handleDecrease
+  handleDecrease,
+  updateCartQuantity // Import thêm hàm này
 } from '../utils/cartHandler';
 import Link from 'next/link';
 
@@ -92,15 +92,14 @@ const Page = () => {
     setIsAuthenticated(!!token);
   }, []);
 
-
   const increase = (food_id: number, restaurant_id: string) => {
     handleIncrease(groupedCart, setGroupedCart, selectedRestaurant, setSelectedRestaurant, food_id, restaurant_id);
   };
-
   const decrease = (food_id: number, restaurant_id: string) => {
     handleDecrease(groupedCart, setGroupedCart, selectedRestaurant, setSelectedRestaurant, food_id, restaurant_id);
   };
 
+  // func xử lý thanh toán đơn hàng - ĐÃ SỬA
   const handleCheckout = (restaurant_id: string) => {
     const restaurant = groupedCart.find(
       g => g.restaurant_id === restaurant_id
@@ -111,9 +110,7 @@ const Page = () => {
     console.log('Chi tiết đơn hàng:', restaurant.items);
 
     // Xóa đơn hàng của nhà hàng vừa thanh toán khỏi giao diện
-    const newGroupedCart = groupedCart.filter(
-      g => g.restaurant_id !== restaurant_id
-    );
+    const newGroupedCart = groupedCart.filter(g => g.restaurant_id !== restaurant_id);
     setGroupedCart(newGroupedCart);
 
     // Đóng popup hóa đơn nếu đang xem nhà hàng vừa thanh toán
@@ -130,6 +127,9 @@ const Page = () => {
       }));
     });
     localStorage.setItem('cart', JSON.stringify(updatedCart));
+
+    // ✅ THÊM: Cập nhật cartQuantity và trigger event để header biết
+    updateCartQuantity(newGroupedCart);
   };
 
   return (

@@ -233,7 +233,7 @@ const Home = () => {
           <div className="mt-2 flex gap-4 justify-end">
             <button
               onClick={() => handleLocationPermission(true)}
-              className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm transition-colors"
+              className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm transition-colors cursor-pointer duration-150"
               aria-label="Cho phép truy cập vị trí"
             >
               Cho phép
@@ -241,7 +241,7 @@ const Home = () => {
 
             <button
               onClick={() => handleLocationPermission(false)}
-              className="px-3 py-1 bg-gray-300 text-black rounded-md hover:bg-gray-400 text-sm transition-colors"
+              className="px-3 py-1 bg-gray-300 text-black rounded-md hover:bg-gray-400 text-sm transition-colors cursor-pointer duration-150"
               aria-label="Từ chối truy cập vị trí"
             >
               Từ chối

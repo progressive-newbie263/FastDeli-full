@@ -95,7 +95,8 @@ const OrderDetailPopup: React.FC<Props> = ({
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => onDecrease(item.food_id, item.restaurant_id)}
-                    className="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                    className="bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors 
+                      cursor-pointer duration-150"
                   >
                     -
                   </button>
@@ -106,7 +107,8 @@ const OrderDetailPopup: React.FC<Props> = ({
                   
                   <button
                     onClick={() => onIncrease(item.food_id, item.restaurant_id)}
-                    className="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                    className="bg-green-500 hover:bg-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors 
+                      cursor-pointer duration-150"
                   >
                     +
                   </button>
@@ -150,7 +152,7 @@ const OrderDetailPopup: React.FC<Props> = ({
               onClick={() => onCheckout(restaurant.restaurant_id)}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors cursor-pointer duration-150"
             >
-              Thanh toán đơn này
+              Thanh toán đơn hàng
             </button>
           </div>
         </div>

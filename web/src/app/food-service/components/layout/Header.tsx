@@ -34,15 +34,29 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   // 👉 Lấy số lượng tổng trong localStorage
   const [cartQuantity, setCartQuantity] = useState(0);
 
-  // Hàm tính tổng số món trong cart với cấu trúc mới
+  // ✅ CẢI THIỆN: Hàm tính tổng số món trong cart với error handling tốt hơn
   const getTotalItemsFromCart = (): number => {
-    const raw = localStorage.getItem('cart');
-    if (!raw) return 0;
-
     try {
+      const raw = localStorage.getItem('cart');
+      if (!raw) return 0;
+
       const parsed: FullCart = JSON.parse(raw);
-      return Object.values(parsed).flat().reduce((sum, item) => sum + item.quantity, 0);
-    } catch {
+      if (!parsed || typeof parsed !== 'object') return 0;
+
+      const total = Object.values(parsed).reduce((totalSum, restaurantItems) => {
+        if (!Array.isArray(restaurantItems)) return totalSum;
+        
+        return totalSum + restaurantItems.reduce((sum, item) => {
+          if (!item || typeof item.quantity !== 'number' || item.quantity < 0) {
+            return sum;
+          }
+          return sum + item.quantity;
+        }, 0);
+      }, 0);
+
+      return isNaN(total) || total < 0 ? 0 : Math.floor(total);
+    } catch (error) {
+      console.error('Error calculating cart total:', error);
       return 0;
     }
   };
@@ -74,8 +88,10 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
 
       - router.refresh giúp đăng xuất trả về ngay trang đang hiển thị.
     */
-    localStorage.removeItem('cart'); 
-    setCartQuantity(0); // tự động cho về 0 khi logout (vì đã xóa cart rồi)
+    localStorage.removeItem('cart');
+    //localStorage.setItem('cartQuantity', '0');
+    window.dispatchEvent(new Event('cart-updated'));
+    setCartQuantity(0);
     
     logout();
     router.refresh();

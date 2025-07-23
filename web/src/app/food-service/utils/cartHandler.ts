@@ -48,15 +48,43 @@ export function updateLocalStorage(groupedCart: RestaurantGroup[]): void {
   localStorage.setItem('cart', JSON.stringify(fullCart));
 }
 
-// func cập nhật lại số lượng sản phẩm ở giỏ hàng sau mỗi lần tăng/giảm thêm/bớt sản phẩm
+// ✅ CẢI THIỆN: func cập nhật lại số lượng sản phẩm ở giỏ hàng với error handling tốt hơn
 export function updateCartQuantity(groupedCart: RestaurantGroup[]): void {
-  const totalItems = groupedCart.reduce((total, group) =>
-    total + group.items.reduce((sum, item) => sum + item.quantity, 0)
-  , 0);
+  try {
+    // Kiểm tra nếu cart rỗng hoặc không hợp lệ
+    if (!groupedCart || groupedCart.length === 0) {
+      //localStorage.setItem('cartQuantity', '0');
+      window.dispatchEvent(new Event('cart-updated'));
+      return;
+    }
 
-  localStorage.setItem('cartQuantity', totalItems.toString());
-  window.dispatchEvent(new Event('cart-updated'));
+    // Tính tổng với validation
+    const totalItems = groupedCart.reduce((total, group) => {
+      if (!group || !group.items || !Array.isArray(group.items)) {
+        return total;
+      }
+      
+      return total + group.items.reduce((sum, item) => {
+        if (!item || typeof item.quantity !== 'number' || item.quantity < 0) {
+          return sum;
+        }
+        return sum + item.quantity;
+      }, 0);
+    }, 0);
+
+    // Đảm bảo số lượng là số hợp lệ
+    const safeQuantity = isNaN(totalItems) || totalItems < 0 ? 0 : Math.floor(totalItems);
+
+    //localStorage.setItem('cartQuantity', safeQuantity.toString());
+    window.dispatchEvent(new Event('cart-updated'));
+  } catch (error) {
+    console.error('Error updating cart quantity:', error);
+    // Fallback: set về 0 nếu có lỗi
+    //localStorage.setItem('cartQuantity', '0');
+    window.dispatchEvent(new Event('cart-updated'));
+  }
 }
+
 
 
 export function handleIncrease(
@@ -127,4 +155,3 @@ export function handleDecrease(
     }
   }
 }
-
