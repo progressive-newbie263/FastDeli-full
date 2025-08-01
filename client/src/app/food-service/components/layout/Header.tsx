@@ -146,7 +146,15 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
 
               <button
                 onClick={handleLogout}
-                className="text-gray-700 hover:text-[#00B14F] border border-gray-300 px-3 py-1 rounded transition-colors cursor-pointer duration-300"
+                className="
+                  border border-red-500
+                  text-red-500
+                  bg-white
+                  hover:bg-red-500 hover:text-white
+                  px-4 py-2 
+                  rounded-md
+                  transition-colors cursor-pointer duration-300
+                "
               >
                 Đăng xuất
               </button>

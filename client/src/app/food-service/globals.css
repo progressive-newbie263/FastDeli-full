@@ -53,3 +53,29 @@ body {
 .footer {
   @apply bg-gray-800 text-white text-center py-6;
 }
+
+
+/* 
+  css cho TOAST 
+*/
+
+/* Tuỳ chỉnh layout toast để icon và nội dung cân đối hơn */
+.custom-toast {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px;
+  padding: 16px !important;
+  font-size: 14px;
+  background-color: #ffffff !important;
+  border-left: 4px solid #f8ff2f !important;
+  color: #000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  border-radius: 8px;
+}
+
+/* Tuỳ chỉnh icon cảnh báo */
+.custom-toast .Toastify__toast-icon {
+  margin-top: 2px;
+  font-size: 20px;
+  color: #f87171; /* đỏ nhạt */
+}

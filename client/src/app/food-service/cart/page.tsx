@@ -20,8 +20,9 @@ import {
   handleDecrease,
   updateCartQuantity // Import thêm hàm này
 } from '../utils/cartHandler';
-import Link from 'next/link';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 
 const Page = () => {
@@ -99,37 +100,48 @@ const Page = () => {
     handleDecrease(groupedCart, setGroupedCart, selectedRestaurant, setSelectedRestaurant, food_id, restaurant_id);
   };
 
-  // func xử lý thanh toán đơn hàng - ĐÃ SỬA
+  // func xử lý thanh toán đơn hàng
+  // const handleCheckout = (restaurant_id: string) => {
+  //   const restaurant = groupedCart.find(
+  //     g => g.restaurant_id === restaurant_id
+  //   );
+  //   if (!restaurant) return;
+
+  //   console.log('Đặt đơn hàng cho:', restaurant.restaurant_name);
+  //   console.log('Chi tiết đơn hàng:', restaurant.items);
+
+  //   // Xóa đơn hàng của nhà hàng vừa thanh toán khỏi giao diện
+  //   const newGroupedCart = groupedCart.filter(g => g.restaurant_id !== restaurant_id);
+  //   setGroupedCart(newGroupedCart);
+
+  //   // Đóng popup hóa đơn nếu đang xem nhà hàng vừa thanh toán
+  //   if (selectedRestaurant && selectedRestaurant.restaurant_id === restaurant_id) {
+  //     setSelectedRestaurant(null);
+  //   }
+
+  //   // Cập nhật lại localStorage
+  //   const updatedCart: FullCart = {};
+  //   newGroupedCart.forEach(group => {
+  //     updatedCart[group.restaurant_id] = group.items.map(({ food_id, quantity }) => ({
+  //       food_id,
+  //       quantity
+  //     }));
+  //   });
+  //   localStorage.setItem('cart', JSON.stringify(updatedCart));
+
+  //   // ✅ THÊM: Cập nhật cartQuantity và trigger event để header biết
+  //   updateCartQuantity(newGroupedCart);
+  // };
+  const router = useRouter();  
   const handleCheckout = (restaurant_id: string) => {
-    const restaurant = groupedCart.find(
-      g => g.restaurant_id === restaurant_id
-    );
+    const restaurant = groupedCart.find(g => g.restaurant_id === restaurant_id);
     if (!restaurant) return;
 
-    console.log('Đặt đơn hàng cho:', restaurant.restaurant_name);
-    console.log('Chi tiết đơn hàng:', restaurant.items);
+    // (Tùy chọn) bạn có thể lưu thông tin nhà hàng vừa chọn nếu muốn.
+    console.log('Đi tới trang thanh toán cho:', restaurant.restaurant_name);
 
-    // Xóa đơn hàng của nhà hàng vừa thanh toán khỏi giao diện
-    const newGroupedCart = groupedCart.filter(g => g.restaurant_id !== restaurant_id);
-    setGroupedCart(newGroupedCart);
-
-    // Đóng popup hóa đơn nếu đang xem nhà hàng vừa thanh toán
-    if (selectedRestaurant && selectedRestaurant.restaurant_id === restaurant_id) {
-      setSelectedRestaurant(null);
-    }
-
-    // Cập nhật lại localStorage
-    const updatedCart: FullCart = {};
-    newGroupedCart.forEach(group => {
-      updatedCart[group.restaurant_id] = group.items.map(({ food_id, quantity }) => ({
-        food_id,
-        quantity
-      }));
-    });
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
-
-    // ✅ THÊM: Cập nhật cartQuantity và trigger event để header biết
-    updateCartQuantity(newGroupedCart);
+    // 👉 Chuyển hướng sang trang /checkout mà không xóa cart
+    router.push(`/food-service/checkout?restaurantId=${restaurant.restaurant_id}`);
   };
 
   return (

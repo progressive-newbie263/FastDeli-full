@@ -28,10 +28,11 @@ const Home = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentAddress, setCurrentAddress] = useState<string>('');
 
-  // 3 state này (antispam) giảm thiểu việc render lại không cần thiết hoặc spam đi spam lại 1 tính năng nào đó (VD: lấy vị trí)
+  // 4 state này (antispam) giảm thiểu việc render lại không cần thiết hoặc spam đi spam lại 1 tính năng nào đó (VD: lấy vị trí)
   const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(false);
+  const isPermissionToastShowing = useRef<boolean>(false);   // Thêm ref để theo dõi toast permission
 
   // 3 refs để quản lý trạng thái và tránh render lại không cần thiết
   const hasRequestedLocation = useRef<boolean>(false);
@@ -115,7 +116,8 @@ const Home = () => {
 
   // Enhanced location permission handler
   const handleLocationPermission = useCallback(async (granted: boolean) => {
-    toast.dismiss();
+    toast.dismiss(); // Đóng tất cả toast hiện tại
+    isPermissionToastShowing.current = false; // Reset state khi xử lý
     
     if (!granted) {
       localStorage.setItem('locationPermissionAsked', `denied:${Date.now()}`);
@@ -174,22 +176,39 @@ const Home = () => {
       console.error('Lỗi vị trí:', error);
       localStorage.setItem('locationPermissionAsked', `denied:${Date.now()}`);
       
-      let errorMessage = 'Không thể lấy vị trí của bạn';
       if (error instanceof GeolocationPositionError) {
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Bạn đã từ chối chia sẻ vị trí';
+            toast.error(
+              <div>
+                <p className="font-bold text-base mb-1">
+                ⚠️ Bạn đã từ chối quyền truy cập vị trí. Vui lòng mở lại quyền để cho phép sử dụng tính năng này. 
+                </p>
+                
+                <ol className="list-decimal ml-4 space-y-1 text-sm ">
+                  <li>Nhấn vào biểu tượng ổ khóa ở thanh địa chỉ.</li>
+                  <li>Chọn "Quyền" hoặc "Vị trí".</li>
+                  <li>Đổi từ "Chặn" sang "Cho phép".</li>
+                  <li>Tải lại trang hoặc bấm F5.</li>
+                </ol>
+              </div>,
+              {
+                icon: false,        
+              }
+            );
             break;
+
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Thông tin vị trí không khả dụng';
+            toast.error("Không thể xác định vị trí thiết bị.");
             break;
           case error.TIMEOUT:
-            errorMessage = 'Hết thời gian chờ lấy vị trí';
+            toast.error("Hết thời gian lấy vị trí.");
+            break;
+          default:
+            toast.error("Đã xảy ra lỗi không xác định.");
             break;
         }
       }
-      
-      toast.error(`📍 ${errorMessage}`);
     } finally {
       setIsGettingLocation(false);
     }
@@ -211,28 +230,47 @@ const Home = () => {
       return;
     }
 
-    const askStatus = localStorage.getItem('locationPermissionAsked');
-    
+    // QUAN TRỌNG: Kiểm tra xem toast permission đã hiển thị chưa. Rồi thì return luôn, ngắt quy trình.
+    if (isPermissionToastShowing.current) {
+      return;
+    }
+
     /* 
       Khi người dùng nhập 'từ chối'. Có thể họ lỡ tay bấm nhầm? 
       Nên khi muốn lấy địa chỉ, ta nên hỏi lại người dùng có muốn cho phép hay không.
       confirm thì mới lấy địa chỉ.
     */
+    const askStatus = localStorage.getItem('locationPermissionAsked');
     if (!askStatus || askStatus !== 'true') {
       const wasDenied = askStatus?.startsWith('denied:');
       
-      toast.info(
+      // Đánh dấu đang hiển thị toast
+      isPermissionToastShowing.current = true;
+      
+      const toastId = toast.info(
         <div>
-          📍{wasDenied ? 'Bạn có muốn cho phép FoodDeli truy cập vị trí để tự động điền địa chỉ?' : 'FoodDeli muốn sử dụng vị trí hiện tại của bạn để tự động điền địa chỉ.'}<br />
+          ℹ️ {/* window + . */}
+          { wasDenied ? 
+            'Bạn có muốn cho phép FoodDeli truy cập vị trí để tự động điền địa chỉ?' : 
+            'FoodDeli muốn sử dụng vị trí hiện tại của bạn để tự động điền địa chỉ.'
+          }
+          
+          <br />
+          
           {wasDenied && (
             <small className="text-gray-600">
               (Bạn có thể thay đổi quyết định trước đó)
             </small>
           )}
 
-          <div className="mt-2 flex gap-4 justify-end">
+          <div className="mt-2 flex gap-4 justify-center">
             <button
-              onClick={() => handleLocationPermission(true)}
+              onClick={() => {
+                // Reset flag và đóng toast khi người dùng chọn
+                isPermissionToastShowing.current = false;
+                toast.dismiss(toastId);
+                handleLocationPermission(true);
+              }}
               className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm transition-colors cursor-pointer duration-150"
               aria-label="Cho phép truy cập vị trí"
             >
@@ -240,7 +278,11 @@ const Home = () => {
             </button>
 
             <button
-              onClick={() => handleLocationPermission(false)}
+              onClick={() => {
+                isPermissionToastShowing.current = false;
+                toast.dismiss(toastId);
+                handleLocationPermission(false);
+              }}
               className="px-3 py-1 bg-gray-300 text-black rounded-md hover:bg-gray-400 text-sm transition-colors cursor-pointer duration-150"
               aria-label="Từ chối truy cập vị trí"
             >
@@ -252,14 +294,18 @@ const Home = () => {
           autoClose: false,
           closeOnClick: false,
           closeButton: false,
+          icon: false,
+          // Reset flag khi toast bị đóng
+          onClose: () => {
+            isPermissionToastShowing.current = false;
+          }
         }
       );
       return;
     }
-    // qua các bước phía trên thì ở đây đã có quyền truy cập vị trí, nên lấy địa chỉ hiện tại
-    // OSM/ OpenStreetMap API là chủ đạo cho tính năng này.
-    await handleLocationPermission(true);
+    await handleLocationPermission(true);  //Nếu đã được cấp quyền, thực hiện lấy vị trí
   }, [isMounted, isLoggedIn, isGettingLocation, handleLocationPermission]);
+
 
   /* 
     ****** Popup yêu cầu vị trí người dùng sẽ hiển thị lần đầu khi người dùng đăng nhập. ******
@@ -275,7 +321,6 @@ const Home = () => {
     - Đảm bảo đầy đủ cả 3 yêu cầu: isMounted, isLoggedIn và hasRequestedLocation thì nút bấm lấy
     địa chỉ mới dùng được hoàn chỉnh.
   */
-
   useEffect(() => {
     if (isMounted && isLoggedIn && !hasRequestedLocation.current) {
       const savedLocation = localStorage.getItem('userLocation');
@@ -288,8 +333,6 @@ const Home = () => {
           shouldAsk = true;
         } 
         else if (askStatus.startsWith('denied:')) {
-          // câu hỏi "muốn được lấy địa chỉ không?" sẽ có cooldown 3 ngày.
-          // Người dùng nhất quyết ko cho thì 3 ngày sau mới hỏi lại, tránh người dùng bị làm phiền khi hiển thị lại popup này.
           const [, timestampStr] = askStatus.split(':');
           const deniedTime = parseInt(timestampStr, 10);
           const now = Date.now();
@@ -300,11 +343,13 @@ const Home = () => {
           }
         }
 
-        if (shouldAsk) {
+        // Thêm kiểm tra flag trước khi hiển thị
+        if (shouldAsk && !isPermissionToastShowing.current) {
           hasRequestedLocation.current = true;
+          isPermissionToastShowing.current = true; // Đánh dấu đang hiển thị
 
           locationTimeoutRef.current = setTimeout(() => {
-            toast.info(
+            const toastId = toast.info(
               <div>
                 📍 FoodDeli muốn sử dụng vị trí hiện tại của bạn để gợi ý nhà hàng gần nhất.<br/>
                 <small className="text-gray-600">
@@ -313,7 +358,12 @@ const Home = () => {
 
                 <div className="mt-2 flex gap-4 justify-end">
                   <button
-                    onClick={() => handleLocationPermission(true)}
+                    onClick={() => {
+                      // Reset flag và đóng toast
+                      isPermissionToastShowing.current = false;
+                      toast.dismiss(toastId);
+                      handleLocationPermission(true);
+                    }}
                     className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm transition-colors"
                     aria-label="Cho phép truy cập vị trí"
                   >
@@ -321,7 +371,12 @@ const Home = () => {
                   </button>
 
                   <button
-                    onClick={() => handleLocationPermission(false)}
+                    onClick={() => {
+                      // Reset flag và đóng toast
+                      isPermissionToastShowing.current = false;
+                      toast.dismiss(toastId);
+                      handleLocationPermission(false);
+                    }}
                     className="px-3 py-1 bg-gray-300 text-black rounded-md hover:bg-gray-400 text-sm transition-colors"
                     aria-label="Từ chối truy cập vị trí"
                   >
@@ -332,7 +387,11 @@ const Home = () => {
               {
                 autoClose: false,
                 closeOnClick: false,
-                closeButton: false
+                closeButton: false,
+                // Reset flag khi toast bị đóng
+                onClose: () => {
+                  isPermissionToastShowing.current = false;
+                }
               }
             );    
           }, 1000);
@@ -430,11 +489,11 @@ const Home = () => {
           <div className="max-w-7xl mx-auto px-4 w-full mt-[200px]">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full md:w-[350px]">
               <p className="text-lg md:text-xl mb-2 text-gray-700">
-                Good Afternoon
+                Một ngày mới vui vẻ!
               </p>
               
               <h1 className="text-4xl font-bold mb-8 text-gray-900">
-                Where should we deliver your food today?
+                Hôm nay bạn muốn giao đồ ăn tới đâu?
               </h1>
               
               <div className="mb-6">
@@ -450,7 +509,7 @@ const Home = () => {
                     placeholder={isLoggedIn ? "Nhập địa chỉ của bạn" : "Đăng nhập để tìm địa chỉ"}
                     className={`w-full pl-10 pr-12 py-4 border rounded-lg text-sm transition-colors
                       ${isLoggedIn 
-                        ? 'border-gray-300 cursor-text focus:border-orange-500 focus:ring-2 focus:ring-orange-200' 
+                        ? 'border-gray-300 cursor-text ' 
                         : 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed'}`
                     }
                     disabled={!isLoggedIn}

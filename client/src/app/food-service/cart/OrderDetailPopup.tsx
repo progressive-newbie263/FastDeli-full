@@ -152,6 +152,7 @@ const OrderDetailPopup: React.FC<Props> = ({
               onClick={() => onCheckout(restaurant.restaurant_id)}
               className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-medium transition-colors cursor-pointer duration-150"
             >
+              
               Thanh toán đơn hàng
             </button>
           </div>

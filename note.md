@@ -43,3 +43,15 @@ GIT PUSH, 23-7-2025 highlights:
 - bản vá nhỏ/microupdate
 - sửa UX 1 chút. thay đổi các alert thành các toast
 - thêm tính năng tạm thời anti-spam. Khi đang tìm địa chỉ nó fix sang icon loading.
+
+-----------------------------------------------------------------------------
+GIT PUSH, 2x-7-2025 highlights: 
+-----------------------------------------------------------------------------
+User bấm "Đặt hàng" 
+→ handlePlaceOrder() chạy (checkout/page.tsx)
+→ Cập nhật localStorage 
+→ Dispatch event 'cart-updated' (Xử lí bên cart luôn).
+→ Header nhận event
+→ Header gọi lại getTotalItemsFromCart()
+→ setCartQuantity() với số mới
+→ UI Header cập nhật ngay lập tức

@@ -8,6 +8,7 @@ import { FaCirclePlus } from "react-icons/fa6";
 import { useAuth } from '@food/context/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { FaMapMarkerAlt, FaPhoneAlt, FaStar } from 'react-icons/fa';
 
 // Type cho cart structure
 interface CartItem {
@@ -181,13 +182,26 @@ export default function RestaurantDetailPage() {
         </div>
 
         <div className="flex flex-col justify-between h-[200px]">
-          <h1 className="text-3xl font-bold">{restaurant.restaurant_name}</h1>
+          <h1 className="text-4xl font-bold">{restaurant.restaurant_name}</h1>
+          
           <p className="text-gray-600">{restaurant.description}</p>
-          <p className="mt-2 text-sm text-gray-500">📍 {restaurant.address}</p>
-          <p className="text-sm text-gray-500">📞 {restaurant.phone}</p>
-          <p className="text-yellow-600 mt-1">
-            ⭐ {parseFloat(restaurant.rating).toFixed(1)} ({restaurant.total_reviews.toLocaleString()} đánh giá)
-          </p>
+          
+          <div>
+            <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
+              <FaMapMarkerAlt className="text-red-500" />
+              {restaurant.address}
+            </p>
+            
+            <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
+              <FaPhoneAlt className="text-green-500" />
+              {restaurant.phone}
+            </p>
+            
+            <div className="flex items-center text-sm text-yellow-600 font-medium gap-1 mt-1">
+              <FaStar />
+              {parseFloat(restaurant.rating).toFixed(1)} ({restaurant.total_reviews.toLocaleString()} đánh giá)
+            </div>
+          </div>
         </div>
       </div>
 
