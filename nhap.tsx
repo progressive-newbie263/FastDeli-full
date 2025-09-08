@@ -1,390 +1,459 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import FoodCategories, {Category} from '../components/FoodCategories';
-import { TiTick } from "react-icons/ti";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  FaChevronLeft,
+  FaCheckCircle,
+  FaClock,
+  FaShieldAlt,
+  FaQrcode,
+  FaCopy,
+  FaCheck,
+  FaCheck as FaCheckIcon,
+} from "react-icons/fa";
 
-const Home = () => {
-  // Kiểm tra đăng nhập
-  const isLoggedIn = typeof window !== 'undefined' && localStorage.getItem('token') !== null;
-  const userData = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('userData') || '{}') : {};
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [currentAddress, setCurrentAddress] = useState<string>('');
+type BankInfo = {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  transferContent: string;
+};
 
-  // Hàm chuyển đổi tọa độ thành địa chỉ
-  const getAddressFromCoordinates = async (latitude: number, longitude: number) => {
+type OrderData = {
+  orderId: string;
+  amount: number;
+  bankInfo: BankInfo;
+};
+
+// ---- Tạo pattern giả lập từ orderId (seed) ----
+function generateQRPattern(seed: string, size: number = 256) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) % 1000000007;
+  }
+  return Array.from({ length: size }, (_, i) => {
+    const val = (hash + i * 9301 + 49297) % 233280;
+    return val % 2 === 0; // true = ô đen, false = ô trắng
+  });
+}
+
+const PaymentPage = () => {
+  const [timeLeft, setTimeLeft] = useState(600); // 10 phút = 600 giây
+  const [paymentStatus, setPaymentStatus] = useState<
+    "pending" | "processing" | "success" | "failed"
+  >("pending");
+  const [copied, setCopied] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // ⚠️ ĐỪNG đọc sessionStorage trong render. Đọc 1 lần trong useEffect rồi setState.
+  const [orderData, setOrderData] = useState<OrderData | null>(null);
+
+  useEffect(() => {
+    // Chạy chỉ ở client
+    if (typeof window === "undefined") return;
+
+    const defaultBank = {
+      bankName: "Vietcombank",
+      accountNumber: "1234567890",
+      accountName: "NGUYEN VAN A",
+    };
+
     try {
-      const response = await fetch(
-        https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=vi
-      );
-      const data = await response.json();
-      
-      if (data && data.display_name) {
-        return data.display_name;
+      let orderId = "UNKNOWN";
+      let amount = 0;
+      let transferContent = "";
+
+      const stored = window.sessionStorage.getItem("currentOrder");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+
+        orderId = parsed?.orderId || "UNKNOWN";
+        amount =
+          typeof parsed?.amount === "number"
+            ? parsed.amount
+            : Number(parsed?.amount) || 0;
+
+        // Nếu có sẵn transferContent thì dùng, không thì suy từ orderId
+        transferContent =
+          parsed?.bankInfo?.transferContent || `DH ${String(orderId).slice(-8)}`;
+      } else {
+        // Fallback: lấy từ URL nếu không có session
+        const params = new URLSearchParams(window.location.search);
+        const qId = params.get("orderId");
+        const qAmount = Number(params.get("amount") || 0);
+
+        orderId = qId || "UNKNOWN";
+        amount = Number.isNaN(qAmount) ? 0 : qAmount;
+        transferContent = `DH ${String(orderId).slice(-8)}`;
       }
-      return ${latitude.toFixed(6)}, ${longitude.toFixed(6)};
-    } catch (error) {
-      console.error('Lỗi khi lấy địa chỉ:', error);
-      return ${latitude.toFixed(6)}, ${longitude.toFixed(6)};
-    }
-  };
 
-  // Hàm xin quyền và lấy vị trí
-  const requestLocationPermission = () => {
-    if (!navigator.geolocation) {
-      alert('Trình duyệt của bạn không hỗ trợ geolocation');
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        
-        // Chuyển đổi tọa độ thành địa chỉ
-        const address = await getAddressFromCoordinates(latitude, longitude);
-        
-        // Lưu vào localStorage
-        const locationData = {
-          latitude,
-          longitude,
-          address,
-          timestamp: Date.now()
-        };
-        
-        localStorage.setItem('userLocation', JSON.stringify(locationData));
-        setCurrentAddress(address);
-        
-        alert('Đã lưu vị trí của bạn thành công!');
-      },
-      (error) => {
-        console.error('Lỗi khi lấy vị trí:', error);
-        
-        let errorMessage = 'Không thể lấy vị trí của bạn';
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = 'Bạn đã từ chối chia sẻ vị trí';
-            break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Thông tin vị trí không khả dụng';
-            break;
-          case error.TIMEOUT:
-            errorMessage = 'Hết thời gian chờ lấy vị trí';
-            break;
-        }
-        
-        alert(errorMessage);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000 // 5 phút
-      }
-    );
-  };
-
-  // Hàm điền địa chỉ hiện tại vào input
-  const fillCurrentLocation = async () => {
-    if (!navigator.geolocation) {
-      alert('Trình duyệt không hỗ trợ định vị');
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-        const address = await getAddressFromCoordinates(latitude, longitude);
-
-        // Cập nhật input
-        const input = document.getElementById('search-input') as HTMLInputElement;
-        if (input) {
-          input.value = address;
-          setCurrentAddress(address);
-        }
-
-        // Cập nhật localStorage (tùy chọn)
-        const locationData = {
-          latitude,
-          longitude,
-          address,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem('userLocation', JSON.stringify(locationData));
-
-        alert('📍 Đã cập nhật vị trí hiện tại!');
-      },
-      (error) => {
-        console.error('Lỗi vị trí:', error);
-        alert('Không thể lấy vị trí hiện tại. Bạn đã chặn quyền hoặc không có kết nối.');
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0 // Luôn lấy dữ liệu mới
-      }
-    );
-  };
-
-
-  // Kiểm tra khi component mount
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    document.title = 'FoodDeli - Đặt đồ ăn trực tuyến';
-
-    // Kiểm tra xem có vị trí đã lưu không
-    if (typeof window !== 'undefined') {
-      const savedLocation = localStorage.getItem('userLocation');
-      if (savedLocation) {
-        const locationData = JSON.parse(savedLocation);
-        setCurrentAddress(locationData.address);
-      }
+      setOrderData({
+        orderId,
+        amount,
+        bankInfo: {
+          ...defaultBank,
+          transferContent,
+        },
+      });
+    } catch (e) {
+      console.error("Error loading order data:", e);
+      // fallback an toàn
+      setOrderData({
+        orderId: "UNKNOWN",
+        amount: 0,
+        bankInfo: {
+          bankName: "Vietcombank",
+          accountNumber: "1234567890",
+          accountName: "NGUYEN VAN A",
+          transferContent: "DH UNKNOWN",
+        },
+      });
     }
   }, []);
 
-
-  /* 
-    Kiểm tra khi đăng nhập thành công
-    - Lần đầu đăng nhập xong hoặc mới xóa các value trong localStorage
-    - Sẽ hiển thị tin nhắn hỏi "Có cho phép lấy địa chỉ người dùng?"
-    - nếu không cho / nhấn cancel thì thôi. Sẽ có 1 vài giới hạn được áp đặt lên
-    - Nếu cho / nhấn allow thì localStorage sẽ nhận được 1 cái 'userPermission' là true
-    ở những lần đăng nhập tiếp theo thì cứ từ đó mà triển. 
-  */
-  let hasRequestedLocation = false; // cho phép ko bị lặp lại alert 2 lần (do bị rerender)
-
+  // Đếm ngược
   useEffect(() => {
-    if (
-      isLoggedIn &&
-      typeof window !== 'undefined' &&
-      !hasRequestedLocation
-    ) {
-      const savedLocation = localStorage.getItem('userLocation');
-      const hasAskedPermission = localStorage.getItem('locationPermissionAsked');
+    if (paymentStatus !== "pending") return; // dừng nếu không còn pending
+    if (timeLeft <= 0) {
+      setPaymentStatus("failed");
+      return;
+    }
+    const id = setInterval(() => {
+      setTimeLeft((t) => t - 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timeLeft, paymentStatus]);
 
-      if (!savedLocation && !hasAskedPermission) {
-        hasRequestedLocation = true; // ✅ Đặt cờ để chặn gọi lại
-        setTimeout(() => {
-          if (confirm('Ứng dụng này muốn biết vị trí của bạn để cung cấp dịch vụ tốt hơn. Bạn có đồng ý không?')) {
-            navigator.geolocation.getCurrentPosition(
-              async (position) => {
-                const { latitude, longitude } = position.coords;
-                const address = await getAddressFromCoordinates(latitude, longitude);
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
 
-                const locationData = {
-                  latitude,
-                  longitude,
-                  address,
-                  timestamp: Date.now()
-                };
+  const copyToClipboard = (text: string): void => {
+    if (typeof window === "undefined") return;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-                localStorage.setItem('userLocation', JSON.stringify(locationData));
-                localStorage.setItem('locationPermissionAsked', 'true');
-                setCurrentAddress(address);
-                alert('📍 Đã lưu vị trí của bạn!');
-              },
-              (error) => {
-                console.warn('Người dùng từ chối hoặc lỗi vị trí:', error);
-                // KHÔNG set locationPermissionAsked nếu thất bại
-              },
-              {
-                enableHighAccuracy: true,
-                timeout: 10000,
-                maximumAge: 0
-              }
-            );
+  // Confirm (demo)
+  const handlePaymentConfirm = () => {
+    setIsProcessing(true);
+    setPaymentStatus("processing");
+
+    // GIẢ LẬP gọi API
+    setTimeout(() => {
+      setPaymentStatus("success");
+      setIsProcessing(false);
+
+      // Xử lý xóa cart và redirect
+      setTimeout(() => {
+        try {
+          const savedCart = localStorage.getItem("cart");
+          if (savedCart) {
+            const parsedCart = JSON.parse(savedCart);
+            const urlParams = new URLSearchParams(window.location.search);
+            const selectedRestaurantId = urlParams.get("restaurantId");
+
+            if (selectedRestaurantId) {
+              delete parsedCart[selectedRestaurantId];
+            } else {
+              const orderRestaurants = JSON.parse(
+                sessionStorage.getItem("currentOrderRestaurants") || "[]"
+              );
+              orderRestaurants.forEach((restaurantId: string) => {
+                delete parsedCart[restaurantId];
+              });
+            }
+
+            localStorage.setItem("cart", JSON.stringify(parsedCart));
+            window.dispatchEvent(new Event("cart-updated"));
           }
-        }, 1000);
-      }
-    }
-  }, [isLoggedIn]);
 
-
-  // api lấy danh sách các "Thể loại món ăn".
-  useEffect(() => {
-    fetch('http://localhost:5001/api/categories')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setCategories(data.data);
+          window.location.href = "/client/food-service/cart";
+        } catch (error) {
+          console.error("Error processing order:", error);
+          window.location.href = "/client/food-service/cart";
         }
-      })
-      .catch((err) => console.error('Fetch failed:', err))
-      .finally(() => {});
-  }, []);
+      }, 1500);
+    }, 3000);
+  };
 
+  // Pattern QR cố định theo orderId
+  const qrPattern = useMemo(() => {
+    if (!orderData?.orderId) return [];
+    return generateQRPattern(orderData.orderId);
+  }, [orderData?.orderId]);
 
+  // Grid QR được memo hóa → không thay đổi giữa các render
+  const qrGrid = useMemo(() => {
+    if (!qrPattern.length) return null;
+    return (
+      <div className="absolute inset-0 opacity-10">
+        <div className="grid grid-cols-16 gap-0 h-full w-full">
+          {qrPattern.map((isBlack, i) => (
+            <div key={i} className={isBlack ? "bg-black" : "bg-white"} />
+          ))}
+        </div>
+      </div>
+    );
+  }, [qrPattern]);
+
+  // Chưa có orderData thì show loading ngắn (tránh render khi window chưa sẵn sàng)
+  if (!orderData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-6 shadow-md">
+          <p className="text-gray-700">Đang tải thông tin thanh toán…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- UI các trạng thái ----
+  if (paymentStatus === "success") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 shadow-xl max-w-md w-full mx-4 text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FaCheckCircle className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Thanh toán thành công!
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Đơn hàng #{orderData.orderId} đã được thanh toán và xác nhận.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition-colors"
+          >
+            Hoàn tất
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (paymentStatus === "failed") {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl p-8 shadow-xl max-w-md w-full mx-4 text-center">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FaClock className="w-10 h-10 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">
+            Hết thời gian thanh toán
+          </h2>
+          <p className="text-gray-600 mb-6">
+            Phiên thanh toán đã hết hạn. Vui lòng thử lại.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setPaymentStatus("pending");
+                setTimeLeft(600);
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition-colors"
+            >
+              Thử lại
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold transition-colors"
+            >
+              Quay lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- UI chính ----
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* ảnh minh họa + hộp thoại */}
-      <div className="relative h-[400px]">
-        <div 
-          className="absolute inset-0 opacity-60 z-0 bg-cover bg-center"
-          style={{ 
-            backgroundImage: url("https://food-cms.grab.com/compressed_webp/cuisine/144/icons/Rice_e191965ccd6848a3862e6a695d05983f_1547819238893335910.webp"),
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
-
-        <div className="relative z-10 h-full flex items-center">
-          <div className="max-w-7xl mx-auto px-4 w-full mt-[200px]">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full md:w-[350px]">
-              <p className="text-lg md:text-xl mb-2 text-gray-700">Good Afternoon</p>
-              
-              <h1 className="text-4xl font-bold mb-8 text-gray-900">
-                Where should we deliver your food today?
-              </h1>
-              
-              <div className="mb-6">
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  </div>
-
-                  {/* 
-                    đọc dữ liệu đầu vào ở thanh input
-                  */}
-                  <input 
-                    type="text"
-                    id="search-input" 
-                    placeholder={isLoggedIn ? "Nhập địa chỉ của bạn" : "Đăng nhập để tìm địa chỉ"}
-                    className={w-full pl-10 pr-12 py-4 border rounded-lg text-sm
-                      ${isLoggedIn 
-                        ? 'border-gray-300 cursor-text' 
-                        : 'border-gray-300 bg-gray-100 text-gray-500 cursor-not-allowed'}
-                    }
-                    disabled={!isLoggedIn}
-                  />
-
-                  <button 
-                    onClick={fillCurrentLocation}
-                    className={absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full duration-250 
-                      ${isLoggedIn 
-                        ? 'hover:bg-gray-100 cursor-pointer' 
-                        : 'cursor-not-allowed opacity-50'}
-                    }
-                    disabled={!isLoggedIn}
-                    title={isLoggedIn ? 'Sử dụng vị trí hiện tại' : 'Vui lòng đăng nhập'}
-                  >
-                    <svg className="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/*
-                - input nếu có 1 cái gì đó thì tự động lọc ra các nhà hàng có tên như vậy, tạm 
-                thời điều hướng về #
-                - input trống, bấm tìm kiếm thì hiển thị mọi nhà hàng.
-              */}
-              <button onClick={() => {
-                const input = document.getElementById('search-input') as HTMLInputElement | null;
-                const query = input?.value.trim() || '';
-
-                if (query === '') {
-                  window.location.href = '/food-service/restaurants';
-                } else {
-                  window.location.href = /food-service/#${encodeURIComponent(query)};
-                }
-              }}
-              
-              className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-semibold text-lg transition-colors mb-2 
-                cursor-pointer duration-250"
+      {/* Header */}
+      <div className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => window.history.back()}
+                className="p-2 hover:bg-gray-100 rounded-full"
               >
-                Tìm kiếm nhà hàng
+                <FaChevronLeft className="w-5 h-5" />
               </button>
+              <h1 className="text-xl font-bold text-gray-800">Thanh toán QR</h1>
+            </div>
+            <div className="flex items-center gap-2 bg-orange-100 text-orange-800 px-3 py-1 rounded-full">
+              <FaClock className="w-4 h-4" />
+              <span className="font-semibold">{formatTime(timeLeft)}</span>
             </div>
           </div>
         </div>
       </div>
 
-
-      {/* vạch chia section */}
-      <div className='bg-gray-200 h-[2px] mt-[60px]'></div>
-
-      {/* nhà hàng */}
-      <div className="py-16 max-w-[1200px] mx-auto px-4 text-center text-black bg-white mt-[80px]">
-        Featured
-      </div>
-
-
-      {/* danh sách thể loại món ăn */}
-      <div className="py-16 max-w-[1200px] mx-auto px-4 text-black bg-white mt-[80px]">
-        <FoodCategories categories={categories}/>
-      </div>
-
-
-      {/* văn mẫu giới thiệu FoodDeli */}
-      <div className="py-16 max-w-[1200px] mx-auto px-4 text-black bg-white mt-[80px]">
-        <h1 className='text-4xl font-bold mb-12'>Tiện ích của FoodDeli</h1>
-
-        <ul className="space-y-2">
-          <li className="flex items-start">
-            <TiTick className="text-green-500 mt-1 mr-2" />
-            <span><strong>Giao đồ thần tốc</strong> - FoodDeli mang đến dịch vụ giao đồ ăn nhanh nhất thị trường.</span>
-          </li>
-
-          <li className="flex items-start">
-            <TiTick className="text-green-500 mt-1 mr-2" />
-            <span><strong>Thân thiện và tiện lợi để sử dụng</strong> - Việc đặt món giờ đây chỉ cần vài cú nhấp hoặc chạm, để có trải nghiệm nhanh chóng, đầy đủ và tiện ích.</span>
-          </li>
-          
-          <li className="flex items-start">
-            <TiTick className="text-green-500 mt-1 mr-2" />
-            <span><strong>Thỏa mãn mọi khẩu vị của người dùng</strong> - Từ món ăn đường phố đến các nhà hàng chất lượng nhất, đáp ứng mọi khẩu vị từ quý khách.</span>
-          </li>
-          
-          {/* <li className="flex items-start">
-            <TiTick className="text-green-500 mt-1 mr-2" />
-            <span><strong>Thanh toán dễ dàng</strong> - Đặt món đơn giản, thanh toán còn dễ hơn với GrabPay.</span>
-          </li> */}
-          
-          <li className="flex items-start">
-            <TiTick className="text-green-500 mt-1 mr-2" />
-            <span><strong>Hệ thống tích điểm thưởng riêng</strong> - Nhận điểm tích lũy cho mỗi đơn hàng và đổi lấy nhiều phần quà và ưu đãi hấp dẫn.</span>
-          </li>
-        </ul>
-      </div>
-
-
-      {/* chưa đăng nhập thì đăng nhập đi. còn rồi thì bấm chọn nhà hàng/món ăn */}
-      <div className="py-16 max-w-[1200px] mx-auto px-4 text-center text-black bg-white mt-[200px]">
-        {!isLoggedIn ? (
-          <>
-            <h2 className="text-3xl font-bold mb-6">Trải nghiệm dịch vụ hàng đầu chỉ với một thao tác đăng nhập</h2>
-          
-            <p className="text-lg text-gray-700 mb-8">
-              Sử dụng mọi dịch vụ hàng đầu từ những nhà hàng xuất sắc nhất từ phía chúng tôi với ưu đãi rẻ nhất
-            </p>
-
-            <Link
-              href="/food-service/auth/register"
-              className="inline-block px-8 py-4 bg-orange-500 text-white rounded-lg text-xl font-semibold hover:bg-orange-600"
-            >
-              Đăng ký miễn phí
-            </Link>
-          </>
-        ) : (
-          <>
-            <h2 className="text-3xl font-bold mb-6">Đặt món ăn ngay</h2>
-          
-            <p className="text-lg text-gray-700 mb-8">
-              Bắt đầu trải nghiệm dịch vụ giao đồ ăn nhanh chóng, tiện lợi ngay hôm nay.
-            </p>
-
-            <Link
-              href="/food-service/restaurants"
-              className="inline-block px-8 py-4 bg-orange-500 text-white rounded-lg text-xl font-semibold hover:bg-orange-600"
-            >
-              Khám phá nhà hàng
-            </Link>
-          </>
+      <div className="max-w-lg mx-auto px-4 py-6">
+        {/* Payment Status */}
+        {paymentStatus === "processing" && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <div>
+                <h3 className="font-semibold text-blue-800">
+                  Đang xử lý thanh toán
+                </h3>
+                <p className="text-sm text-blue-600">
+                  Vui lòng chờ trong giây lát...
+                </p>
+              </div>
+            </div>
+          </div>
         )}
+
+        {/* QR Code Section */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+          <div className="text-center mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">
+              Quét mã QR để thanh toán
+            </h2>
+            <p className="text-gray-600">
+              Sử dụng ứng dụng ngân hàng để quét mã QR
+            </p>
+          </div>
+
+          <div className="flex justify-center mb-6">
+            <div className="bg-white p-4 rounded-2xl shadow-lg border border-gray-200">
+              <div className="w-64 h-64 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center relative overflow-hidden">
+                {qrGrid}
+                <div className="relative z-10 text-center">
+                  <FaQrcode className="w-16 h-16 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500 font-medium">QR Payment</p>
+                  <p className="text-xs text-gray-400">#{orderData.orderId}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Amount */}
+          <div className="text-center mb-6">
+            <p className="text-sm text-gray-600 mb-1">Số tiền cần thanh toán</p>
+            <p className="text-3xl font-bold text-green-600">
+              {orderData.amount.toLocaleString("vi-VN")}đ
+            </p>
+          </div>
+
+          {/* Confirm Button (demo) */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FaShieldAlt className="w-4 h-4 text-yellow-600" />
+              <span className="text-sm font-semibold text-yellow-800">
+                Chế độ thử nghiệm
+              </span>
+            </div>
+            <p className="text-sm text-yellow-700 mb-4">
+              Đây là phiên bản demo. Bấm nút bên dưới để mô phỏng thanh toán
+              thành công.
+            </p>
+
+            <button
+              onClick={handlePaymentConfirm}
+              disabled={isProcessing}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-xl font-semibold 
+                transition-colors flex items-center justify-center gap-2 cursor-pointer duration-150
+              "
+            >
+              {isProcessing ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  <FaCheckIcon className="w-4 h-4" />
+                  Xác nhận thanh toán (Demo)
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Bank Information */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+          <h3 className="font-semibold text-gray-800 mb-4">
+            Thông tin chuyển khoản
+          </h3>
+
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Ngân hàng</p>
+              <p className="font-semibold text-gray-800">
+                {orderData.bankInfo.bankName}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Số tài khoản</p>
+              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                <span className="font-mono font-semibold">
+                  {orderData.bankInfo.accountNumber}
+                </span>
+                <button
+                  onClick={() =>
+                    copyToClipboard(orderData.bankInfo.accountNumber)
+                  }
+                  className="text-green-600 hover:text-green-700 p-1"
+                >
+                  {copied ? <FaCheck className="w-4 h-4" /> : <FaCopy className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Chủ tài khoản</p>
+              <p className="font-semibold text-gray-800">
+                {orderData.bankInfo.accountName}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm text-gray-600 mb-1">Nội dung chuyển khoản</p>
+              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                <span className="font-mono font-semibold text-red-600">
+                  {orderData.bankInfo.transferContent}
+                </span>
+                <button
+                  onClick={() =>
+                    copyToClipboard(orderData.bankInfo.transferContent)
+                  }
+                  className="text-green-600 hover:text-green-700 p-1"
+                >
+                  {copied ? <FaCheck className="w-4 h-4" /> : <FaCopy className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="bg-blue-50 rounded-xl p-4">
+          <h4 className="font-semibold text-blue-800 mb-2">Hướng dẫn thanh toán</h4>
+          <ol className="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+            <li>Mở ứng dụng ngân hàng trên điện thoại</li>
+            <li>Chọn chức năng "Quét QR" hoặc "Chuyển khoản QR"</li>
+            <li>Quét mã QR phía trên</li>
+            <li>Kiểm tra thông tin và xác nhận thanh toán</li>
+            <li>Giữ lại biên lai để đối chiếu</li>
+          </ol>
+          <p className="text-xs text-blue-600 mt-3 font-medium">
+            ⚠️ Lưu ý: Chuyển khoản đúng nội dung để đơn hàng được xử lý tự động
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Home;
+export default PaymentPage;

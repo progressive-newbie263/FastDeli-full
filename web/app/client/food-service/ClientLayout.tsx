@@ -13,15 +13,20 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname();
 
-  const isAuthPage = pathname === '/client/food-service/auth/login' || pathname === '/client/food-service/auth/register' || pathname === '/client/food-service/landing';
+  const isAuthPage =
+    pathname === '/client/food-service/auth/login' ||
+    pathname === '/client/food-service/auth/register' ||
+    pathname === '/client/food-service/landing';
 
   return (
     <AuthProvider>
-      {!isAuthPage && <Header />}
-      
-      <main>{children}</main>
+      <div className="flex flex-col min-h-screen">
+        {!isAuthPage && <Header />}
 
-      {!isAuthPage && <Footer />}
+        <main className="flex-grow">{children}</main>
+
+        {!isAuthPage && <Footer />}
+      </div>
     </AuthProvider>
   );
 }

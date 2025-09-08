@@ -116,6 +116,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
           <ClientLink href="/" className="text-gray-700 hover:text-[#00B14F]">Trang chủ</ClientLink>
           <ClientLink href="/restaurants" className="text-gray-700 hover:text-[#00B14F]">Nhà hàng</ClientLink>
           <ClientLink href="/promotions" className="text-gray-700 hover:text-[#00B14F]">Khuyến mãi</ClientLink>
+          <ClientLink href="/orders" className="text-gray-700 hover:text-[#00B14F]">Đơn hàng</ClientLink>
         </nav>
 
         <div className="flex items-center space-x-4">

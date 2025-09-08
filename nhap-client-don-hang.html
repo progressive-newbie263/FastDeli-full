@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodDeli - Đơn hàng của tôi</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .nav {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #666;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav a:hover, .nav a.active {
+            color: #28a745;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .cart-icon, .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #28a745;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #333;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: #28a745;
+            color: white;
+        }
+
+        /* Current Order Section */
+        .current-order {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            border-left: 4px solid #28a745;
+        }
+
+        .order-status {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            background: #28a745;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .status-text h3 {
+            color: #28a745;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .status-text p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Progress Bar */
+        .progress-timeline {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .progress-step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .step-circle.completed {
+            background: #28a745;
+            color: white;
+        }
+
+        .step-circle.current {
+            background: #ffc107;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .step-line {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #e9ecef;
+            z-index: -1;
+        }
+
+        .step-line.completed {
+            background: #28a745;
+        }
+
+        .step-text {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* Order Details */
+        .order-details {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .restaurant-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+        }
+
+        .restaurant-logo {
+            width: 60px;
+            height: 60px;
+            background: #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .order-summary {
+            text-align: right;
+        }
+
+        .total-amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* Order History */
+        .order-history {
+            display: none;
+        }
+
+        .order-history.active {
+            display: block;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .history-item {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s ease;
+        }
+
+        .history-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .order-date {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .order-status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+
+            .nav {
+                display: none;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .order-details {
+                flex-direction: column;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .progress-timeline {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .step-line {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">FoodDeli</div>
+        <nav class="nav">
+            <a href="#">Trang chủ</a>
+            <a href="#">Nhà hàng</a>
+            <a href="#">Khuyến mãi</a>
+            <a href="#" class="active">Đơn hàng</a>
+        </nav>
+        <div class="user-section">
+            <div class="cart-icon">
+                🛒
+                <div class="cart-badge">7</div>
+            </div>
+            <div class="user-avatar">👤</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1 class="page-title">Đơn hàng của tôi</h1>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('current')">Đang xử lý</button>
+            <button class="tab" onclick="showTab('history')">Lịch sử đơn hàng</button>
+        </div>
+
+        <!-- Current Order -->
+        <div id="current-orders" class="current-orders">
+            <div class="current-order">
+                <div class="order-status">
+                    <div class="status-icon">🔥</div>
+                    <div class="status-text">
+                        <h3>Đang chuẩn bị món ăn</h3>
+                        <p>Dự kiến hoàn thành sau 15 phút</p>
+                    </div>
+                </div>
+
+                <div class="progress-timeline">
+                    <div class="progress-step">
+                        <div class="step-circle completed">✓</div>
+                        <div class="step-text">Xác nhận</div>
+                        <div class="step-line completed"></div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle current">👨‍🍳</div>
+                        <div class="step-text">Chuẩn bị</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle">🛵</div>
+                        <div class="step-text">Đang giao</div>
+                        <div class="step-line"></div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle">✅</div>
+                        <div class="step-text">Hoàn thành</div>
+                    </div>
+                </div>
+
+                <div class="order-details">
+                    <div class="restaurant-info">
+                        <div class="restaurant-logo">🧋</div>
+                        <div>
+                            <h4>Trà Sữa Golden</h4>
+                            <p>2 món • Đơn hàng #TS001</p>
+                            <small>Đặt lúc 14:30 - 28/08/2025</small>
+                        </div>
+                    </div>
+                    <div class="order-summary">
+                        <div class="total-amount">200,000 ₫</div>
+                        <button class="btn btn-outline">Xem chi tiết</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order History -->
+        <div id="order-history" class="order-history">
+            <div class="filters">
+                <select class="filter-select">
+                    <option>7 ngày qua</option>
+                    <option>1 tháng qua</option>
+                    <option>3 tháng qua</option>
+                </select>
+                <select class="filter-select">
+                    <option>Tất cả trạng thái</option>
+                    <option>Hoàn thành</option>
+                    <option>Đã hủy</option>
+                </select>
+            </div>
+
+            <div class="history-item">
+                <div class="history-header">
+                    <div>
+                        <h4>KFC Hàng Bài</h4>
+                        <div class="order-date">25/08/2025 - 19:30</div>
+                    </div>
+                    <div class="order-status-badge status-completed">Hoàn thành</div>
+                </div>
+                <div class="order-details">
+                    <div class="restaurant-info">
+                        <div class="restaurant-logo">🍗</div>
+                        <div>
+                            <p>3 món • Gà rán + Burger + Pepsi</p>
+                            <small>Đơn hàng #KFC001</small>
+                        </div>
+                    </div>
+                    <div class="order-summary">
+                        <div class="total-amount">350,000 ₫</div>
+                    </div>
+                </div>
+                <div class="history-actions">
+                    <button class="btn btn-primary">Đặt lại</button>
+                    <button class="btn btn-secondary">Đánh giá</button>
+                    <button class="btn btn-outline">Chi tiết</button>
+                </div>
+            </div>
+
+            <div class="history-item">
+                <div class="history-header">
+                    <div>
+                        <h4>Pizza Hut Tràng Tiền</h4>
+                        <div class="order-date">23/08/2025 - 20:15</div>
+                    </div>
+                    <div class="order-status-badge status-completed">Hoàn thành</div>
+                </div>
+                <div class="order-details">
+                    <div class="restaurant-info">
+                        <div class="restaurant-logo">🍕</div>
+                        <div>
+                            <p>2 món • Pizza Supreme + Coca Cola</p>
+                            <small>Đơn hàng #PH001</small>
+                        </div>
+                    </div>
+                    <div class="order-summary">
+                        <div class="total-amount">450,000 ₫</div>
+                    </div>
+                </div>
+                <div class="history-actions">
+                    <button class="btn btn-primary">Đặt lại</button>
+                    <button class="btn btn-secondary">Đánh giá</button>
+                    <button class="btn btn-outline">Chi tiết</button>
+                </div>
+            </div>
+
+            <div class="history-item">
+                <div class="history-header">
+                    <div>
+                        <h4>Bún Bò Huế Bà Sáu</h4>
+                        <div class="order-date">20/08/2025 - 11:45</div>
+                    </div>
+                    <div class="order-status-badge status-cancelled">Đã hủy</div>
+                </div>
+                <div class="order-details">
+                    <div class="restaurant-info">
+                        <div class="restaurant-logo">🍜</div>
+                        <div>
+                            <p>1 món • Bún bò Huế đặc biệt</p>
+                            <small>Đơn hàng #BBH001</small>
+                        </div>
+                    </div>
+                    <div class="order-summary">
+                        <div class="total-amount">75,000 ₫</div>
+                    </div>
+                </div>
+                <div class="history-actions">
+                    <button class="btn btn-primary">Đặt lại</button>
+                    <button class="btn btn-outline">Chi tiết</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.getElementById('current-orders').style.display = 'none';
+            document.getElementById('order-history').classList.remove('active');
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            if (tabName === 'current') {
+                document.getElementById('current-orders').style.display = 'block';
+                document.querySelectorAll('.tab')[0].classList.add('active');
+            } else {
+                document.getElementById('order-history').classList.add('active');
+                document.querySelectorAll('.tab')[1].classList.add('active');
+            }
+        }
+
+        // Simulate real-time updates
+        let progressStep = 2;
+        setInterval(() => {
+            if (progressStep < 4) {
+                const currentStep = document.querySelector('.step-circle.current');
+                if (currentStep) {
+                    currentStep.classList.remove('current');
+                    currentStep.classList.add('completed');
+                    currentStep.innerHTML = '✓';
+                    
+                    const nextStep = currentStep.parentElement.nextElementSibling;
+                    if (nextStep) {
+                        const nextCircle = nextStep.querySelector('.step-circle');
+                        nextCircle.classList.add('current');
+                        
+                        // Update status text
+                        const statusTexts = [
+                            { title: 'Đơn hàng đã xác nhận', desc: 'Nhà hàng đã nhận đơn' },
+                            { title: 'Đang chuẩn bị món ăn', desc: 'Dự kiến hoàn thành sau 15 phút' },
+                            { title: 'Shipper đang đến lấy hàng', desc: 'Dự kiến giao trong 30 phút' },
+                            { title: 'Đang giao hàng', desc: 'Shipper đang trên đường đến bạn' },
+                            { title: 'Đã giao thành công', desc: 'Cảm ơn bạn đã sử dụng dịch vụ!' }
+                        ];
+                        
+                        if (statusTexts[progressStep]) {
+                            document.querySelector('.status-text h3').textContent = statusTexts[progressStep].title;
+                            document.querySelector('.status-text p').textContent = statusTexts[progressStep].desc;
+                        }
+                    }
+                }
+                progressStep++;
+            }
+        }, 5000); // Update every 5 seconds for demo
+    </script>
+</body>
+</html>

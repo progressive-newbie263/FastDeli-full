@@ -45,8 +45,7 @@ GIT PUSH, 23-7-2025 highlights:
 - thêm tính năng tạm thời anti-spam. Khi đang tìm địa chỉ nó fix sang icon loading.
 
 -----------------------------------------------------------------------------
-GIT PUSH, 2x-7-2025 highlights: 
------------------------------------------------------------------------------
+GIT PUSH, 2x-7-2025 highlights:
 User bấm "Đặt hàng" 
 → handlePlaceOrder() chạy (checkout/page.tsx)
 → Cập nhật localStorage 
@@ -55,3 +54,18 @@ User bấm "Đặt hàng"
 → Header gọi lại getTotalItemsFromCart()
 → setCartQuantity() với số mới
 → UI Header cập nhật ngay lập tức
+
+
+-----------------------------------------------------------------------------
+GIT PUSH, 16-8-2025:
+Thiết kế trang payment. DÙng GPT tạo phần sinh QR code (function custom luôn).
+-> sau khi bấm đặt hàng ở checkout thì nó sẽ điều hướng sang trang payment thay vì
+tự động hoàn thiện order như trước đó
+-> note: tạm thời, tính năng thanh toán sẽ là: đưa ra hóa đơn và 1 QR ảo kèm mã QR xác
+định của nó thôi. Người dùng sẽ có cách skip thanh toán và coi như đã chuyển tiền thành công
+khi bấm nút thanh toán (Kiểu đơn 0 đồng trá hình).
+-> với tính năng phức tạp này, cho đến lúc hiểu rõ hơn thì ko nên làm thẳng cái thanh 
+toán QR vào
+-> Với "order id" thì tạo nó dựa theo "thời gian đặt hàng". Vì thời gian ấy là 1 thuộc tính độc nhất.
+Tuy nhiên, vẫn có thể hi hữu xảy ra trường hợp kiểu này: thời gian trong console.log tính theo ms, nhưng
+2 user có thể dính chung 1 thời gian nào đó

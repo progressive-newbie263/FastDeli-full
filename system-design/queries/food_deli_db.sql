@@ -84,8 +84,8 @@ CREATE TABLE orders (
   order_id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL, -- Tham chiếu tới shared_db.users
   restaurant_id INTEGER NOT NULL REFERENCES restaurants(restaurant_id),
-  customer_name VARCHAR(100) NOT NULL,
-  customer_phone VARCHAR(15) NOT NULL,
+  user_name VARCHAR(100) NOT NULL,
+  user_phone VARCHAR(15) NOT NULL,
   delivery_address TEXT NOT NULL,
   total_amount DECIMAL(12, 2) NOT NULL,
   order_status VARCHAR(30) DEFAULT 'pending', -- pending, confirmed, preparing, delivering, completed, cancelled
@@ -242,3 +242,13 @@ INSERT INTO restaurants (
 ('Bánh Đa Cua Hải Phòng', '29 Nguyễn Phong Sắc, Cầu Giấy, Hà Nội', '0901111027', 'Bánh đa cua đậm chất đất Cảng', '25-30 phút', 10000, 4.5, 810, false),
 ('Cơm Tấm Sài Gòn 24h', '24 Hoàng Đạo Thúy, Thanh Xuân, Hà Nội', '0901111030', 'Cơm tấm ngon, phục vụ cả ngày', '15-25 phút', 7000, 4.7, 1080, true);
 
+
+------------------------------------------------------------ 27/8/2025 ------------------------------------------------------------
+-- bơm thêm 2 cột sau, phí giao hàng (fee) và trạng thái thanh toán (payment_status)
+-- mặc định phí giao hàng là 0, trạng thái thanh toán là 'pending' (đang chờ thanh toán)
+-- tương tự, thêm cột updated_at để theo dõi thời gian cập nhật đơn hàng. mặc định thời gian là thời gian hiện tại khi tạo đơn hàng
+ADD COLUMN delivery_fee DECIMAL(10,2) DEFAULT 0,
+ADD COLUMN payment_status VARCHAR(30) DEFAULT 'pending'; 
+
+ALTER TABLE orders
+ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;

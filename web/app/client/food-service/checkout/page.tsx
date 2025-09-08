@@ -22,6 +22,7 @@ import { toast } from 'react-toastify';
 
 // dùng lại UserData interface có bên profile-page.
 interface UserData {
+  user_id?: number;
   full_name?: string;
   phone_number?: string;
   //address?: string;
@@ -35,6 +36,7 @@ interface UserLocation {
 const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [userInfos, setUserInfos] = useState({
+    id: '',
     name: '',
     phone: '',
     //address: '',
@@ -142,6 +144,7 @@ const CheckoutPage = () => {
         const user = parsed.user ?? parsed;
 
         setUserInfos({
+          id: user.user_id || '',
           name: user.full_name || '',
           phone: user.phone_number || '',
           //address: user.address || '',
@@ -196,12 +199,55 @@ const CheckoutPage = () => {
   };
 
   // Tính phí
+  // tạm thời nên bỏ qua cái 5% này ? ko khớp với grabfood và cũng không cần thiết mấy.
   const subtotal = calculateGrandTotal();
   const deliveryFee = 20000; // Phí giao hàng cố định
   const serviceFee = Math.round(subtotal * 0.05); // 5% phí dịch vụ
   const totalAmount = subtotal + deliveryFee + serviceFee;
 
   // xử lý đặt hàng cho 1 đơn hàng xác định. Phần else chưa cần thiết, sẽ làm sau.
+  // const handlePlaceOrder = () => {
+  //   try {
+  //     const savedCart = localStorage.getItem('cart');
+  //     if (!savedCart) {
+  //       toast.error('Không tìm thấy giỏ hàng');
+  //       return;
+  //     }
+
+  //     const parsedCart: FullCart = JSON.parse(savedCart);
+      
+  //     if (selectedRestaurantId) {
+  //       delete parsedCart[selectedRestaurantId];
+
+  //       localStorage.setItem('cart', JSON.stringify(parsedCart));
+  //       // Dispatch event ngay để Header cập nhật số lượng cart
+  //       window.dispatchEvent(new Event('cart-updated'));
+  //       toast.success(`Đặt hàng thành công! Cảm ơn bạn đã sử dụng dịch vụ.`);
+        
+  //       setCartData(prevData => 
+  //         prevData.filter(restaurant => restaurant.restaurant_id !== selectedRestaurantId)
+  //       );
+
+  //       router.push('/client/food-service/cart');
+  //     } else {
+  //       cartData.forEach(restaurant => {
+  //         delete parsedCart[restaurant.restaurant_id];
+  //       });
+
+  //       localStorage.setItem('cart', JSON.stringify(parsedCart));
+  //       window.dispatchEvent(new Event('cart-updated'));
+  //       toast.success(`Đặt hàng thành công cho ${cartData.length} nhà hàng! Cảm ơn bạn đã sử dụng dịch vụ.`);
+
+  //       setCartData([]);
+  //       router.push('/client/food-service/cart');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error placing order:', error);
+  //     toast.error('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
+  //   }
+  // };
+
+  // xử lý đặt hàng - điều hướng sang trang payment
   const handlePlaceOrder = () => {
     try {
       const savedCart = localStorage.getItem('cart');
@@ -210,39 +256,49 @@ const CheckoutPage = () => {
         return;
       }
 
-      const parsedCart: FullCart = JSON.parse(savedCart);
-      
+      // Giả sử userInfos có chứa userId
+      const userId = userInfos?.id || "guest";
+
+      // Tạo orderId với userId + timestamp
+      const orderId = `ORD-${userId}-${Date.now()}`;
+
+      const orderInfo = {
+        orderId,
+        amount: totalAmount,
+        restaurants: cartData.map(restaurant => ({
+          restaurant_id: restaurant.restaurant_id,
+          restaurant_name: restaurant.restaurant_name,
+          items: restaurant.items,
+          total: restaurant.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+        })),
+        selectedRestaurantId,
+        userInfo: userInfos,
+        userLocation: userLocation,
+        paymentMethod,
+        timestamp: Date.now()
+      };
+
+      sessionStorage.setItem('currentOrder', JSON.stringify(orderInfo));
+
       if (selectedRestaurantId) {
-        delete parsedCart[selectedRestaurantId];
-
-        localStorage.setItem('cart', JSON.stringify(parsedCart));
-        // Dispatch event ngay để Header cập nhật số lượng cart
-        window.dispatchEvent(new Event('cart-updated'));
-        toast.success(`Đặt hàng thành công! Cảm ơn bạn đã sử dụng dịch vụ.`);
-        
-        setCartData(prevData => 
-          prevData.filter(restaurant => restaurant.restaurant_id !== selectedRestaurantId)
-        );
-
-        router.push('/client/food-service/cart');
+        sessionStorage.setItem('currentOrderRestaurants', JSON.stringify([selectedRestaurantId]));
       } else {
-        cartData.forEach(restaurant => {
-          delete parsedCart[restaurant.restaurant_id];
-        });
-
-        localStorage.setItem('cart', JSON.stringify(parsedCart));
-        window.dispatchEvent(new Event('cart-updated'));
-        toast.success(`Đặt hàng thành công cho ${cartData.length} nhà hàng! Cảm ơn bạn đã sử dụng dịch vụ.`);
-
-        setCartData([]);
-        router.push('/client/food-service/cart');
+        const restaurantIds = cartData.map(r => r.restaurant_id);
+        sessionStorage.setItem('currentOrderRestaurants', JSON.stringify(restaurantIds));
       }
+
+      const paymentUrl = `/client/food-service/payment?orderId=${orderId}&amount=${totalAmount}${selectedRestaurantId ? `&restaurantId=${selectedRestaurantId}` : ''}`;
+      router.push(paymentUrl);
+
     } catch (error) {
-      console.error('Error placing order:', error);
-      toast.error('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
+      console.error('Error preparing order:', error);
+      toast.error('Có lỗi xảy ra khi chuẩn bị đơn hàng. Vui lòng thử lại.');
     }
   };
 
+
+
+  
   // Loading state
   if (isLoading) {
     return (
@@ -469,7 +525,7 @@ const CheckoutPage = () => {
                   
                   return (
                     <div key={restaurant.restaurant_id} className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-2 gap-4">
                         {/* 
                           truncate = overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
                           - Đại khái tác dụng là nếu tên nhà hàng quá dài thì sẽ hiển thị ... ở cuối
@@ -500,10 +556,10 @@ const CheckoutPage = () => {
                   <span>{deliveryFee.toLocaleString()}đ</span>
                 </div>
                 
-                <div className="flex justify-between text-sm">
+                {/* <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Phí dịch vụ (5%)</span>
                   <span>{serviceFee.toLocaleString()}đ</span>
-                </div>
+                </div> */}
                 
                 <div className="border-t border-gray-200 pt-3 flex justify-between">
                   <span className="font-semibold text-gray-800">Tổng cộng</span>
