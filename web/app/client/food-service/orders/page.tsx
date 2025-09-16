@@ -84,7 +84,7 @@ export default function OrdersPage() {
             {pendingOrders.map((order) => (
               <div
                 key={order.order_id}
-                className="border rounded-xl shadow p-4 bg-white"
+                className="border rounded-xl shadow p-4 bg-white position-relative"
               >
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-lg font-bold">
@@ -97,9 +97,9 @@ export default function OrdersPage() {
                   </span>
                 </div>
 
-                <p className="text-gray-700 mb-2">
+                {/* <p className="text-gray-700 mb-2">
                   <span className="font-semibold">Khách:</span> {order.user_name} ({order.user_phone})
-                </p>
+                </p> */}
                 <p className="text-gray-700 mb-2">
                   <span className="font-semibold">Địa chỉ:</span> {order.delivery_address}
                 </p>
@@ -109,11 +109,16 @@ export default function OrdersPage() {
                   </p>
                 )}
 
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>{dayjs(order.created_at).format('DD/MM/YYYY HH:mm')}</span>
-                  <span className="font-semibold">
-                    Tổng: {parseFloat(order.total_amount).toLocaleString()}₫
+                <div className="flex items-center gap-3">
+                  <p className='font-semibold text-gray-700'>Thời gian đặt hàng: </p>
+                  
+                  <span className='text-gray-600'>
+                    {dayjs(order.created_at).format('DD/MM/YYYY, HH:mm:ss')}
                   </span>
+                </div>
+
+                <div className='font-semibold position-absolute text-lg mt-4 text-orange-600 right-0'>
+                  Tổng: {parseFloat(order.total_amount).toLocaleString()}₫  
                 </div>
               </div>
             ))}

@@ -5,12 +5,9 @@ class Order {
   static async createOrder(orderData, items) {
     const client = await foodPool.connect();
     try {
-      // thành công, confirm.
-      // console.log('Order Data:', orderData);
-      // console.log('Items:', items);
-
       await client.query('BEGIN');
 
+      // total_amount sẽ xử lí phía dưới
       const {
         user_id,
         restaurant_id,
@@ -18,10 +15,18 @@ class Order {
         user_phone,
         delivery_address,
         notes,
-        delivery_fee = 0,
-        total_amount
+        delivery_fee = 0
       } = orderData;
 
+      // Tổng tiền từ items
+      let total_items_amount = 0;
+      for (const item of items) {
+        total_items_amount += Number(item.food_price) * Number(item.quantity);
+      }
+
+      const total_amount = total_items_amount + Number(delivery_fee);
+
+      // Thêm bản ghi order
       const orderInsertQuery = `
         INSERT INTO orders (
           user_id, restaurant_id, user_name, user_phone, delivery_address, notes, delivery_fee, total_amount,
@@ -45,21 +50,21 @@ class Order {
 
       const order = orderResult.rows[0];
 
+      // Thêm các items
       const insertItemQuery = `
         INSERT INTO order_items (
-          order_id, food_id, food_name, food_price, quantity, subtotal, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+          order_id, food_id, food_name, food_price, quantity, created_at
+        ) VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
       `;
 
       for (const item of items) {
-        const { food_id, food_name, food_price, quantity, subtotal } = item;
+        const { food_id, food_name, food_price, quantity } = item;
         await client.query(insertItemQuery, [
           order.order_id,
           food_id,
           food_name,
           food_price,
-          quantity,
-          subtotal
+          quantity
         ]);
       }
 
@@ -73,9 +78,9 @@ class Order {
     }
   }
 
-  // Lấy đon hàng theo ID của người dùng (user_id) => hiển thị lịch sử đơn hàng của người dùng.
+  // Lấy đơn hàng theo user_id
   static async getOrdersByUserId(userId) {
-        const client = await foodPool.connect();
+    const client = await foodPool.connect();
     try {
       const query = `
         SELECT 
@@ -106,7 +111,7 @@ class Order {
     }
   }
 
-  // Lấy đơn hàng theo ID của order 
+  // Lấy chi tiết đơn hàng theo order_id
   static async getOrderById(orderId) {
     const client = await foodPool.connect();
     try {
@@ -119,14 +124,19 @@ class Order {
       const order = orderRes.rows[0];
 
       const itemsRes = await client.query(
-        `SELECT order_item_id, order_id, food_id, food_name, food_price, quantity, subtotal, created_at
+        `SELECT order_item_id, order_id, food_id, food_name, food_price, quantity, created_at
          FROM order_items
          WHERE order_id = $1
          ORDER BY order_item_id`,
         [orderId]
       );
 
-      order.items = itemsRes.rows;
+      // Tính subtotal động
+      order.items = itemsRes.rows.map((item) => ({
+        ...item,
+        subtotal: Number(item.food_price) * Number(item.quantity)
+      }));
+
       return order;
     } catch (err) {
       throw err;

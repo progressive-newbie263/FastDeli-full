@@ -1,67 +1,43 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { 
-  FaMapMarkerAlt, 
-  FaClock, 
-  FaCreditCard, 
-  FaWallet, 
-  FaPhone, 
-  FaUser, 
+import React, { useState, useEffect } from "react";
+import {
+  FaMapMarkerAlt,
+  FaClock,
+  FaCreditCard,
+  FaWallet,
+  FaPhone,
+  FaUser,
   FaEdit,
   FaChevronLeft,
   FaShoppingBag,
-  FaUtensils
-} from 'react-icons/fa';
-
-// Import types từ cartHandler
-import { RestaurantGroup, CartItem, FullCart } from '../utils/cartHandler';
-import { Food } from '../interfaces';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { toast } from 'react-toastify';
-
-// dùng lại UserData interface có bên profile-page.
-interface UserData {
-  user_id?: number;
-  full_name?: string;
-  phone_number?: string;
-  //address?: string;
-  note?: string;
-}
-
-interface UserLocation {
-  location?: string;
-}
+  FaUtensils,
+} from "react-icons/fa";
+import { RestaurantGroup, CartItem, FullCart } from "../utils/cartHandler";
+import { Food } from "../interfaces";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "react-toastify";
 
 const CheckoutPage = () => {
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [userInfos, setUserInfos] = useState({
-    id: '',
-    name: '',
-    phone: '',
-    //address: '',
-    note: ''
+    id: "",
+    name: "",
+    phone: "",
+    note: "",
   });
-  const [userLocation, setUserLocation] = useState({
-    location: ''
-  });
-
-  // State để lưu dữ liệu từ localStorage
+  const [userLocation, setUserLocation] = useState({ location: "" });
   const [cartData, setCartData] = useState<RestaurantGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Lấy restaurant_id từ query params.
   const searchParams = useSearchParams();
-  const selectedRestaurantId = searchParams.get('restaurantId'); //lấy giá trị restaurantId từ URL.
+  const selectedRestaurantId = searchParams.get("restaurantId");
   const router = useRouter();
 
-  console.log(localStorage.getItem('userLocation'));
-
-  // Load dữ liệu từ localStorage khi component mount
   useEffect(() => {
     const fetchCartData = async () => {
       try {
-        const savedCart = localStorage.getItem('cart');
+        const savedCart = localStorage.getItem("cart");
         if (!savedCart) {
           setIsLoading(false);
           return;
@@ -73,20 +49,20 @@ const CheckoutPage = () => {
 
         for (const restaurantId of restaurantIds) {
           const [resFoods, resInfo] = await Promise.all([
-            fetch(`http://localhost:5001/api/restaurants/${restaurantId}/foods`).then(res => res.json()),
-            fetch(`http://localhost:5001/api/restaurants/${restaurantId}`).then(res => res.json())
+            fetch(`http://localhost:5001/api/restaurants/${restaurantId}/foods`).then((res) => res.json()),
+            fetch(`http://localhost:5001/api/restaurants/${restaurantId}`).then((res) => res.json()),
           ]);
 
           if (!resFoods.success || !resInfo.success) continue;
 
           const foods: Food[] = resFoods.data;
           const restaurantName = resInfo.data.restaurant_name;
-          const restaurantImage = resInfo.data.image_url || 'https://via.placeholder.com/64';
+          const restaurantImage = resInfo.data.image_url || "https://via.placeholder.com/64";
           const storedItems = parsedCart[restaurantId];
           const items: CartItem[] = [];
 
           storedItems.forEach(({ food_id, quantity }) => {
-            const food = foods.find(f => f.food_id === food_id);
+            const food = foods.find((f) => f.food_id === food_id);
             if (food) {
               items.push({
                 restaurant_id: restaurantId,
@@ -95,7 +71,7 @@ const CheckoutPage = () => {
                 price: parseFloat(food.price),
                 image_url: food.image_url,
                 description: food.description,
-                quantity
+                quantity,
               });
             }
           });
@@ -105,24 +81,24 @@ const CheckoutPage = () => {
               restaurant_id: restaurantId,
               restaurant_name: restaurantName,
               restaurant_image: restaurantImage,
-              items
+              items,
             });
           }
         }
 
-        //lọc nhóm đơn hàng.
-        const filteredGroups = selectedRestaurantId ? groups.filter(group => group.restaurant_id === selectedRestaurantId) : groups;
-        
+        const filteredGroups = selectedRestaurantId
+          ? groups.filter((group) => group.restaurant_id === selectedRestaurantId)
+          : groups;
+
         if (selectedRestaurantId && filteredGroups.length === 0) {
-          toast.error('Không tìm thấy đơn hàng. Quý khách vui lòng thử lại sau.');
-          router.push('/client/food-service/cart'); 
-          
+          toast.error("Không tìm thấy đơn hàng. Quý khách vui lòng thử lại sau.");
+          router.push("/client/food-service/cart");
           return;
         }
 
         setCartData(filteredGroups);
       } catch (error) {
-        console.error('Error loading cart data:', error);
+        console.error("Error loading cart data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -131,204 +107,102 @@ const CheckoutPage = () => {
     fetchCartData();
   }, []);
 
-  
-  // useEffect số 2: xử lí lấy địa chỉ giao hàng + thông tin người dùng từ localStorage.
   useEffect(() => {
-    const storedUserData = localStorage.getItem('userData');
-
+    const storedUserData = localStorage.getItem("userData");
     if (storedUserData) {
       try {
         const parsed = JSON.parse(storedUserData);
-
-        // hỗ trợ cấu trúc userData có thể nằm trong key `user`
         const user = parsed.user ?? parsed;
-
         setUserInfos({
-          id: user.user_id || '',
-          name: user.full_name || '',
-          phone: user.phone_number || '',
-          //address: user.address || '',
-          note: user.note || '',
+          id: user.user_id || "",
+          name: user.full_name || "",
+          phone: user.phone_number || "",
+          note: user.note || "",
         });
       } catch (err) {
-        console.error('Lỗi khi parse userData từ localStorage:', err);
+        console.error("Lỗi khi parse userData:", err);
       }
     }
   }, []);
 
-  // useEffect số 3: lấy địa chỉ giao hàng từ localStorage. (OpenStreetMap)
   useEffect(() => {
-    const storedLocation = localStorage.getItem('userLocation');
-
+    const storedLocation = localStorage.getItem("userLocation");
     if (storedLocation) {
       try {
         const parsedLocation = JSON.parse(storedLocation);
-
-        setUserLocation({
-          location: parsedLocation.address
-        });
+        setUserLocation({ location: parsedLocation.address });
       } catch (error) {
-        console.error('Error parsing user location:', error);
+        console.error("Error parsing user location:", error);
       }
     }
   }, []);
 
-
-  // Tính toán tổng tiền của tất cả nhà hàng
   const calculateGrandTotal = () => {
-    if (!Array.isArray(cartData) || cartData.length === 0) return 0;
-    
-    return cartData.reduce((total, restaurant) => {
-      if (!restaurant.items || !Array.isArray(restaurant.items)) return total;
-      
-      const restaurantTotal = restaurant.items.reduce((sum, item) => {
-        return sum + (item.price * item.quantity);
-      }, 0);
-      return total + restaurantTotal;
-    }, 0);
-  };
-
-  // Đếm tổng số món
-  const getTotalItems = () => {
-    if (!Array.isArray(cartData) || cartData.length === 0) return 0;
-    
-    return cartData.reduce((total, restaurant) => {
-      if (!restaurant.items || !Array.isArray(restaurant.items)) return total;
-      return total + restaurant.items.reduce((sum, item) => sum + item.quantity, 0);
-    }, 0);
-  };
-
-  // Tính phí
-  // tạm thời nên bỏ qua cái 5% này ? ko khớp với grabfood và cũng không cần thiết mấy.
-  const subtotal = calculateGrandTotal();
-  const deliveryFee = 20000; // Phí giao hàng cố định
-  const serviceFee = Math.round(subtotal * 0.05); // 5% phí dịch vụ
-  const totalAmount = subtotal + deliveryFee + serviceFee;
-
-  // xử lý đặt hàng cho 1 đơn hàng xác định. Phần else chưa cần thiết, sẽ làm sau.
-  // const handlePlaceOrder = () => {
-  //   try {
-  //     const savedCart = localStorage.getItem('cart');
-  //     if (!savedCart) {
-  //       toast.error('Không tìm thấy giỏ hàng');
-  //       return;
-  //     }
-
-  //     const parsedCart: FullCart = JSON.parse(savedCart);
-      
-  //     if (selectedRestaurantId) {
-  //       delete parsedCart[selectedRestaurantId];
-
-  //       localStorage.setItem('cart', JSON.stringify(parsedCart));
-  //       // Dispatch event ngay để Header cập nhật số lượng cart
-  //       window.dispatchEvent(new Event('cart-updated'));
-  //       toast.success(`Đặt hàng thành công! Cảm ơn bạn đã sử dụng dịch vụ.`);
-        
-  //       setCartData(prevData => 
-  //         prevData.filter(restaurant => restaurant.restaurant_id !== selectedRestaurantId)
-  //       );
-
-  //       router.push('/client/food-service/cart');
-  //     } else {
-  //       cartData.forEach(restaurant => {
-  //         delete parsedCart[restaurant.restaurant_id];
-  //       });
-
-  //       localStorage.setItem('cart', JSON.stringify(parsedCart));
-  //       window.dispatchEvent(new Event('cart-updated'));
-  //       toast.success(`Đặt hàng thành công cho ${cartData.length} nhà hàng! Cảm ơn bạn đã sử dụng dịch vụ.`);
-
-  //       setCartData([]);
-  //       router.push('/client/food-service/cart');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error placing order:', error);
-  //     toast.error('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
-  //   }
-  // };
-
-  // xử lý đặt hàng - điều hướng sang trang payment
-  const handlePlaceOrder = () => {
-    try {
-      const savedCart = localStorage.getItem('cart');
-      if (!savedCart) {
-        toast.error('Không tìm thấy giỏ hàng');
-        return;
-      }
-
-      // Giả sử userInfos có chứa userId
-      const userId = userInfos?.id || "guest";
-
-      // Tạo orderId với userId + timestamp
-      const orderId = `ORD-${userId}-${Date.now()}`;
-
-      const orderInfo = {
-        orderId,
-        amount: totalAmount,
-        restaurants: cartData.map(restaurant => ({
-          restaurant_id: restaurant.restaurant_id,
-          restaurant_name: restaurant.restaurant_name,
-          items: restaurant.items,
-          total: restaurant.items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-        })),
-        selectedRestaurantId,
-        userInfo: userInfos,
-        userLocation: userLocation,
-        paymentMethod,
-        timestamp: Date.now()
-      };
-
-      sessionStorage.setItem('currentOrder', JSON.stringify(orderInfo));
-
-      if (selectedRestaurantId) {
-        sessionStorage.setItem('currentOrderRestaurants', JSON.stringify([selectedRestaurantId]));
-      } else {
-        const restaurantIds = cartData.map(r => r.restaurant_id);
-        sessionStorage.setItem('currentOrderRestaurants', JSON.stringify(restaurantIds));
-      }
-
-      const paymentUrl = `/client/food-service/payment?orderId=${orderId}&amount=${totalAmount}${selectedRestaurantId ? `&restaurantId=${selectedRestaurantId}` : ''}`;
-      router.push(paymentUrl);
-
-    } catch (error) {
-      console.error('Error preparing order:', error);
-      toast.error('Có lỗi xảy ra khi chuẩn bị đơn hàng. Vui lòng thử lại.');
-    }
-  };
-
-
-
-  
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Đang tải thông tin đơn hàng...</p>
-        </div>
-      </div>
+    return cartData.reduce(
+      (total, restaurant) =>
+        total + restaurant.items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      0
     );
+  };
+
+  const getTotalItems = () => {
+    return cartData.reduce(
+      (total, restaurant) => total + restaurant.items.reduce((sum, item) => sum + item.quantity, 0),
+      0
+    );
+  };
+
+  const subtotal = calculateGrandTotal();
+  const deliveryFee = 20000;
+  const totalAmount = subtotal + deliveryFee;
+
+  const handlePlaceOrder = () => {
+    if (!cartData || cartData.length === 0) {
+      toast.error("Giỏ hàng trống");
+      return;
+    }
+
+    // Dùng chỉ nhà hàng đã chọn (nếu có)
+    const targetGroups = selectedRestaurantId
+      ? cartData.filter((g) => g.restaurant_id === selectedRestaurantId)
+      : cartData;
+
+    if (targetGroups.length === 0) {
+      toast.error("Không tìm thấy dữ liệu đặt hàng.");
+      return;
+    }
+
+    const group = targetGroups[0]; // chỉ xử lý 1 nhà hàng
+    const orderPayload = {
+      orderData: {
+        user_id: Number(userInfos.id) || null,
+        restaurant_id: Number(group.restaurant_id),
+        user_name: userInfos.name,
+        user_phone: userInfos.phone,
+        delivery_address: userLocation.location,
+        notes: userInfos.note,
+        delivery_fee: deliveryFee,
+        total_amount: totalAmount,
+      },
+      items: group.items.map((item) => ({
+        food_id: item.food_id,
+        food_name: item.food_name,
+        food_price: item.price,
+        quantity: item.quantity,
+      })),
+    };
+
+    sessionStorage.setItem("pendingOrderPayload", JSON.stringify(orderPayload));
+
+    router.push(`/client/food-service/payment?restaurantId=${group.restaurant_id}`);
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-screen">Đang tải...</div>;
   }
 
-  // Empty cart state
-  if (!Array.isArray(cartData) || cartData.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <FaShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">Giỏ hàng trống</h2>
-          <p className="text-gray-500 mb-6">Vui lòng thêm món ăn vào giỏ hàng trước khi thanh toán</p>
-
-          <button
-            onClick={() => window.history.back()}
-            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-          >
-            Quay lại mua sắm
-          </button>
-        </div>
-      </div>
-    );
+  if (cartData.length === 0) {
+    return <div className="flex justify-center items-center h-screen">Giỏ hàng trống</div>;
   }
 
   return (

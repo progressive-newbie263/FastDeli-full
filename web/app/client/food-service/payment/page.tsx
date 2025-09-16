@@ -1,76 +1,93 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
-import {
-  FaChevronLeft,
-  FaCheckCircle,
-  FaClock,
-  FaShieldAlt,
-  FaQrcode,
-  FaCopy,
-  FaCheck,
-} from "react-icons/fa";
+import { useSearchParams, useRouter } from "next/navigation";
+import { FaChevronLeft, FaQrcode } from "react-icons/fa";
 import Link from "next/link";
 
-// Hàm tạo QR (cpy paste tạm)
 const generateQRPattern = (seed: string) => {
   const size = 256;
   const blockSize = 16;
   const totalBlocks = (size / blockSize) ** 2;
   let pattern = Array(totalBlocks).fill(false);
 
-  // random theo seed
-  /* 
-    quy ước như sau:  máy tính có 1 bộ đếm thời gian theo 1 con số có 1x chữ số.
-      + Khi thử log trên console trị giá của thời gian hiện tại (VD: date.now()) thì là 1 chuỗi số rất dài.
-      + chuỗi số ấy coi như 1 thời gian tiền chuyển đổi (tức là thời gian (x ngày, y giờ, z phút, t giây) tính từ 1970 đến hiện tại)
-      + Nên có thể coi, mỗi lần log nó ra, chuỗi thời gian này "độc nhất" (vì thời gian không bao giờ lặp lại)
-      + ý tưởng sẽ là mã hóa đơn hàng theo cái này.
-  */
   for (let i = 0; i < totalBlocks; i++) {
     const hash = (seed.charCodeAt(i % seed.length) + i * 31) % 97;
     pattern[i] = hash % 2 === 0;
   }
-
   return pattern;
 };
 
 const PaymentPage = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId");
-  const restaurantId = searchParams.get("restaurantId"); // lấy từ checkout và session/localStorage sang
+  const orderIdFromQuery = searchParams.get("orderId");
+  const restaurantIdFromQuery = searchParams.get("restaurantId");
 
-  // 10 phút, hoặc set nó ngắn hơn nếu đang làm thử nghiệm
   const [timeLeft, setTimeLeft] = useState(600);
-  const [copied, setCopied] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState("pending");
-  const [orderData, setOrderData] = useState({
-    orderId: orderId || "UNKNOWN",
-    amount: 93500,
-  });
-  const [showTestToast, setShowTestToast] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "success" | "processing">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-  // Chỉ chạy ở client: lấy order từ sessionStorage
+  const [payload, setPayload] = useState<any>(null);
+
+  // Lấy dữ liệu order từ sessionStorage hoặc localStorage
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = sessionStorage.getItem("currentOrder");
-      if (saved) {
-        setOrderData(JSON.parse(saved));
-      }
-    }
-  }, [orderId]);
+    if (typeof window === "undefined") return;
 
-  // Tạo pattern cố định dựa vào orderId
+    try {
+      const saved = sessionStorage.getItem("pendingOrderPayload");
+      if (saved) {
+        setPayload(JSON.parse(saved));
+        return;
+      }
+
+      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+      const cart = JSON.parse(localStorage.getItem("cart") || "{}");
+      const restaurantId = restaurantIdFromQuery || Object.keys(cart)[0] || "0";
+
+      const cartItems = cart[restaurantId] || [];
+
+
+      // note: ko dùng subtotal trong database, nhưng có thể ghi tạm nó như thế này
+      // cho dễ tính toán đơn giá
+      const items = cartItems.map((item: any) => ({
+        food_id: item.food_id,
+        food_name: item.food_name || "",
+        food_price: item.food_price || 0,
+        quantity: item.quantity,
+        subtotal: (item.food_price || 0) * item.quantity,
+      }));
+
+      const orderPayload = {
+        orderData: {
+          user_id: userData.user_id,
+          restaurant_id: Number(restaurantId),
+          user_name: userData.name || "Khách hàng",
+          user_phone: userData.phone_number,
+          delivery_address: userData.address || "Chưa có địa chỉ",
+          notes: "",
+          delivery_fee: 15000,
+          total_amount: items.reduce((sum: number, i: {subtotal: number}) => sum + i.subtotal, 0),
+        },
+        items,
+      };
+
+      setPayload(orderPayload);
+      sessionStorage.setItem("pendingOrderPayload", JSON.stringify(orderPayload));
+    } catch (err) {
+      console.error("Lỗi đọc dữ liệu:", err);
+    }
+  }, [restaurantIdFromQuery]);
+
+  // QR code pattern
   const qrPattern = useMemo(
-    () => generateQRPattern(orderData.orderId),
-    [orderData.orderId]
+    () => generateQRPattern(orderIdFromQuery || String(Date.now())),
+    [orderIdFromQuery]
   );
 
-  // QR grid chỉ render 1 lần
-  const qrGrid = useMemo(() => {
-    return (
+  const qrGrid = useMemo(
+    () => (
       <div className="absolute inset-0 opacity-10">
         <div className="grid grid-cols-16 gap-0 h-full w-full">
           {qrPattern.map((isBlack, i) => (
@@ -78,16 +95,14 @@ const PaymentPage = () => {
           ))}
         </div>
       </div>
-    );
-  }, [qrPattern]);
+    ),
+    [qrPattern]
+  );
 
-  // Đếm ngược
-  // nhảy mỗi giây (1000ms)
+  // Countdown timer
   useEffect(() => {
     if (timeLeft <= 0) return;
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
-    }, 1000);
+    const timer = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [timeLeft]);
 
@@ -97,45 +112,65 @@ const PaymentPage = () => {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // copy mã đơn hàng cho khách.
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(orderData.orderId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleCreateOrder = async () => {
+    try {
+      setIsProcessing(true);
+      setShowToast(true);
 
+      const res = await fetch("http://localhost:5001/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-  /* 
-    Đây là tính năng thử nghiệm, không phải tính năng thật.
-      + Ý tưởng là, với tư cách 1 dev build web này, tôi có thể bỏ qua bước thanh toán thật. 
-      + Tôi sẽ ko cần chuyển tiền thật, mà vẫn có thể test được luồng thanh toán thành công.
+      if (!res.ok) throw new Error("Tạo đơn hàng thất bại");
 
-    Flow hoạt động như sau.
-      + Khi bấm nút "Thử nghiệm nhanh", sẽ hiện toast thông báo góc trên, phải (đang ở chế độ thử nghiệm).
-      + Sau 3 giây, trạng thái chuyển thành "thanh toán thành công"
-      + Sau 8 giây nữa, toast tự biến mất.
-  */
-  const simulatePayment = () => {
-    setIsProcessing(true);
-    setShowTestToast(true);
-    
-    setTimeout(() => {
+      const data = await res.json();
+      console.log("✅ Đơn hàng đã tạo:", data);
+
+      // 🧹 XÓA CART CỦA NHÀ HÀNG ĐÃ ĐẶT
+      try {
+        const cart = JSON.parse(localStorage.getItem("cart") || "{}");
+        const restaurantId = payload.orderData.restaurant_id;
+        if (restaurantId && cart[restaurantId]) {
+          delete cart[restaurantId];
+          localStorage.setItem("cart", JSON.stringify(cart));
+
+          // BẮN SỰ KIỆN để các component khác cập nhật UI
+          window.dispatchEvent(new Event("cart-updated"));
+        }
+      } catch (err) {
+        console.error("❌ Lỗi khi xóa cart:", err);
+      }
+
+      // Cập nhật trạng thái UI ngay
       setPaymentStatus("success");
       setIsProcessing(false);
-      setTimeLeft(0); // Stop the timer
-    }, 3000);
+      setTimeLeft(0);
 
-    setTimeout(() => {
-      setShowTestToast(false);
-    }, 8000);
+      // Điều hướng sang /orders sau 1.5s
+      setTimeout(() => {
+        router.push("/client/food-service/orders");
+      }, 1500);
+
+      setTimeout(() => setShowToast(false), 4000);
+    } catch (err) {
+      console.error("❌ Lỗi tạo đơn:", err);
+      setIsProcessing(false);
+    }
   };
+
+
+  if (!payload) {
+    return <div className="flex justify-center items-center h-screen">Đang tải thông tin đơn hàng...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 mb-20">
       {/* Header */}
       <div className="flex items-center mb-6 mt-20">
         <Link
-          href={`/client/food-service/checkout?restaurantId=${restaurantId || ""}`}
+          href={`/client/food-service/checkout?restaurantId=${payload.orderData.restaurant_id || ""}`}
           className="flex items-center text-gray-600 hover:text-gray-800"
         >
           <FaChevronLeft className="text-gray-600 mr-2 cursor-pointer" />
@@ -149,22 +184,21 @@ const PaymentPage = () => {
           <div className="flex flex-col items-center">
             <div className="w-64 h-64 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center relative overflow-hidden">
               {qrGrid}
-
               <div className="relative z-10 text-center">
                 <FaQrcode className="w-16 h-16 text-gray-400 mx-auto mb-2" />
-                
                 <p className="text-sm text-gray-500 font-medium">QR Payment</p>
-                
-                <p className="text-xs text-gray-400">#{orderData.orderId}</p>
+                <p className="text-xs text-gray-400">#{orderIdFromQuery || "NEW"}</p>
               </div>
             </div>
 
             <p className="mt-4 text-gray-600 text-sm">
               Vui lòng quét mã QR để thanh toán
             </p>
-            
-            {/* Test Payment Button */}
-            <button onClick={simulatePayment} disabled={paymentStatus !== "pending" || isProcessing}
+
+            {/* Nút xác nhận */}
+            <button
+              onClick={handleCreateOrder}
+              disabled={paymentStatus !== "pending" || isProcessing}
               className="mt-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 flex items-center gap-2 disabled:cursor-not-allowed cursor-pointer"
             >
               {isProcessing ? (
@@ -175,120 +209,71 @@ const PaymentPage = () => {
               ) : (
                 <>
                   <span className="text-lg">⚡</span>
-                  Thanh toán nhanh (thử nghiệm)
+                  Thanh toán nhanh
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* Order Info - Responsive chính xác */}
+        {/* Thông tin đơn */}
         <div className="flex-1">
           <div className="bg-white rounded-2xl p-6 shadow-md mb-6">
             <h2 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h2>
 
-            {/* Mã đơn hàng + tt chi tiết của đơn */}
             <div className="space-y-3 text-sm">
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2">
-                <span className="text-gray-600 font-medium">Mã đơn hàng:</span>
-
-                <div className="flex items-center gap-2 sm:justify-end">
-                  <span className="font-mono text-sm text-gray-800 break-all">{orderData.orderId}</span>
-
-                  <button onClick={copyToClipboard}
-                    className="text-blue-500 hover:text-blue-700 transition-colors flex-shrink-0 cursor-pointer"
-                  >
-                    {copied ? <FaCheck className="text-green-500" /> : <FaCopy />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Số tiền/ Đơn giá */}
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2">
+              <div className="flex justify-between">
                 <span className="text-gray-600 font-medium">Số tiền:</span>
-
                 <span className="font-bold text-red-500 text-lg sm:text-right">
-                  {orderData.amount.toLocaleString()} VND
+                  {payload.orderData.total_amount?.toLocaleString() || 0} VND
                 </span>
               </div>
 
-              {/* Trạng thái */}
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2">
+              <div className="flex justify-between">
                 <span className="text-gray-600 font-medium">Trạng thái:</span>
-
-                <span className={`font-semibold px-2 py-1 rounded-full text-xs inline-block w-fit sm:ml-auto 
-                  ${paymentStatus === "pending" ? 
-                    "bg-yellow-100 text-yellow-700" : paymentStatus === "success" ? 
-                    "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                  }
-                `}>
-                  {paymentStatus === "pending" ? "Chờ thanh toán" : paymentStatus === "success" ? "Thanh toán thành công": "Đang xử lý..."}
+                <span
+                  className={`font-semibold px-2 py-1 rounded-full text-xs 
+                  ${
+                    paymentStatus === "pending"
+                      ? "bg-yellow-100 text-yellow-700"
+                      : paymentStatus === "success"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-blue-100 text-blue-700"
+                  }`}
+                >
+                  {paymentStatus === "pending"
+                    ? "Chờ thanh toán"
+                    : paymentStatus === "success"
+                    ? "Thanh toán thành công"
+                    : "Đang xử lý..."}
                 </span>
               </div>
 
-              {/* Thời gian còn lại */}
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-2">
+              <div className="flex justify-between">
                 <span className="text-gray-600 font-medium">Thời gian còn lại:</span>
-
-                <span className={`font-bold text-lg sm:text-right ${timeLeft <= 60 ? 'text-red-500' : 'text-gray-800'}`}>
-                  {timeLeft > 0 ? formatTime(timeLeft) : 'Hết hạn'}
+                <span
+                  className={`font-bold text-lg sm:text-right ${
+                    timeLeft <= 60 ? "text-red-500" : "text-gray-800"
+                  }`}
+                >
+                  {timeLeft > 0 ? formatTime(timeLeft) : "Hết hạn"}
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Mục lưu ý/ hướng dẫn cho khách hàng  */}
-          <div className="bg-white rounded-2xl p-6 shadow-md">
-            <h2 className="text-lg font-semibold mb-4">Lưu ý</h2>
-
-            <ul className="space-y-3 text-sm text-gray-600">
-              <li className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-400">
-                <FaCheckCircle className="text-green-500 mt-0.5 flex-shrink-0" />
-                <span>Vui lòng thanh toán trong vòng 10 phút</span>
-              </li>
-
-              <li className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                <FaClock className="text-blue-500 mt-0.5 flex-shrink-0" />
-                <span>Quá thời gian, đơn hàng sẽ bị hủy</span>
-              </li>
-              
-              <li className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg border-l-4 border-purple-400">
-                <FaShieldAlt className="text-purple-500 mt-0.5 flex-shrink-0" />
-                <span>Đảm bảo nhập đúng số tiền và nội dung</span>
-              </li>
-            </ul>
           </div>
         </div>
       </div>
 
-      {/* toast/pop-up thông báo sau thanh toán */}
-      {showTestToast && (
+      {/* Toast demo */}
+      {showToast && (
         <div className="fixed top-4 right-4 z-50 max-w-sm animate-slide-in">
           <div className="bg-white border-l-4 border-purple-500 rounded-lg shadow-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-600 text-sm">🧪</span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-semibold text-gray-900 mb-1">
-                  Chế độ thử nghiệm
-                </h4>
-                <p className="text-xs text-gray-600 mb-2">
-                  Đây là bản demo! Thanh toán sẽ được mô phỏng mà không cần chuyển tiền thật.
-                </p>
-                <div className="text-xs text-purple-600 font-medium">
-                  ⚡ Đang xử lý thanh toán demo...
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowTestToast(false)}
-                className="text-gray-400 hover:text-gray-600 text-lg leading-none"
-              >
-                ×
-              </button>
-            </div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-1">
+              Đang xử lý thanh toán...
+            </h4>
+            <p className="text-xs text-gray-600">
+              Đây là chế độ demo. Thanh toán sẽ được mô phỏng mà không trừ tiền thật.
+            </p>
           </div>
         </div>
       )}
@@ -304,7 +289,6 @@ const PaymentPage = () => {
             opacity: 1;
           }
         }
-        
         .animate-slide-in {
           animation: slide-in 0.3s ease-out;
         }

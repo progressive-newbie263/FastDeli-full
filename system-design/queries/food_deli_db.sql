@@ -102,7 +102,10 @@ CREATE TABLE order_items (
   food_name VARCHAR(150) NOT NULL,
   food_price DECIMAL(10, 2) NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
-  subtotal DECIMAL(12, 2) NOT NULL,
+
+  -- xóa bỏ cái này. Ưu điểm đáng nói? Sẽ là dễ làm tính năng discount/coupon hơn.
+  -- subtotal DECIMAL(12, 2) NOT NULL, 
+  
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
