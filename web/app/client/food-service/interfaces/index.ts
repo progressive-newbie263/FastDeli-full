@@ -1,8 +1,7 @@
-// app/interfaces/index.ts
 
 export interface Restaurant {
-  restaurant_id: number;
-  restaurant_name: string;
+  id: number;
+  name: string;
   address: string;
   image_url: string | null;
   delivery_time: string;

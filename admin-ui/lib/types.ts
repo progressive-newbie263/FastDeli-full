@@ -50,7 +50,7 @@ export interface Order {
   createdAt: string;
   updatedAt?: string;
   deliveryAddress: string;
-  paymentMethod: 'cash' | 'card' | 'wallet';
+  //paymentMethod: 'cash' | 'card' | 'wallet';
   paymentStatus: 'pending' | 'paid' | 'refunded';
   items: OrderItem[];
   notes?: string;

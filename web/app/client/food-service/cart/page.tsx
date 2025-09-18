@@ -5,7 +5,6 @@ import { Food } from '../interfaces';
 import Image from 'next/image';
 import OrderDetailPopup from './OrderDetailPopup';
 
-// icon sử dụng (react-icons)
 import { FaUtensils } from 'react-icons/fa';
 import { MdOutlineShoppingCart } from "react-icons/md";
 
@@ -13,18 +12,16 @@ import {
   RestaurantGroup,
   FullCart,
   CartItem,
-
   getGroupTotal,
   getTotalCart,
   handleIncrease,
   handleDecrease,
-  updateCartQuantity // Import thêm hàm này
+  updateCartQuantity
 } from '../utils/cartHandler';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ClientLink from '../components/ClientLink';
-
 
 const Page = () => {
   const [groupedCart, setGroupedCart] = useState<RestaurantGroup[]>([]);
@@ -43,6 +40,7 @@ const Page = () => {
         const groups: RestaurantGroup[] = [];
 
         for (const restaurantId of restaurantIds) {
+          // Lấy foods và thông tin nhà hàng
           const [resFoods, resInfo] = await Promise.all([
             fetch(`http://localhost:5001/api/restaurants/${restaurantId}/foods`).then(res => res.json()),
             fetch(`http://localhost:5001/api/restaurants/${restaurantId}`).then(res => res.json())
@@ -51,7 +49,7 @@ const Page = () => {
           if (!resFoods.success || !resInfo.success) continue;
 
           const foods: Food[] = resFoods.data;
-          const restaurantName: string = resInfo.data.restaurant_name;
+          const restaurantName: string = resInfo.data.name; // ✅ Đổi từ restaurant_name -> name
           const restaurantImage: string = resInfo.data.image_url || 'https://via.placeholder.com/80';
           const storedItems = parsedCart[restaurantId];
           const items: CartItem[] = [];
@@ -74,7 +72,7 @@ const Page = () => {
           if (items.length > 0) {
             groups.push({
               restaurant_id: restaurantId,
-              restaurant_name: restaurantName,
+              restaurant_name: restaurantName, // vẫn giữ tên key này để UI không phải đổi nhiều
               restaurant_image: restaurantImage,
               items
             });
@@ -101,47 +99,12 @@ const Page = () => {
     handleDecrease(groupedCart, setGroupedCart, selectedRestaurant, setSelectedRestaurant, food_id, restaurant_id);
   };
 
-  // func xử lý thanh toán đơn hàng
-  // const handleCheckout = (restaurant_id: string) => {
-  //   const restaurant = groupedCart.find(
-  //     g => g.restaurant_id === restaurant_id
-  //   );
-  //   if (!restaurant) return;
-
-  //   console.log('Đặt đơn hàng cho:', restaurant.restaurant_name);
-  //   console.log('Chi tiết đơn hàng:', restaurant.items);
-
-  //   // Xóa đơn hàng của nhà hàng vừa thanh toán khỏi giao diện
-  //   const newGroupedCart = groupedCart.filter(g => g.restaurant_id !== restaurant_id);
-  //   setGroupedCart(newGroupedCart);
-
-  //   // Đóng popup hóa đơn nếu đang xem nhà hàng vừa thanh toán
-  //   if (selectedRestaurant && selectedRestaurant.restaurant_id === restaurant_id) {
-  //     setSelectedRestaurant(null);
-  //   }
-
-  //   // Cập nhật lại localStorage
-  //   const updatedCart: FullCart = {};
-  //   newGroupedCart.forEach(group => {
-  //     updatedCart[group.restaurant_id] = group.items.map(({ food_id, quantity }) => ({
-  //       food_id,
-  //       quantity
-  //     }));
-  //   });
-  //   localStorage.setItem('cart', JSON.stringify(updatedCart));
-
-  //   // ✅ THÊM: Cập nhật cartQuantity và trigger event để header biết
-  //   updateCartQuantity(newGroupedCart);
-  // };
-  const router = useRouter();  
+  const router = useRouter();
   const handleCheckout = (restaurant_id: string) => {
     const restaurant = groupedCart.find(g => g.restaurant_id === restaurant_id);
     if (!restaurant) return;
 
-    // (Tùy chọn) bạn có thể lưu thông tin nhà hàng vừa chọn nếu muốn.
     console.log('Đi tới trang thanh toán cho:', restaurant.restaurant_name);
-
-    // 👉 Chuyển hướng sang trang /checkout mà không xóa cart
     router.push(`/client/food-service/checkout?restaurantId=${restaurant.restaurant_id}`);
   };
 

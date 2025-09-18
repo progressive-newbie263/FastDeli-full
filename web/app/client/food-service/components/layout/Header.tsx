@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ClientLink from '../ClientLink';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@food/context/AuthContext';
 import { IoCartOutline } from "react-icons/io5";
 
@@ -30,6 +30,7 @@ interface HeaderProps {
 const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   const { currentUser, isAuthenticated: contextIsAuthenticated, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const isAuthenticated = contextIsAuthenticated ?? propIsAuthenticated ?? false;
 
   // 👉 Lấy số lượng tổng trong localStorage
@@ -105,6 +106,22 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
     router.push('/client/food-service/auth/login');
   };
 
+  // highlight router/trang đang được chọn hiện tại
+  const getLinkClass = (href: string, exact = false) => {
+    /* 
+      "exact" ở đây sẽ chỉ bao gồm "/" (tức là trang chủ)
+
+      startsWith sẽ bao gồm cả "/restaurants", "/promotions", "/orders". 
+      Vì "/" đã bao gồm cả trang chủ, nên phải ép thẳng nó ra "exact".
+      Nếu ko nó ghi đè lên, thì trang chủ sẽ vĩnh viễn tỉnh là active.
+    */
+    const isActive = exact ? pathname === href : pathname.startsWith(href);
+
+    return `transition-colors ${
+      isActive ? 'text-[#00B14F] font-semibold border-b-2 border-[#00B14F]' : 'text-gray-700 hover:text-[#00B14F]'
+    }`;
+  };
+
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-white shadow-md">
       <div className="w-full max-w-screen-2xl mx-auto px-4 py-3 flex justify-between items-center">
@@ -113,11 +130,17 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
         </ClientLink>
 
         <nav className="hidden md:flex items-center space-x-6">
-          <ClientLink href="/" className="text-gray-700 hover:text-[#00B14F]">Trang chủ</ClientLink>
-          <ClientLink href="/restaurants" className="text-gray-700 hover:text-[#00B14F]">Nhà hàng</ClientLink>
-          <ClientLink href="/promotions" className="text-gray-700 hover:text-[#00B14F]">Khuyến mãi</ClientLink>
-          <ClientLink href="/orders" className="text-gray-700 hover:text-[#00B14F]">Đơn hàng</ClientLink>
+          {/*
+              - default cho trang chủ sẽ là true (highlight mặc định)
+              - các trang con khác sẽ xài 'startsWith' để highlight
+          */}
+          <Link href="/client/food-service" className={getLinkClass('/client/food-service', true)}>Trang chủ</Link>
+
+          <Link href="/client/food-service/restaurants" className={getLinkClass('/client/food-service/restaurants')}>Nhà hàng</Link>
+          <Link href="/client/food-service/promotions" className={getLinkClass('/client/food-service/promotions')}>Khuyến mãi</Link>
+          <Link href="/client/food-service/orders" className={getLinkClass('/client/food-service/orders')}>Đơn hàng</Link>
         </nav>
+
 
         <div className="flex items-center space-x-4">
           <ClientLink 

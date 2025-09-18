@@ -23,14 +23,14 @@ const RestaurantList: React.FC<RestaurantListProps> = ({ restaurants }) => {
     ">
       {restaurants.map((restaurant) => (
         <Link
-          key={restaurant.restaurant_id}
-          href={`/client/food-service/restaurants/${restaurant.restaurant_id}`}
+          key={restaurant.id}
+          href={`/client/food-service/restaurants/${restaurant.id}`}
           className="block rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow bg-white"
         >
           <div className="relative w-full h-48">
             <Image
               src={restaurant.image_url || ''}
-              alt={restaurant.restaurant_name}
+              alt={restaurant.name}
               fill
               className="object-cover"
             />
@@ -38,7 +38,7 @@ const RestaurantList: React.FC<RestaurantListProps> = ({ restaurants }) => {
 
           <div className="p-4">
             <h3 className="text-xl font-semibold mb-1">
-              {restaurant.restaurant_name}
+              {restaurant.name}
             </h3>
 
             <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">

@@ -4,9 +4,15 @@ import React, { useEffect, useState } from 'react';
 import { FaBox, FaSpinner } from 'react-icons/fa';
 import dayjs from 'dayjs';
 
+// note: fix lại interface (do trước đó ở lần push này đã phải fix lại database)
 interface Order {
-  order_id: number;
-  restaurant_id: number;
+  id: number;
+  order_code: string;
+
+  //restaurant_id: number;
+  restaurant_name: string;
+  restaurant_image?: string;
+
   user_name: string;
   user_phone: string;
   delivery_address: string;
@@ -44,9 +50,11 @@ export default function OrdersPage() {
         const data = await res.json();
 
         if (data?.success && Array.isArray(data.data)) {
+          console.log(data.data);
           setOrders(data.data);
         } else {
           console.error('Lỗi khi lấy dữ liệu đơn hàng:', data);
+          
         }
       } catch (error) {
         console.error('Lỗi lấy đơn hàng:', error);
@@ -66,65 +74,133 @@ export default function OrdersPage() {
     );
   }
 
-  // 🔥 Lọc đơn hàng đang pending
-  const pendingOrders = orders.filter((o) => o.order_status === 'pending');
+  // status đơn hàng
+  // tạm thời sẽ có trạng thái processing cho order và paid cho payment là chính.
+  const getOrderStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'processing':
+        return 'bg-blue-100 text-blue-700';
+      case 'completed':
+        return 'bg-green-100 text-green-700';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-orange-100 text-orange-700';
+      case 'paid':
+        return 'bg-green-100 text-green-700';
+      case 'refunded':
+        return 'bg-purple-100 text-purple-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  // dịch status sang tiếng việt
+  const orderStatusTranslator = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Đang chờ xử lý';
+      case 'processing':
+        return 'Đang xử lý';
+      case 'completed':
+        return 'Hoàn thành';
+      case 'cancelled':
+        return 'Đã hủy';
+      default:
+        return status;
+    }
+  }
+
+  const paymentStatusTranslator = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Đang chờ xử lý';
+      case 'paid':
+        return 'Đã thanh toán';
+      case 'refunded':
+        return 'Đã hoàn tiền';
+      default:
+        return status;
+    }
+  }
 
   return (
-    <div className="container mx-auto px-4 py-6 mt-20">
-      <h1 className="text-2xl font-bold mb-6">Các đơn hàng đã bán</h1>
+    <div className="container mx-auto px-16 py-6 mt-20">
+      <h1 className="text-2xl font-bold mb-6">Lịch sử đặt hàng</h1>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-          <FaBox className="text-orange-500" /> Đơn hàng đang chờ xử lý
-        </h2>
-        {pendingOrders.length === 0 ? (
-          <p className="text-gray-500">Không có đơn hàng nào.</p>
-        ) : (
-          <div className="grid gap-4">
-            {pendingOrders.map((order) => (
-              <div
-                key={order.order_id}
-                className="border rounded-xl shadow p-4 bg-white position-relative"
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-lg font-bold">
-                    Nhà hàng #{order.restaurant_id}
-                  </h3>
-                  <span className="px-2 py-1 text-sm bg-orange-100 text-orange-700 rounded-md">
-                    {order.order_status === 'pending'
-                      ? 'Đang chờ xử lý'
-                      : order.order_status}
-                  </span>
+      {orders.length === 0 ? (
+        <p className="text-gray-500">Chưa có đơn hàng nào.</p>
+      ) : (
+        <div className="grid gap-4">
+          {orders.map((order) => (
+            <div
+              key={order.id}
+              className="border rounded-xl shadow p-4 bg-white flex flex-col md:flex-row gap-4"
+            >
+              {/* Ảnh nhà hàng */}
+              <img
+                src={order.restaurant_image || '/images/placeholder.png'}
+                alt={order.restaurant_name}
+                className="w-full md:w-40 h-40 object-cover rounded-xl border"
+              />
+
+              {/* Nội dung */}
+              <div className="flex-1 flex flex-col">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-xl font-bold uppercase">{order.restaurant_name}</h3>
+                  <div className="flex gap-2">
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${getOrderStatusColor(
+                        order.order_status
+                      )}`}
+                    >
+                      {orderStatusTranslator(order.order_status)}
+                    </span>
+                    <span
+                      className={`px-2 py-1 text-xs font-semibold rounded-full ${getPaymentStatusColor(
+                        order.payment_status
+                      )}`}
+                    >
+                      {paymentStatusTranslator(order.payment_status)}
+                    </span>
+                  </div>
                 </div>
 
-                {/* <p className="text-gray-700 mb-2">
-                  <span className="font-semibold">Khách:</span> {order.user_name} ({order.user_phone})
-                </p> */}
-                <p className="text-gray-700 mb-2">
+                {/* Địa chỉ */}
+                <p className="text-gray-700 mb-1">
                   <span className="font-semibold">Địa chỉ:</span> {order.delivery_address}
                 </p>
-                {order.notes && (
-                  <p className="text-gray-700 mb-2">
-                    <span className="font-semibold">Ghi chú:</span> {order.notes}
-                  </p>
-                )}
 
-                <div className="flex items-center gap-3">
-                  <p className='font-semibold text-gray-700'>Thời gian đặt hàng: </p>
-                  
-                  <span className='text-gray-600'>
-                    {dayjs(order.created_at).format('DD/MM/YYYY, HH:mm:ss')}
-                  </span>
-                </div>
+                {/* Ghi chú */}
+                <p className="text-gray-700 mb-1">
+                  <span className="font-semibold">Ghi chú:</span>{' '}
+                  {order.notes?.trim() ? order.notes : 'Không có'}
+                </p>
 
-                <div className='font-semibold position-absolute text-lg mt-4 text-orange-600 right-0'>
-                  Tổng: {parseFloat(order.total_amount).toLocaleString()}₫  
+                {/* Thời gian */}
+                <p className="text-gray-700 text-sm">
+                  <span className="font-semibold">Thời gian đặt hàng:</span>{' '}
+                  {dayjs(order.created_at).format('DD/MM/YYYY, HH:mm:ss')}
+                </p>
+
+                {/* Tổng tiền */}
+                <div className="font-semibold text-lg mt-3 text-orange-600 text-right">
+                  Tổng: {parseFloat(order.total_amount).toLocaleString()}₫
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

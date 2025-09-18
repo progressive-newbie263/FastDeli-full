@@ -8,7 +8,7 @@ class Restaurant {
              COALESCE(AVG(rev.rating), 0) as avg_rating,
              COUNT(rev.review_id) as review_count
       FROM restaurants r
-      LEFT JOIN reviews rev ON r.restaurant_id = rev.restaurant_id
+      LEFT JOIN reviews rev ON r.id = rev.restaurant_id
       WHERE r.is_active = true
     `;
     
@@ -16,7 +16,7 @@ class Restaurant {
     let paramIndex = 1;
 
     if (filters.search) {
-      query += ` AND r.restaurant_name ILIKE $${paramIndex}`;
+      query += ` AND r.name ILIKE $${paramIndex}`;
       params.push(`%${filters.search}%`);
       paramIndex++;
     }
@@ -27,7 +27,7 @@ class Restaurant {
       paramIndex++;
     }
 
-    query += ` GROUP BY r.restaurant_id ORDER BY r.created_at DESC`;
+    query += ` GROUP BY r.id ORDER BY r.created_at DESC`;
 
     if (filters.limit) {
       query += ` LIMIT $${paramIndex}`;
@@ -45,8 +45,8 @@ class Restaurant {
   static async getRestaurantById(id) {
     const query = `
       SELECT 
-        restaurant_id,
-        restaurant_name,
+        id,
+        name,
         address,
         phone,
         image_url,
@@ -55,7 +55,7 @@ class Restaurant {
         rating,
         total_reviews
       FROM restaurants
-      WHERE restaurant_id = $1 AND is_active = true
+      WHERE id = $1 AND is_active = true
     `;
 
     try {
@@ -92,7 +92,7 @@ class Restaurant {
         FROM foods f
         LEFT JOIN food_categories fc1 ON f.primary_category_id = fc1.category_id
         LEFT JOIN food_categories fc2 ON f.secondary_category_id = fc2.category_id
-        JOIN restaurants r ON f.restaurant_id = r.restaurant_id
+        JOIN restaurants r ON f.restaurant_id = r.id
         WHERE f.restaurant_id = $1 AND f.is_available = true AND r.is_active = true
       `;
 
@@ -174,20 +174,20 @@ class Restaurant {
   // api dùng cho 'nhà hàng' đăng kí làm dịch vụ
   static async create(restaurantData) {
     const {
-      restaurant_name, address, phone, image_url, description,
+      name, address, phone, image_url, description,
       delivery_time, min_order_amount, delivery_fee
     } = restaurantData;
 
     const query = `
       INSERT INTO restaurants (
-        restaurant_name, address, phone, image_url, description,
+        name, address, phone, image_url, description,
         delivery_time, min_order_amount, delivery_fee
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
 
     const values = [
-      restaurant_name, address, phone, image_url, description,
+      name, address, phone, image_url, description,
       delivery_time, min_order_amount, delivery_fee
     ];
 
@@ -207,7 +207,7 @@ class Restaurant {
     const query = `
       UPDATE restaurants 
       SET ${setClause}, updated_at = CURRENT_TIMESTAMP
-      WHERE restaurant_id = $1
+      WHERE id = $1
       RETURNING *
     `;
 

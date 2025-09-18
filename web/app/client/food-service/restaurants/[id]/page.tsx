@@ -174,7 +174,7 @@ export default function RestaurantDetailPage() {
         <div className="relative w-[250px] h-[200px]">
           <Image
             src={restaurant.image_url || 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSTBkR4TrQ2yBGV92K1tLf85d2o0-wWuxSAMg&s'}
-            alt={restaurant.restaurant_name}
+            alt={restaurant.name}
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover rounded-xl"
@@ -182,7 +182,7 @@ export default function RestaurantDetailPage() {
         </div>
 
         <div className="flex flex-col justify-between h-[200px]">
-          <h1 className="text-4xl font-bold">{restaurant.restaurant_name}</h1>
+          <h1 className="text-4xl font-bold">{restaurant.name}</h1>
           
           <p className="text-gray-600">{restaurant.description}</p>
           

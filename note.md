@@ -69,3 +69,33 @@ toán QR vào
 -> Với "order id" thì tạo nó dựa theo "thời gian đặt hàng". Vì thời gian ấy là 1 thuộc tính độc nhất.
 Tuy nhiên, vẫn có thể hi hữu xảy ra trường hợp kiểu này: thời gian trong console.log tính theo ms, nhưng
 2 user có thể dính chung 1 thời gian nào đó
+
+
+-----------------------------------------------------------------------------
+GITPUSH, 18-9-2025:
+-----------------------------------------------------------------------------
+Đây là 1 BIG UPDATE. Sửa lại 1 số tính năng + hiển thị các đơn hàng
+Chỉnh sửa khá nhiều trong csdl
+Sửa lại 1 chút trong bảng 'restaurants' trong database, khi mà thay 2 thuộc tính restaurant_id và restaurant_name thành 'id' và 'name'
+Sẽ thực thi đoạn ở dưới:
+
+ALTER TABLE restaurants
+RENAME COLUMN restaurant_id TO id;
+
+
+ALTER TABLE restaurants
+RENAME COLUMN restaurant_name TO name;
+
+ALTER TABLE foods DROP CONSTRAINT foods_restaurant_id_fkey;
+ALTER TABLE orders DROP CONSTRAINT orders_restaurant_id_fkey;
+
+ALTER TABLE foods
+ADD CONSTRAINT foods_restaurant_id_fkey
+FOREIGN KEY (restaurant_id) REFERENCES restaurants(id);
+
+ALTER TABLE orders
+ADD CONSTRAINT orders_restaurant_id_fkey
+FOREIGN KEY (restaurant_id) REFERENCES restaurants(id);
+
+
+

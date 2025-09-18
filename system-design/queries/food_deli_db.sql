@@ -7,8 +7,8 @@ CREATE DATABASE db-food-deli;
 
 -- RESTAURANTS
 CREATE TABLE restaurants (
-  restaurant_id SERIAL PRIMARY KEY,
-  restaurant_name VARCHAR(150) NOT NULL,
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
   address VARCHAR(255) NOT NULL,
   phone VARCHAR(15),
   image_url TEXT,
@@ -39,7 +39,7 @@ CREATE TABLE food_categories (
 -- FOODS
 CREATE TABLE foods (
   food_id SERIAL PRIMARY KEY,
-  restaurant_id INTEGER NOT NULL REFERENCES restaurants(restaurant_id),
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
   food_name VARCHAR(150) NOT NULL,
   description TEXT DEFAULT 'Chưa có mô tả về món ăn này',
   price DECIMAL(10, 2) NOT NULL,
@@ -81,15 +81,21 @@ VALUES
 
 -- ORDERS
 CREATE TABLE orders (
-  order_id SERIAL PRIMARY KEY,
-  user_id INTEGER NOT NULL, -- Tham chiếu tới shared_db.users
-  restaurant_id INTEGER NOT NULL REFERENCES restaurants(restaurant_id),
+  id SERIAL PRIMARY KEY,
+  order_code VARCHAR(20) UNIQUE,  -- Mã đơn hàng công khai (ORD20250916-000001)
+  user_id INTEGER NOT NULL,  -- Tham chiếu tới users ở DB khác
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
+  
   user_name VARCHAR(100) NOT NULL,
   user_phone VARCHAR(15) NOT NULL,
   delivery_address TEXT NOT NULL,
   total_amount DECIMAL(12, 2) NOT NULL,
-  order_status VARCHAR(30) DEFAULT 'pending', -- pending, confirmed, preparing, delivering, completed, cancelled
+  delivery_fee DECIMAL(10, 2) DEFAULT 0,
+  
+  order_status VARCHAR(30) DEFAULT 'pending',   -- dự kiến?: pending, confirmed, preparing, delivering, completed, cancelled
+  payment_status VARCHAR(30) DEFAULT 'pending', -- dự kiến?: pending, paid, refunded
   notes TEXT,
+  
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -114,7 +120,7 @@ CREATE TABLE reviews (
   review_id SERIAL PRIMARY KEY,
   order_id INTEGER NOT NULL REFERENCES orders(order_id),
   user_id INTEGER NOT NULL,
-  restaurant_id INTEGER NOT NULL REFERENCES restaurants(restaurant_id),
+  restaurant_id INTEGER NOT NULL REFERENCES restaurants(id),
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comment TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -169,7 +175,7 @@ INSERT INTO food_categories (category_name) VALUES
 -- Nhà hàng mẫu
 -- cần xử lí phần này chuẩn chỉ.
 INSERT INTO restaurants (
-  restaurant_name,
+  name,
   address,
   phone,
   image_url,
@@ -225,7 +231,7 @@ WHERE category_name = 'Khác';
 
 ------------------------ 7/7/2025 -----------------------------------------------
 INSERT INTO restaurants (
-  restaurant_name,
+  name,
   address,
   phone,
   description,
@@ -255,3 +261,20 @@ ADD COLUMN payment_status VARCHAR(30) DEFAULT 'pending';
 
 ALTER TABLE orders
 ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP;
+
+
+
+--------- 17/9/2025 ------------
+---- trigger tự động tạo order_code (mã order)
+CREATE OR REPLACE FUNCTION generate_order_code()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.order_code := 'ORD' || TO_CHAR(NOW(), 'YYYYMMDD') || '-' || LPAD(NEW.id::text, 6, '0');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_generate_order_code
+AFTER INSERT ON orders
+FOR EACH ROW
+EXECUTE FUNCTION generate_order_code();

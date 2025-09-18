@@ -1,13 +1,12 @@
 const { foodPool } = require('../config/db');
 
 class Order {
-  // Tạo đơn hàng
+  // 🆕 Tạo đơn hàng
   static async createOrder(orderData, items) {
     const client = await foodPool.connect();
     try {
       await client.query('BEGIN');
 
-      // total_amount sẽ xử lí phía dưới
       const {
         user_id,
         restaurant_id,
@@ -18,7 +17,7 @@ class Order {
         delivery_fee = 0
       } = orderData;
 
-      // Tổng tiền từ items
+      // Tính tổng tiền từ items
       let total_items_amount = 0;
       for (const item of items) {
         total_items_amount += Number(item.food_price) * Number(item.quantity);
@@ -26,15 +25,18 @@ class Order {
 
       const total_amount = total_items_amount + Number(delivery_fee);
 
-      // Thêm bản ghi order
+      // Thêm bản ghi order (id được tạo tự động)
       const orderInsertQuery = `
         INSERT INTO orders (
-          user_id, restaurant_id, user_name, user_phone, delivery_address, notes, delivery_fee, total_amount,
+          user_id, restaurant_id, user_name, user_phone,
+          delivery_address, notes, delivery_fee, total_amount,
           order_status, payment_status, created_at, updated_at
-        ) VALUES (
+        )
+        VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8,
           'pending', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-        ) RETURNING *
+        )
+        RETURNING *
       `;
 
       const orderResult = await client.query(orderInsertQuery, [
@@ -60,7 +62,7 @@ class Order {
       for (const item of items) {
         const { food_id, food_name, food_price, quantity } = item;
         await client.query(insertItemQuery, [
-          order.order_id,
+          order.id, // dùng id mới
           food_id,
           food_name,
           food_price,
@@ -69,7 +71,7 @@ class Order {
       }
 
       await client.query('COMMIT');
-      return order;
+      return order; // trả về cả id & order_code để frontend hiển thị
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
@@ -78,46 +80,55 @@ class Order {
     }
   }
 
-  // Lấy đơn hàng theo user_id
+
+  // Lấy danh sách đơn theo user_id
   static async getOrdersByUserId(userId) {
     const client = await foodPool.connect();
+
     try {
       const query = `
         SELECT 
-          order_id,
-          user_id,
-          restaurant_id,
-          user_name,
-          user_phone,
-          delivery_address,
-          total_amount,
-          order_status,
-          notes,
-          created_at,
-          updated_at,
-          delivery_fee,
-          payment_status
-        FROM orders
-        WHERE user_id = $1
-        ORDER BY created_at DESC
+          o.id,
+          o.order_code,
+          o.user_id,
+          o.restaurant_id,
+          r.name AS restaurant_name,
+          r.image_url AS restaurant_image,
+          o.user_name,
+          o.user_phone,
+          o.delivery_address,
+          o.total_amount,
+          o.delivery_fee,
+          o.order_status,
+          o.payment_status,
+          o.notes,
+          o.created_at,
+          o.updated_at
+        FROM orders o
+        LEFT JOIN restaurants r ON o.restaurant_id = r.id
+        WHERE o.user_id = $1
+        ORDER BY o.created_at DESC
       `;
 
       const { rows } = await client.query(query, [userId]);
       return rows;
-    } catch (error) {
-      throw error;
+    } catch (err) {
+      console.error("[getOrdersByUserId] lỗi khi lấy danh sách đơn hàng:", err);
+      throw err;
     } finally {
       client.release();
     }
-  }
+  };
 
-  // Lấy chi tiết đơn hàng theo order_id
-  static async getOrderById(orderId) {
+
+  // Lấy chi tiết đơn hàng theo id (hoặc order_code)
+  static async getOrderById(orderIdOrCode) {
     const client = await foodPool.connect();
     try {
+      // Cho phép tìm theo id hoặc order_code
       const orderRes = await client.query(
-        `SELECT * FROM orders WHERE order_id = $1`,
-        [orderId]
+        `SELECT * FROM orders WHERE id = $1 OR order_code = $1 LIMIT 1`,
+        [orderIdOrCode]
       );
 
       if (orderRes.rows.length === 0) return null;
@@ -128,10 +139,9 @@ class Order {
          FROM order_items
          WHERE order_id = $1
          ORDER BY order_item_id`,
-        [orderId]
+        [order.id]
       );
 
-      // Tính subtotal động
       order.items = itemsRes.rows.map((item) => ({
         ...item,
         subtotal: Number(item.food_price) * Number(item.quantity)
@@ -145,33 +155,43 @@ class Order {
     }
   }
 
-  // Cập nhật trạng thái thanh toán
-  static async updatePaymentStatus(orderId, paymentStatus = 'paid', orderStatus = null) {
+  
+  static async updatePaymentStatus(orderIdOrCode, paymentStatus = 'paid', orderStatus = null) {
     const client = await foodPool.connect();
     try {
+      let query;
+      let values;
+
       if (orderStatus) {
-        const q = `
+        query = `
           UPDATE orders
-          SET payment_status = $1, order_status = $2, updated_at = CURRENT_TIMESTAMP
-          WHERE order_id = $3 RETURNING *
+          SET payment_status = $1,
+              order_status = $2,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = $3 OR order_code = $3::text
+          RETURNING *
         `;
-        const res = await client.query(q, [paymentStatus, orderStatus, orderId]);
-        return res.rows[0];
+        values = [paymentStatus, orderStatus, orderIdOrCode];
       } else {
-        const q = `
+        query = `
           UPDATE orders
-          SET payment_status = $1, updated_at = CURRENT_TIMESTAMP
-          WHERE order_id = $2 RETURNING *
+          SET payment_status = $1,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = $2 OR order_code = $2::text
+          RETURNING *
         `;
-        const res = await client.query(q, [paymentStatus, orderId]);
-        return res.rows[0];
+        values = [paymentStatus, orderIdOrCode];
       }
+
+      const res = await client.query(query, values);
+      return res.rows[0];
     } catch (err) {
       throw err;
     } finally {
       client.release();
     }
   }
+
 }
 
 module.exports = Order;

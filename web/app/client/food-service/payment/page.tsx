@@ -25,11 +25,12 @@ const PaymentPage = () => {
   const restaurantIdFromQuery = searchParams.get("restaurantId");
 
   const [timeLeft, setTimeLeft] = useState(600);
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "success" | "processing">("pending");
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "paid" | "refunded">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
   const [payload, setPayload] = useState<any>(null);
+  const [orderCode, setOrderCode] = useState<string | null>(null);
 
   // Lấy dữ liệu order từ sessionStorage hoặc localStorage
   useEffect(() => {
@@ -45,12 +46,8 @@ const PaymentPage = () => {
       const userData = JSON.parse(localStorage.getItem("userData") || "{}");
       const cart = JSON.parse(localStorage.getItem("cart") || "{}");
       const restaurantId = restaurantIdFromQuery || Object.keys(cart)[0] || "0";
-
       const cartItems = cart[restaurantId] || [];
 
-
-      // note: ko dùng subtotal trong database, nhưng có thể ghi tạm nó như thế này
-      // cho dễ tính toán đơn giá
       const items = cartItems.map((item: any) => ({
         food_id: item.food_id,
         food_name: item.food_name || "",
@@ -68,7 +65,7 @@ const PaymentPage = () => {
           delivery_address: userData.address || "Chưa có địa chỉ",
           notes: "",
           delivery_fee: 15000,
-          total_amount: items.reduce((sum: number, i: {subtotal: number}) => sum + i.subtotal, 0),
+          total_amount: items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0),
         },
         items,
       };
@@ -117,6 +114,7 @@ const PaymentPage = () => {
       setIsProcessing(true);
       setShowToast(true);
 
+      // 1️⃣ POST tạo đơn
       const res = await fetch("http://localhost:5001/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -126,29 +124,45 @@ const PaymentPage = () => {
       if (!res.ok) throw new Error("Tạo đơn hàng thất bại");
 
       const data = await res.json();
-      console.log("✅ Đơn hàng đã tạo:", data);
+      const orderId = data?.data?.id;
+      const code = data?.data?.order_code;
+      setOrderCode(code || null);
 
-      // 🧹 XÓA CART CỦA NHÀ HÀNG ĐÃ ĐẶT
+      if (orderId) {
+        // 2️⃣ PATCH update trạng thái
+        const patchRes = await fetch(`http://localhost:5001/api/orders/${orderId}/payment`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            payment_status: "paid",
+            order_status: "processing",
+          }),
+        });
+
+        if (!patchRes.ok) {
+          console.error("❌ PATCH thất bại:", await patchRes.text());
+        } else {
+          console.log(`✅ Đã cập nhật đơn ${code || orderId} thành paid/processing`);
+        }
+      }
+
+      // 3️⃣ Xoá cart trong localStorage
       try {
         const cart = JSON.parse(localStorage.getItem("cart") || "{}");
         const restaurantId = payload.orderData.restaurant_id;
         if (restaurantId && cart[restaurantId]) {
           delete cart[restaurantId];
           localStorage.setItem("cart", JSON.stringify(cart));
-
-          // BẮN SỰ KIỆN để các component khác cập nhật UI
           window.dispatchEvent(new Event("cart-updated"));
         }
       } catch (err) {
         console.error("❌ Lỗi khi xóa cart:", err);
       }
 
-      // Cập nhật trạng thái UI ngay
-      setPaymentStatus("success");
+      setPaymentStatus("paid");
       setIsProcessing(false);
       setTimeLeft(0);
 
-      // Điều hướng sang /orders sau 1.5s
       setTimeout(() => {
         router.push("/client/food-service/orders");
       }, 1500);
@@ -187,7 +201,9 @@ const PaymentPage = () => {
               <div className="relative z-10 text-center">
                 <FaQrcode className="w-16 h-16 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500 font-medium">QR Payment</p>
-                <p className="text-xs text-gray-400">#{orderIdFromQuery || "NEW"}</p>
+                <p className="text-xs text-gray-400">
+                  #{orderCode || orderIdFromQuery || "NEW"}
+                </p>
               </div>
             </div>
 
@@ -236,14 +252,15 @@ const PaymentPage = () => {
                   ${
                     paymentStatus === "pending"
                       ? "bg-yellow-100 text-yellow-700"
-                      : paymentStatus === "success"
+                      : paymentStatus === "paid"
                       ? "bg-green-100 text-green-700"
                       : "bg-blue-100 text-blue-700"
-                  }`}
+                  }
+                  `}
                 >
                   {paymentStatus === "pending"
                     ? "Chờ thanh toán"
-                    : paymentStatus === "success"
+                    : paymentStatus === "paid"
                     ? "Thanh toán thành công"
                     : "Đang xử lý..."}
                 </span>
