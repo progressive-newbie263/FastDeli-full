@@ -192,6 +192,58 @@ class Order {
     }
   }
 
+  static async cancelOrder(orderId) {
+    const client = await foodPool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const res = await client.query(
+        `SELECT id, order_status, created_at, payment_status 
+        FROM orders 
+        WHERE id = $1 LIMIT 1`,
+        [orderId]
+      );
+
+      if (res.rows.length === 0) {
+        throw new Error('NOT_FOUND');
+      }
+
+      const order = res.rows[0];
+
+      // Nếu đã cancel hoặc completed => không hủy nữa
+      if (order.order_status === 'cancelled' || order.order_status === 'completed') {
+        throw new Error('ALREADY_PROCESSED');
+      }
+
+      // Kiểm tra giới hạn 5 phút
+      const diffMinutes = (Date.now() - new Date(order.created_at).getTime()) / 60000;
+      if (diffMinutes > 5) {
+        throw new Error('EXPIRED');
+      }
+
+      // Cập nhật trạng thái order + payment_status
+      const updateQuery = `
+        UPDATE orders
+        SET order_status = 'cancelled',
+            payment_status = CASE 
+              WHEN payment_status = 'paid' THEN 'refunded'
+              ELSE payment_status
+            END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1
+        RETURNING *;
+      `;
+
+      const updateRes = await client.query(updateQuery, [orderId]);
+      await client.query('COMMIT');
+      return updateRes.rows[0];
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = Order;

@@ -15,4 +15,7 @@ router.get('/:id', OrderController.getOrderById);
 // PATCH: Cập nhật trạng thái thanh toán
 router.patch('/:id/payment', OrderController.updatePaymentStatus);
 
+// PATCH: hủy đơn hàng.
+router.patch('/:id/cancel', OrderController.cancelOrder);
+
 module.exports = router;

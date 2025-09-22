@@ -76,6 +76,29 @@ class OrderController {
       return errorResponse(res, 'Lỗi khi cập nhật trạng thái thanh toán', error);
     }
   }
+
+  // hủy đơn hàng/cancel order
+  static async cancelOrder(req, res) {
+    try {
+      const updated = await Order.cancelOrder(req.params.id);
+
+      if (!updated) {
+        return errorResponse(res, 'Không tìm thấy đơn hàng', null, 404);
+      }
+
+      return successResponse(res, 'Hủy đơn hàng thành công', updated);
+    } catch (err) {
+      if (err.message === 'NOT_FOUND')
+        return errorResponse(res, 'Không tìm thấy đơn hàng', null, 404);
+      if (err.message === 'ALREADY_PROCESSED')
+        return errorResponse(res, 'Đơn hàng đã được xử lý/hủy', null, 400);
+      if (err.message === 'EXPIRED')
+        return errorResponse(res, 'Đơn hàng đã quá thời gian hủy', null, 400);
+
+      console.error('[cancelOrder] Lỗi:', err);
+      return errorResponse(res, 'Lỗi server khi hủy đơn hàng', err);
+    }
+  }
 }
 
 module.exports = OrderController;
