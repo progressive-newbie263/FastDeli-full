@@ -35,11 +35,14 @@ const Profile = () => {
 
   const loadUserProfile = async () => {
     try {
-      // token từ local storage, chưa đăng nhập (chưa có token) thì tự cút về route login
+      // token từ local storage
+      // chưa đăng nhập (chưa có token) thì trả về trang chủ.
       const token = localStorage.getItem('token');
       if (!token) {
-        console.log('No token found, redirecting to login');
-        router.push('/client/food-service/auth/login');
+        console.log('No token found, redirecting to home page');
+        //router.push('/client/food-service/auth/login');
+        localStorage.setItem("toastMessage", "Vui lòng đăng nhập để sử dụng tính năng này");
+        router.push('/client/food-service');
         return;
       }
 
@@ -97,6 +100,8 @@ const Profile = () => {
         console.log('Token expired or invalid, clearing auth data');
         localStorage.removeItem('token');
         localStorage.removeItem('userData');
+
+        localStorage.setItem("toastMessage", "Vui lòng đăng nhập để sử dụng tính năng này");
 
         router.push('/client/food-service/auth/login');
       } else {

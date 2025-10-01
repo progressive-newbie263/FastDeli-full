@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authAPI } from '@food/utils/api';
 import { formatErrorMessage } from '@client/food-service/utils/helpers';
+import { toast } from "react-toastify";
 
 interface User {
   id: string;
@@ -47,6 +48,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+
+  // function hiển thị toast báo lỗi
+  const showErrorToast = (msg: string) => {
+    toast.error(msg, {
+      position: "top-center",
+      autoClose: 2500,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+    });
+  };
 
   // Initialize token from localStorage
   useEffect(() => {
@@ -110,6 +124,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error) {
       const errorMessage = formatErrorMessage(error);
       setError(errorMessage);
+      showErrorToast(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -136,6 +151,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     } catch (error) {
       const errorMessage = formatErrorMessage(error);
       setError(errorMessage);
+      showErrorToast(errorMessage);
       return { success: false, error: errorMessage };
     } finally {
       setLoading(false);
@@ -152,6 +168,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setToken(null);
     setCurrentUser(null);
     setError(null);
+
+    if (typeof window !== 'undefined') { 
+      window.location.reload();
+    }
   };
 
   // Check if user is authenticated

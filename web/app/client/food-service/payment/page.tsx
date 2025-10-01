@@ -139,11 +139,11 @@ const PaymentPage = () => {
           }),
         });
 
-        if (!patchRes.ok) {
-          console.error("❌ PATCH thất bại:", await patchRes.text());
-        } else {
-          console.log(`✅ Đã cập nhật đơn ${code || orderId} thành paid/processing`);
-        }
+        // if (!patchRes.ok) {
+        //   console.error("❌ PATCH thất bại:", await patchRes.text());
+        // } else {
+        //   console.log(`✅ Đã cập nhật đơn ${code || orderId} thành paid/processing`);
+        // }
       }
 
       // 3️⃣ Xoá cart trong localStorage

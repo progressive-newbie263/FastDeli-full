@@ -99,3 +99,29 @@ FOREIGN KEY (restaurant_id) REFERENCES restaurants(id);
 
 
 
+-----------------------------------------------------------------------------
+GITPUSH, 23-9-2025:
+-----------------------------------------------------------------------------
++ trước đó database bị lỗi 1 vài index nên cần phải viết lại 1 số index (idx_...)
+Nó giúp cải thiện rất nhanh chóng tốc độ reload trang (f5)
+Ở lần đầu, nó mất tầm 10-12s do 'postgre warmup'. Những lần f5 sau đó thì còn 0.5s, hoàn toàn ổn áp.
+cải thiện 1 chút code, khi sửa lại router /orders, với việc làm page.tsx như 1 client layout bọc file trước đó
+thay vì viết nguyên code trong page.tsx như trước đó. 
+
++ Viết thêm 1 hàm rerender state của nút hủy (sau 5p tự động rerender nút từ active sang inactive).
+
++ file food_deli_db trước đó sẽ đổi sang food_deli_deb_prefixed (do nhiều lần fetch và chỉnh sửa đã làm nó loạn vcl).
+file food_deli_db mới sẽ là 1 bản gọn gàng, tinh giản, đảm bảo các index ko bị lỗi. Cải thiện tốc độ reload f5 web.
+
+
+-----------------------------------------------------------------------------
+------------------------------GITPUSH, 2-10-2025-----------------------------
+
++ trước hết, trong mỗi orders sẽ có thể áp dụng 1 mã khuyến mãi (nếu có). Giới hạn hiện tại là 1 đơn chỉ áp dụng 1 mã.
++ ý tưởng sẽ là: Ở giao diện thanh toán (payment page). Sẽ cho phép người dùng chọn giữa các phương thức promotions.
++ Sẽ đan xen giữa : promotions từ chính Grabfood (nên để nó phèn phèn tí, mặc định phải có) để nếu nhà hàng có ưu đãi thì
+ăn ưu đãi từ nhà hàng. Nếu ko có ưu đãi thì để cái ưu đãi phèn này gánh 1 tí tiền 
++ Có lẽ trước hết chỉ nên làm 1 phương thức thanh toán ảo. Tương đối khó làm 2 cái qr với momo, vì kể cả có chuyển xèng thành công thì nó vẫn là liên quan đến tiền thật, việc thật.
++ Bản vá thử nghiệm (mini patch)
++ Hiển thị các promotions ra bên người dùng.
++ Có thể rollback lại sau cái push hôm 23/9/2025 nếu bị lỗi. Bản vá nhỏ, ko cần lo quá

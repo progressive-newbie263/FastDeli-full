@@ -19,7 +19,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 
 const CheckoutPage = () => {
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [userInfos, setUserInfos] = useState({
     id: "",
     name: "",
@@ -56,7 +56,7 @@ const CheckoutPage = () => {
           if (!resFoods.success || !resInfo.success) continue;
 
           const foods: Food[] = resFoods.data;
-          const restaurantName = resInfo.data.restaurant_name;
+          const restaurantName = resInfo.data.name;
           const restaurantImage = resInfo.data.image_url || "https://via.placeholder.com/64";
           const storedItems = parsedCart[restaurantId];
           const items: CartItem[] = [];
@@ -331,47 +331,57 @@ const CheckoutPage = () => {
                   <input
                     type="radio"
                     name="payment"
+                    value="card"
+                    checked={paymentMethod === 'card'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-4 h-4 text-green-600 cursor-pointer"
+                  />
+
+                  <FaCreditCard className="w-5 h-5 text-gray-600" />
+                  
+                  <div className="flex-1">
+                    <span className="font-medium">Thẻ tín dụng/ghi nợ</span>
+                    <p className="text-sm text-gray-600">Visa, Mastercard, JCB</p>
+                  </div>
+                </label>
+
+
+                <label className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-green-300 transition-colors">
+                  <input
+                    type="radio"
+                    name="payment"
                     value="cash"
                     checked={paymentMethod === 'cash'}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-4 h-4 text-green-600"
+                    className="w-4 h-4 text-green-600 cursor-pointer"
                   />
+
                   <FaWallet className="w-5 h-5 text-gray-600" />
+                  
                   <div className="flex-1">
                     <span className="font-medium">Tiền mặt</span>
                     <p className="text-sm text-gray-600">Thanh toán khi nhận hàng</p>
                   </div>
                 </label>
                 
-                <label className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-green-300 transition-colors">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="card"
-                    checked={paymentMethod === 'card'}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-4 h-4 text-green-600"
-                  />
-                  <FaCreditCard className="w-5 h-5 text-gray-600" />
-                  <div className="flex-1">
-                    <span className="font-medium">Thẻ tín dụng/ghi nợ</span>
-                    <p className="text-sm text-gray-600">Visa, Mastercard, JCB</p>
-                  </div>
-                </label>
                 
-                <label className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-green-300 transition-colors">
+                <label className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg hover:border-red-300 transition-colors cursor-not-allowed">
                   <input
                     type="radio"
                     name="payment"
                     value="momo"
                     checked={paymentMethod === 'momo'}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-4 h-4 text-green-600"
+                    className="w-4 h-4 text-green-600 cursor-not-allowed"
+                    disabled={true}
                   />
+
                   <div className="w-5 h-5 bg-pink-500 rounded flex items-center justify-center text-white text-xs font-bold">M</div>
+                  
                   <div className="flex-1">
                     <span className="font-medium">Ví MoMo</span>
-                    <p className="text-sm text-gray-600">Thanh toán qua ví điện tử</p>
+                    {/* <p className="text-sm text-gray-600">Thanh toán qua ví điện tử</p> */}
+                    <p className="text-sm italic text-red-600">Tính năng đang được phát triển, quý khách vui lòng thử lại sau.</p>
                   </div>
                 </label>
               </div>

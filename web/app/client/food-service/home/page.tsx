@@ -22,27 +22,39 @@ interface UserData {
 }
 
 const Home = () => {
-  // State management
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserData>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentAddress, setCurrentAddress] = useState<string>('');
 
-  // 4 state này (antispam) giảm thiểu việc render lại không cần thiết hoặc spam đi spam lại 1 tính năng nào đó (VD: lấy vị trí)
   const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(false);
-  const isPermissionToastShowing = useRef<boolean>(false);   // Thêm ref để theo dõi toast permission
+  const isPermissionToastShowing = useRef<boolean>(false);
 
-  // 3 refs để quản lý trạng thái và tránh render lại không cần thiết
   const hasRequestedLocation = useRef<boolean>(false);
   const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // 🔥 Hiển thị toast thông báo redirect từ trang khác
+  useEffect(() => {
+    const message = localStorage.getItem("toastMessage");
+    if (message) {
+      toast.info(message, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+      });
+      localStorage.removeItem("toastMessage");
+    }
+  }, []);
 
   useEffect(() => {
     setIsMounted(true);
-    // ktra status (đăng nhập/ đăng xuất)
     const token = localStorage.getItem('token');
     const userDataStr = localStorage.getItem('userData');
     
@@ -64,26 +76,16 @@ const Home = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  // dọn dẹp/ làm gọn webapp
   useEffect(() => {
     return () => {
-      if (locationTimeoutRef.current) {
-        clearTimeout(locationTimeoutRef.current);
-      }
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, []);
 
-  // hàm break/ghép tọa độ thành địa chỉ
   const getAddressFromCoordinates = useCallback(async (latitude: number, longitude: number): Promise<string> => {
     try {
-      // dừng các req trước.
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-      
+      if (abortControllerRef.current) abortControllerRef.current.abort();
       abortControllerRef.current = new AbortController();
       
       const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=vi`,{ 
@@ -93,23 +95,15 @@ const Home = () => {
         }
       });
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       
       const data = await response.json();
-      
-      if (data && data.display_name) {
-        return data.display_name;
-      }
+      if (data && data.display_name) return data.display_name;
       return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('Address request was cancelled');
-        return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
       }
-      
-      console.error('Lỗi khi lấy địa chỉ:', error);
       return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
     }
   }, []);

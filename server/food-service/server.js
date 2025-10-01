@@ -7,6 +7,7 @@ const foodCategoryRoutes = require('./routes/foodCategories');
 const restaurantRoutes = require('./routes/restaurants');
 const foodRoutes = require('./routes/foods');
 const orderRoutes = require('./routes/orders');
+const promotionRoutes = require('./routes/promotions');
 // const categoryRoutes = require('./routes/categories');
 // const bannerRoutes = require('./routes/banners');
 // const featuredItemRoutes = require('./routes/featuredItems');
@@ -24,9 +25,11 @@ app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/categories', foodCategoryRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/promotions', promotionRoutes);
 // app.use('/api/categories', categoryRoutes);
 // app.use('/api/banners', bannerRoutes);
 // app.use('/api/featured-items', featuredItemRoutes);
+
 
 app.get('/food-service/restaurants/:id');
 app.get('/', (req, res) => {

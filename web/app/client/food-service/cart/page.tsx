@@ -104,7 +104,7 @@ const Page = () => {
     const restaurant = groupedCart.find(g => g.restaurant_id === restaurant_id);
     if (!restaurant) return;
 
-    console.log('Đi tới trang thanh toán cho:', restaurant.restaurant_name);
+    //console.log('Đi tới trang thanh toán cho:', restaurant.restaurant_name);
     router.push(`/client/food-service/checkout?restaurantId=${restaurant.restaurant_id}`);
   };
 
