@@ -125,3 +125,9 @@ file food_deli_db mới sẽ là 1 bản gọn gàng, tinh giản, đảm bảo 
 + Bản vá thử nghiệm (mini patch)
 + Hiển thị các promotions ra bên người dùng.
 + Có thể rollback lại sau cái push hôm 23/9/2025 nếu bị lỗi. Bản vá nhỏ, ko cần lo quá
+
+
+-----------------------------------------------------------------------------
+------------------------------GITPUSH, 3-10-2025-----------------------------
+
++ đến hiện tại kiểm thử vẫn đang chạy ổn, đúng ý muốn

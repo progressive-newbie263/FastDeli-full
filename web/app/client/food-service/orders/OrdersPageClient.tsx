@@ -186,7 +186,7 @@ export default function OrdersPageClient({initialOrders}: {initialOrders: Order[
 
             return (
               <div key={order.id} className="rounded-2xl bg-white shadow-md hover:shadow-xl transition-all hover:-translate-y-1 
-                flex flex-col md:flex-row gap-5 p-5 cursor-pointer duration-150"
+                flex flex-col md:flex-row gap-5 p-5 cursor-pointer duration-150 md:max-w-[1000px] md:mx-auto"
               >
                 <img src={order.restaurant_image || '/images/placeholder.png'} alt={order.restaurant_name}
                   className="w-full md:w-40 h-40 object-cover rounded-xl border"
@@ -208,7 +208,7 @@ export default function OrdersPageClient({initialOrders}: {initialOrders: Order[
                     </div>
                   </div>
 
-                  <p className="text-gray-700 mb-1">
+                  <p className="text-gray-700 mb-1 md:w-[80%]">
                     <span className="font-semibold">📍 Địa chỉ:</span> {order.delivery_address}
                   </p>
 

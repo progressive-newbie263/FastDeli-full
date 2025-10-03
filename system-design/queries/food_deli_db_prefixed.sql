@@ -344,3 +344,23 @@ INSERT INTO promotion_restaurants (promotion_id, restaurant_id)
 VALUES (3, 2);
 
 
+------------------------ QUAN TRỌNG  ---------------------------------
+-- tại bảng này, ta sẽ bổ sung thêm 1 vài thuộc tính quan trọng như sau.
+-- trước hết, trong mỗi orders sẽ có thể áp dụng 1 mã khuyến mãi (nếu có). Giới hạn hiện tại là 1 đơn chỉ áp dụng 1 mã.
+-- ALTER TABLE orders
+-- ADD COLUMN promotion_id INTEGER REFERENCES promotions(id),
+-- ADD COLUMN discount_amount DECIMAL(10, 2) DEFAULT 0;
+
+-- 3/10/2025
+-- bổ sung ảnh đại diện cho mã khuyến mãi
+ALTER TABLE promotions
+ADD COLUMN image_url TEXT DEFAULT 
+'https://res.cloudinary.com/dpldznnma/image/upload/v1759474917/discount-default-thumbnail.png'
+
+INSERT INTO promotions (id, title, description, discount_type, discount_value, min_order_value, max_discount_value, valid_days, start_date, end_date, is_active, is_public, created_at, image_url) 
+VALUES
+(1, 'Giảm 20% cho mọi đơn hàng trên 80k từ T2-T6, tối đa lên đến 50k', 'Áp dụng cho tất cả đơn hàng trên 80k', 'percent', 20.00, 80000.00, 50000.00, 'mon-fri', '2025-01-01 00:00:00', '2026-12-31 00:00:00', true, true, '2025-10-01 16:54:10.903594', 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474862/discount-20-percent-thumbnail.png'),
+(2, 'Giảm 30% cho mọi đơn hàng trên 120k vào Chủ Nhật, tối đa lên đến 80k', 'Áp dụng cho tất cả đơn hàng từ 120k trở lên', 'percent', 30.00, 120000.00, 80000.00, 'sun', '2025-01-01 00:00:00', '2026-12-31 00:00:00', true, true, '2025-10-01 16:54:10.903594', 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474865/discount-30-percent-thumbnail.png'),
+(3, 'Pizza House tặng 50k', 'Giảm trực tiếp 50k cho đơn từ 200k', 'flat', 50000.00, 200000.00, 50000.00, 'mon-sun', '2025-01-01 00:00:00', '2025-12-31 00:00:00', false, true, '2025-10-01 16:54:10.903594', 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474814/discount-50k-thumbnail.png'),
+(4, '🎉 COUPON TEST - Dummy', 'Mã giảm giá test dùng cho mục đích phát triển, không áp dụng thật', 'flat', 10000.00, 50000.00, 10000.00, 'mon-sun', '2025-01-01 00:00:00', '2025-12-31 00:00:00', true, false, '2025-10-01 16:54:10.903594', 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474917/discount-default-thumbnail.png');
+
