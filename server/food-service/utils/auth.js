@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { sharedPool } = require('../config/database');
+const { sharedPool } = require('../config/db');
 const { errorResponse } = require('../utils/response');
 
 const auth = async (req, res, next) => {

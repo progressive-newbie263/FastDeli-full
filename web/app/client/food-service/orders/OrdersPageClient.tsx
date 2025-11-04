@@ -179,18 +179,24 @@ export default function OrdersPageClient({initialOrders}: {initialOrders: Order[
           Hiện tại không có đơn hàng nào.
         </p>
       ) : (
-        <div className="grid gap-10 mb-20">
+        <div className="grid gap-10 mb-20 justify-center">
           {selectedOrders.map((order) => {
             const minutesPassed = timeNow.diff(dayjs(order.created_at), 'minute');
             const canCancelOrder = (order.order_status === 'pending' || order.order_status === 'processing') && minutesPassed < 5;
 
             return (
-              <div key={order.id} className="rounded-2xl bg-white shadow-md hover:shadow-xl transition-all hover:-translate-y-1 
-                flex flex-col md:flex-row gap-5 p-5 cursor-pointer duration-150 md:max-w-[1000px] md:mx-auto"
+              <div key={order.id} 
+                className="w-full lg:w-[750px] md:w-[700px] mx-auto rounded-2xl bg-white 
+                shadow-md hover:shadow-xl transition-all hover:-translate-y-1 
+                flex flex-col md:flex-row gap-5 p-5 cursor-pointer duration-150"
               >
-                <img src={order.restaurant_image || '/images/placeholder.png'} alt={order.restaurant_name}
-                  className="w-full md:w-40 h-40 object-cover rounded-xl border"
-                />
+                <div className="relative w-full max-h-56 md:w-40 md:h-40 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
+                  <img
+                    src={order.restaurant_image || '/images/placeholder.png'}
+                    alt={order.restaurant_name}
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
 
                 <div className="flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-3">
@@ -208,7 +214,7 @@ export default function OrdersPageClient({initialOrders}: {initialOrders: Order[
                     </div>
                   </div>
 
-                  <p className="text-gray-700 mb-1 md:w-[80%]">
+                  <p className="text-gray-700 mb-1">
                     <span className="font-semibold">📍 Địa chỉ:</span> {order.delivery_address}
                   </p>
 

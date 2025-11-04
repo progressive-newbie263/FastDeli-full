@@ -4,7 +4,9 @@ import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@food/context/AuthContext';
 import Header from '@food/components/layout/Header';
 import Footer from '@food/components/layout/Footer';
+
 import './globals.css';
+import 'leaflet/dist/leaflet.css';
 
 export default function ClientLayout({
   children,

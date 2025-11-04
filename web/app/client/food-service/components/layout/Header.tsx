@@ -129,7 +129,8 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
           <img src="/logo/fooddeli-logo.png" alt="FoodDeli" className="h-10" />
         </ClientLink>
 
-        <nav className="hidden md:flex items-center space-x-6">
+        {/* note: thay vì md, ép thẳng 850px làm mốc đoạn này. cần ẩn đi sớm hơn, xuống tận md thì nhìn xấu quá. */} 
+        <nav className="hidden [@media(min-width:850px)]:flex items-center space-x-6">
           {/*
               - default cho trang chủ sẽ là true (highlight mặc định)
               - các trang con khác sẽ xài 'startsWith' để highlight

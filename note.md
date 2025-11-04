@@ -131,3 +131,19 @@ file food_deli_db mới sẽ là 1 bản gọn gàng, tinh giản, đảm bảo 
 ------------------------------GITPUSH, 3-10-2025-----------------------------
 
 + đến hiện tại kiểm thử vẫn đang chạy ổn, đúng ý muốn
+
+
+
+-----------------------------------------------------------------------------
+------------------------------GITPUSH, ?-10-2025-----------------------------
+
+Số chữ số       thập phân	      Độ chính xác tương ứng	
+Ví dụ
+2	              ~1.1 km	         Chỉ cần biết thành phố lớn
+3	              ~110 m	         Khu phố / block
+4	              ~11 m	           Đủ để xác định ngôi nhà
+5	              ~1.1 m	         Rất chính xác, đủ để định vị cửa hàng/nhà riêng
+6	              ~0.11 m (11 cm)	 Độ chính xác cao, thừa cho food delivery
+7+	            < 1 cm	         Mức GPS chuyên dụng (không cần cho app food)
+=> làm bản đồ quán ăn thì có thể dùng 5-6 chữ số thập phân cho kinh/vĩ độ để lấy chính xác được
+vị trí quán ăn, vị trí người dùng, ....

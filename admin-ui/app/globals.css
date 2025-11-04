@@ -1,5 +1,10 @@
-@import "tailwindcss" /*reference*/;
+/* admin-ui/app/globals.css - Cập nhật */
+@import "tailwindcss";
 
+/* 
+  font chủ đạo sẽ là Roboto.
+  Backup nếu Roboto fail là "Arial, sans-serif"
+*/
 @layer base {
   html {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -28,3 +33,35 @@
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   }
 }
+
+/* Custom primary colors */
+:root {
+  --primary-50: #eff6ff;
+  --primary-100: #dbeafe;
+  --primary-200: #bfdbfe;
+  --primary-300: #93c5fd;
+  --primary-400: #60a5fa;
+  --primary-500: #3b82f6;
+  --primary-600: #2563eb;
+  --primary-700: #1d4ed8;
+  --primary-800: #1e40af;
+  --primary-900: #1e3a8a;
+}
+
+.text-primary-600 { color: var(--primary-600); }
+
+.text-primary-700 { color: var(--primary-700); }
+
+.bg-primary-100 { background-color: var(--primary-100); }
+
+.bg-primary-600 { background-color: var(--primary-600); }
+
+.bg-primary-700 { background-color: var(--primary-700); }
+
+.border-primary-300 { border-color: var(--primary-300); }
+
+.hover\:text-primary-700:hover { color: var(--primary-700); }
+
+.hover\:bg-primary-50:hover { background-color: var(--primary-50); }
+
+.hover\:border-primary-300:hover { border-color: var(--primary-300); }

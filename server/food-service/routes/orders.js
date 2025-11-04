@@ -2,6 +2,13 @@ const express = require('express');
 const router = express.Router();
 const OrderController = require('../controllers/orderController');
 
+
+//GET: Lấy mọi đơn hàng (cho admin)
+router.get('/', OrderController.getAllOrders);
+
+// PATCH: Cập nhật trạng thái đơn hàng (cho admin)
+//router.patch('/:id/status', OrderController.updateOrderStatus);
+
 // POST: Tạo đơn hàng
 router.post('/', OrderController.createOrder);
 
@@ -16,5 +23,6 @@ router.patch('/:id/payment', OrderController.updatePaymentStatus);
 
 // PATCH: hủy đơn hàng.
 router.patch('/:id/cancel', OrderController.cancelOrder);
+
 
 module.exports = router;

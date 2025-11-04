@@ -8,6 +8,9 @@ export default {
         primary: "#ff6b35",
         secondary: "#004e89",
       },
+      screens: {
+        '850': '850px',
+      },
     },
   },
 } satisfies Config;

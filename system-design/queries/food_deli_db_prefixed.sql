@@ -364,3 +364,10 @@ VALUES
 (3, 'Pizza House tặng 50k', 'Giảm trực tiếp 50k cho đơn từ 200k', 'flat', 50000.00, 200000.00, 50000.00, 'mon-sun', '2025-01-01 00:00:00', '2025-12-31 00:00:00', false, true, '2025-10-01 16:54:10.903594', 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474814/discount-50k-thumbnail.png'),
 (4, '🎉 COUPON TEST - Dummy', 'Mã giảm giá test dùng cho mục đích phát triển, không áp dụng thật', 'flat', 10000.00, 50000.00, 10000.00, 'mon-sun', '2025-01-01 00:00:00', '2025-12-31 00:00:00', true, false, '2025-10-01 16:54:10.903594', 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474917/discount-default-thumbnail.png');
 
+
+-- 4/10/2025
+-- bổ sung longtitude, latitude cho restaurants
+-- độ chính xác là 6 chữ số thập phân (tính bằng cm).
+ALTER TABLE restaurants 
+ADD COLUMN longtitude DECIMAL(9,6),
+ADD COLUMN latitude DECIMAL (9,6);

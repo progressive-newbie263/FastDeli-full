@@ -26,6 +26,7 @@ const Home = () => {
   const [userData, setUserData] = useState<UserData>({});
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentAddress, setCurrentAddress] = useState<string>('');
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
   const [isMounted, setIsMounted] = useState<boolean>(false);
@@ -129,14 +130,34 @@ const Home = () => {
           reject(new Error('Timeout'));
         }, 10000);
 
+        // Thử với độ chính xác cao trước
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             clearTimeout(timeoutId);
             resolve(pos);
           },
           (error) => {
-            clearTimeout(timeoutId);
-            reject(error);
+            // Nếu lỗi POSITION_UNAVAILABLE, thử lại với độ chính xác thấp hơn
+            if (error.code === error.POSITION_UNAVAILABLE) {
+              navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                  clearTimeout(timeoutId);
+                  resolve(pos);
+                },
+                (retryError) => {
+                  clearTimeout(timeoutId);
+                  reject(retryError);
+                },
+                {
+                  enableHighAccuracy: false,
+                  timeout: 10000,
+                  maximumAge: 300000, // Cache 5 phút
+                }
+              );
+            } else {
+              clearTimeout(timeoutId);
+              reject(error);
+            }
           },
           {
             enableHighAccuracy: true,
@@ -193,11 +214,13 @@ const Home = () => {
             break;
 
           case error.POSITION_UNAVAILABLE:
-            toast.error("Không thể xác định vị trí thiết bị.");
+            toast.error("Không thể xác định vị trí của bạn. Vui lòng thử lại.");
             break;
+
           case error.TIMEOUT:
-            toast.error("Hết thời gian lấy vị trí.");
+            toast.error("Hết thời gian chờ lấy vị trí. Vui lòng thử lại.");
             break;
+
           default:
             toast.error("Đã xảy ra lỗi không xác định.");
             break;
@@ -492,8 +515,15 @@ const Home = () => {
               
               <div className="mb-6">
                 <div className="relative">
+                  {/* mở bản đồ ở nút này */}
                   <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full" aria-hidden="true"></div>
+                    <button
+                      onClick={() => setIsMapOpen(true)}
+                      className=" text-white rounded-lg hover:bg-gray-100 cursor-pointer transition"
+                      title={isLoggedIn ? 'Bản đồ' : 'Vui lòng đăng nhập'}
+                    >
+                      🗺️
+                    </button>
                   </div>
 
                   {/* thanh input. Chỉ dùng cho người đã đăng nhập. Bao gồm cả nút tự động lấy địa chỉ người dùng */}
@@ -550,7 +580,6 @@ const Home = () => {
       {/* thanh chia section */}
       <div className='bg-gray-200 h-[2px] mt-[60px]' role="separator" aria-hidden="true"></div>
 
-
       {/* Featured section (món ăn mới/ đề xuất) */}
       <section className="py-16 max-w-[1200px] mx-auto px-4 text-center text-black bg-white mt-[80px]">
         <h2 className="text-3xl font-bold">Featured</h2>
@@ -597,6 +626,7 @@ const Home = () => {
         </ul>
       </section>
 
+      {/* <TileLayer url={`https://api.mapbox.com/styles/v1/...access_token=${MAPBOX_KEY}`} /> */}
 
       {/* Call to action section (Cơ bản 1 cái section kích cầu) */}
       <section className="py-16 max-w-[1200px] mx-auto px-4 text-center text-black bg-white mt-[200px]">

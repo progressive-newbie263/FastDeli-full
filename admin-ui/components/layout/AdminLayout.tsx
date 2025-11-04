@@ -11,9 +11,11 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="flex-1">
+      
+      <div className="flex flex-col">
         <Header title={title} subtitle={subtitle} />
-        <main className="ml-72 p-8">
+
+        <main className="p-8">
           {children}
         </main>
       </div>

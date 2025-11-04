@@ -15,20 +15,19 @@ export interface User {
 export interface Restaurant {
   id: string;
   name: string;
-  ownerName: string;
-  email: string;
-  phone: string;
   address: string;
-  cuisine: string;
-  status: 'pending' | 'approved' | 'rejected' | 'active' | 'inactive';
-  createdAt: string;
-  updatedAt?: string;
+  phone: string;
+  image_url?: string;
   description?: string;
+  is_active: boolean; 
+  delivery_time?: string;
+  delivery_fee?: number;
   rating?: number;
-  totalOrders?: number;
-  revenue?: number;
-  documents?: RestaurantDocument[];
+  total_reviews?: number;
+  is_featured?: boolean;
+  created_at: string;
 }
+
 
 export interface RestaurantDocument {
   id: string;
@@ -40,31 +39,35 @@ export interface RestaurantDocument {
 
 export interface Order {
   id: string;
-  customerName: string;
-  customerId: string;
-  customerPhone?: string;
-  restaurantName: string;
-  restaurantId: string;
-  totalAmount: number;
-  status: 'new' | 'processing' | 'completed' | 'cancelled' | 'delivering';
-  createdAt: string;
-  updatedAt?: string;
-  deliveryAddress: string;
-  //paymentMethod: 'cash' | 'card' | 'wallet';
-  paymentStatus: 'pending' | 'paid' | 'refunded';
-  items: OrderItem[];
+  order_code: string;
+  user_id: number;
+  restaurant_id: number; 
+  user_name: string; 
+  user_phone: string;
+  delivery_address: string;
+  total_amount: number;
+  delivery_fee?: number;
+  order_status: 'pending' | 'confirmed' | 'processing' | 'delivering' | 'completed' | 'cancelled';
+  payment_status: 'pending' | 'paid' | 'refunded';
   notes?: string;
-  deliveryFee?: number;
-  serviceFee?: number;
+  created_at: string;
+  updated_at?: string;
+  items: OrderItem[];
 }
 
+
+// order_id là number
+// cái mã dạng chuỗi kí tự/string sẽ là "order_code"
 export interface OrderItem {
-  id: string;
-  name: string;
-  price: number;
+  order_item_id: number;
+  order_id: number;
+  food_id: number;
+  food_name: string;
+  food_price: number;
   quantity: number;
-  notes?: string;
+  created_at: string;
 }
+
 
 export interface DashboardStats {
   totalOrders: number;

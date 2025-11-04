@@ -1,6 +1,73 @@
 const { foodPool } = require('../config/db');
 
 class Order {
+  // Lấy tất cả đơn hàng (cho admin)
+  static async getAllOrders(filters = {}) {
+    let query = `
+      SELECT 
+        o.*,
+        r.name as restaurant_name,
+        r.address as restaurant_address,
+        r.phone as restaurant_phone
+      FROM orders o
+      LEFT JOIN restaurants r ON o.restaurant_id = r.id
+      WHERE 1=1
+    `;
+    
+    const params = [];
+    let paramIndex = 1;
+
+    // Filter theo order_status
+    if (filters.order_status) {
+      query += ` AND o.order_status = $${paramIndex}`;
+      params.push(filters.order_status);
+      paramIndex++;
+    }
+
+    // Filter theo payment_status
+    if (filters.payment_status) {
+      query += ` AND o.payment_status = $${paramIndex}`;
+      params.push(filters.payment_status);
+      paramIndex++;
+    }
+
+    // Filter theo restaurant_id
+    if (filters.restaurant_id) {
+      query += ` AND o.restaurant_id = $${paramIndex}`;
+      params.push(filters.restaurant_id);
+      paramIndex++;
+    }
+
+    // Filter theo user_id
+    if (filters.user_id) {
+      query += ` AND o.user_id = $${paramIndex}`;
+      params.push(filters.user_id);
+      paramIndex++;
+    }
+
+    // Sorting
+    const sortBy = filters.sort_by || 'created_at';
+    const sortOrder = filters.sort_order || 'DESC';
+    query += ` ORDER BY o.${sortBy} ${sortOrder}`;
+
+    // Pagination
+    if (filters.limit) {
+      query += ` LIMIT $${paramIndex}`;
+      params.push(filters.limit);
+      paramIndex++;
+      
+      if (filters.page && filters.page > 1) {
+        const offset = (filters.page - 1) * filters.limit;
+        query += ` OFFSET $${paramIndex}`;
+        params.push(offset);
+      }
+    }
+
+    const result = await foodPool.query(query, params);
+    return result.rows;
+  }
+
+  
   // 🆕 Tạo đơn hàng
   static async createOrder(orderData, items) {
     const client = await foodPool.connect();
