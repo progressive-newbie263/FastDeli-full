@@ -20,18 +20,15 @@ interface Order {
   payment_status: string;
 }
 
-export default function OrdersPageClient({initialOrders}: {initialOrders: Order[]}) {
+export default function OrdersPageClient({initialOrders = []}: {initialOrders?: Order[]}) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [loading, setLoading] = useState(true);
-  // đặt state cho bộ lọc order.
   // tạm thời chỉ sử dụng 4 state này. Sau này khi phát triển thêm, sẽ có thêm state như "delivering". 
   // "processing" sẽ là hiển thị mặc định khi load.
+  // rerender nó khi đủ 5 phút - thời gian giới hạn hủy đơn
   const [filteredOrder, setFilteredOrder] = useState<'pending' | 'processing' | 'completed' | 'cancelled'>('processing')
+  const [timeNow, setTimeNow] = useState(() => dayjs()); 
 
-  //thêm state cho trạng thái nút hủy (để rerender nó khi đủ 5 phút - thời gian giới hạn hủy đơn)
-  const [timeNow, setTimeNow] = useState(() => dayjs());
-
-  // 5 phút sau sẽ rerender lại component để cập nhật trạng thái nút hủy
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeNow(dayjs()); 

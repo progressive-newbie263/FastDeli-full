@@ -1,31 +1,11 @@
-'use client'
+import { Metadata } from "next";
+import RestaurantClient from "./RestaurantClient";
 
-import React, { useEffect, useState } from 'react';
-import RestaurantList from './Restaurants';
-import { Restaurant } from '../interfaces';
-
-
-const Page = () => {
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-
-  useEffect(() => {
-    fetch('http://localhost:5001/api/restaurants')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setRestaurants(data.data.restaurants);
-        }
-      })
-      .catch(err => console.error(err));
-  }, []);
-
-  return (
-    <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">
-      <h1 className="text-3xl font-bold">Danh sách nhà hàng</h1>
-      
-      <RestaurantList restaurants={restaurants} />
-    </main>
-  );
+export const metadata: Metadata = {
+  title: 'Danh sách nhà hàng',
+  description: 'Khám phá các nhà hàng ngon gần bạn',
 };
 
-export default Page;
+export default function RestaurantPage() {
+  return <RestaurantClient />;
+}

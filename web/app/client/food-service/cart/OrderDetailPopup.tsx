@@ -4,6 +4,7 @@ import { FaUtensils } from 'react-icons/fa';
 import { RestaurantGroup } from '../utils/cartHandler';
 import Link from 'next/link';
 
+
 interface Props {
   restaurant: RestaurantGroup;
   onClose: () => void;

@@ -9,9 +9,8 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Đặt đồ ăn online nhanh chóng cùng FoodDeli - FastDeli Việt Nam",
-  description:
-    "Đi lại, ăn uống, vận chuyển hàng hoá một cách nhanh chóng ... chúng tôi sẽ cung cấp tất cả cho bạn",
+  title: "Đặt đồ ăn online cùng FoodDeli",
+  description: "Đi lại, ăn uống, order một cách nhanh chóng cùng FoodDeli",
 };
 
 

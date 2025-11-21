@@ -5,12 +5,12 @@ import HomePage from '@client/components/HomePage';
 import Services from '@client/components/Services';
 import Blog from '@client/components/Blog';
 
-import { Metadata } from 'next';
+import type { Metadata } from "next";
+
 
 export const metadata: Metadata = {
-  title: "FastDeli - Vận chuyển hoả tốc",
-  description:
-    "Đi lại, ăn uống, vận chuyển hàng hoá một cách nhanh chóng ... chúng tôi sẽ cung cấp tất cả cho bạn",
+  title: 'Trang chủ - FastDeli',
+  description: 'Đặt đồ ăn, thuê xe, giao hàng nhanh chóng cùng siêu ứng dụng FastDeli của chúng tôi',
 };
 
 // Define the Home component as a Functional Component (FC)

@@ -9,6 +9,7 @@ import Login from '@food/auth/login/page';
 import Register from '@food/auth/register/page';
 import Profile from '@food/profile/page';
 
+
 export default function App() {
   const [isChecking, setIsChecking] = useState(true);
   const { isAuthenticated, loading: authLoading } = useAuth();
