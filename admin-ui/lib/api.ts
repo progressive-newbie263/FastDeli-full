@@ -3,11 +3,24 @@ const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5
 
 class ApiService {
   private static getAuthHeaders() {
+    // thêm logic check. Đảm bảo code chỉ chạy trình duyệt
+    if (typeof window === 'undefined') return {};
+    
     const token = localStorage.getItem('admin_token');
     return {
       'Content-Type': 'application/json',
       'Authorization': token ? `Bearer ${token}` : '',
     };
+  }
+
+  // function để xóa token khi logout.
+  // bổ sung method này vào để khi đăng xuất, xóa đi thông tin người dùng khỏi localStorage
+  static clearAuth() {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('authToken');
+    }
   }
 
   // Auth APIs

@@ -3,15 +3,22 @@ import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'FoodDeli Admin - Quản lý hệ thống',
-  description: 'Hệ thống quản lý đơn hàng và nhà hàng FoodDeli',
+  title: {
+    template: '%s | FastDeli Admin',
+    default: 'Dashboard | FastDeli Admin',
+  },
+  description: 'Hệ thống quản trị FastDeli - Quản lý đơn hàng, nhà hàng, người dùng',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="vi">
       <body>

@@ -19,6 +19,21 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
+  /* 
+    đề phòng lỗi đăng xuất xong mà token vẫn còn trong localStorage,
+    ta sẽ load thêm 1 useEffect này
+    
+    + Nó đảm bảo sẽ xóa sạch localStorage khi trang login được load 
+  */
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('userData');
+      localStorage.removeItem('authToken');
+    }
+  }, []);
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);

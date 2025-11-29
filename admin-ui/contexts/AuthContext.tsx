@@ -62,8 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // cập nhật logic: Xóa token và user data khi logout
   const logout = () => {
-    localStorage.removeItem('admin_token');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('admin_token');
+      localStorage.removeItem('userData');
+    }
     setUser(null);
     router.push('/login');
   };
