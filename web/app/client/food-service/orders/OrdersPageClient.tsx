@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FaSpinner } from 'react-icons/fa';
+import { Loader2 } from 'lucide-react';
 import dayjs from 'dayjs';
 
 interface Order {
@@ -140,7 +140,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 text-gray-600">
-        <FaSpinner className="animate-spin text-3xl" />
+        <Loader2 className="animate-spin text-3xl" />
       </div>
     );
   }

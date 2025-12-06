@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FiChevronDown } from 'react-icons/fi';
+import { ChevronDown } from 'lucide-react';
 
 type Question = {
   question: string;
@@ -52,7 +52,7 @@ const Guidance = () => {
             <div className='flex justify-between items-center px-6 py-3 md:px-12 md:py-6'>
               <p className='font-medium'>{item.question}</p>
 
-              <FiChevronDown className={`transition-transform ${openIndex === index ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`transition-transform ${openIndex === index ? 'rotate-180' : ''}`} />
             </div>
 
             {openIndex === index && (

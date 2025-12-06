@@ -6,7 +6,7 @@ import ClientLink from '../ClientLink';
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@food/context/AuthContext';
-import { IoCartOutline } from "react-icons/io5";
+import { ShoppingCart } from "lucide-react";
 
 import { FullCart } from '../../utils/cartHandler';
 
@@ -149,7 +149,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
             className="text-gray-700 hover:text-[#00B14F] text-2xl border border-gray-300 px-2 py-2 rounded transition-colors"
           >
             <div className='relative'>
-              <IoCartOutline />
+              <ShoppingCart />
 
               {cartQuantity > 0 && (
                 <span className="bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center absolute -top-4 -right-4">

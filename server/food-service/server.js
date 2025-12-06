@@ -3,6 +3,7 @@ const cors = require('cors');
 const config = require('./config/config');
 
 //food category routes
+const adminStatsRoutes = require('./routes/adminStats');
 const foodCategoryRoutes = require('./routes/foodCategories');
 const restaurantRoutes = require('./routes/restaurants');
 const foodRoutes = require('./routes/foods');
@@ -29,6 +30,7 @@ app.use('/api/promotions', promotionRoutes);
 // app.use('/api/categories', categoryRoutes);
 // app.use('/api/banners', bannerRoutes);
 // app.use('/api/featured-items', featuredItemRoutes);
+app.use('/api/admin', adminStatsRoutes);
 
 
 app.get('/food-service/restaurants/:id');

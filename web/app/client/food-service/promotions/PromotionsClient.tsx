@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FaSpinner, FaTag } from 'react-icons/fa';
+import { Loader2, Tag } from 'lucide-react';
 import dayjs from 'dayjs';
 
 //test map
@@ -54,7 +54,7 @@ export default function PromotionsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20 text-gray-600">
-        <FaSpinner className="animate-spin text-3xl" />
+        <Loader2 className="animate-spin text-3xl" />
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function PromotionsPage() {
     <>
     <div className="container mx-auto px-16 md:px-20 py-8 mt-20">
       <h1 className="text-3xl font-extrabold mb-6 text-gray-800 flex items-center gap-3">
-        <FaTag className="text-orange-500" /> Mã Khuyến Mãi
+        <Tag className="text-orange-500" /> Mã Khuyến Mãi
       </h1>
 
       {promotions.length === 0 ? (

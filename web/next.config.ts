@@ -17,7 +17,15 @@ const nextConfig: NextConfig = {
         hostname: 'encrypted-tbn0.gstatic.com',
         pathname: '**'
       }
-    ]
+    ],
+    
+    formats: ['image/avif', 'image/webp'], // Thêm formats để tối ưu
+    // Các kích thước device để Next.js tối ưu
+    // cỡ thiết bị /device.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    // cỡ ảnh
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60,
   },
 };
 

@@ -2,17 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  FaMapMarkerAlt,
-  FaClock,
-  FaCreditCard,
-  FaWallet,
-  FaPhone,
-  FaUser,
-  FaEdit,
-  FaChevronLeft,
-  FaShoppingBag,
-  FaUtensils,
-} from "react-icons/fa";
+  MapPin,
+  Clock,
+  CreditCard,
+  Wallet,
+  Phone,
+  User,
+  Pencil,
+  ChevronLeft,
+  ShoppingBag,
+  Utensils,
+} from "lucide-react";
 import { RestaurantGroup, CartItem, FullCart } from "../utils/cartHandler";
 import { Food } from "../interfaces";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -215,7 +215,7 @@ const CheckoutClient = () => {
               onClick={() => window.history.back()}
               className="p-2 hover:bg-gray-100 rounded-full"
             >
-              <FaChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <h1 className="text-xl font-bold text-gray-800">Thanh toán</h1>
           </div>
@@ -238,7 +238,7 @@ const CheckoutClient = () => {
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <FaUtensils className="w-4 h-4 text-green-600" />
+                      <Utensils className="w-4 h-4 text-green-600" />
                       <h2 className="text-lg font-bold text-gray-800">
                         {restaurant.restaurant_name}
                       </h2>
@@ -279,28 +279,28 @@ const CheckoutClient = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <FaMapMarkerAlt className="w-5 h-5 text-green-600" />
+                  <MapPin className="w-5 h-5 text-green-600" />
                   Địa chỉ giao hàng
                 </h3>
 
                 <button className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors">
-                  <FaEdit className="w-4 h-4" />
+                  <Pencil className="w-4 h-4" />
                 </button>
               </div>
               
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <FaUser className="w-4 h-4 text-gray-500" />
+                  <User className="w-4 h-4 text-gray-500" />
                   <span className="font-medium">{userInfos.name}</span>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <FaPhone className="w-4 h-4 text-gray-500" />
+                  <Phone className="w-4 h-4 text-gray-500" />
                   <span>{userInfos.phone}</span>
                 </div>
                 
                 <div className="flex items-start gap-3">
-                  <FaMapMarkerAlt className="w-4 h-4 text-gray-500 mt-0.5" />
+                  <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
 
                   <div className='w-full'>
                     <p className="text-gray-800 mb-3">
@@ -322,7 +322,7 @@ const CheckoutClient = () => {
             {/* Phương thức thanh toán */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <FaCreditCard className="w-5 h-5 text-green-600" />
+                <CreditCard className="w-5 h-5 text-green-600" />
                 Phương thức thanh toán
               </h3>
               
@@ -337,7 +337,7 @@ const CheckoutClient = () => {
                     className="w-4 h-4 text-green-600 cursor-pointer"
                   />
 
-                  <FaCreditCard className="w-5 h-5 text-gray-600" />
+                  <CreditCard className="w-5 h-5 text-gray-600" />
                   
                   <div className="flex-1">
                     <span className="font-medium">Thẻ tín dụng/ghi nợ</span>
@@ -356,7 +356,7 @@ const CheckoutClient = () => {
                     className="w-4 h-4 text-green-600 cursor-pointer"
                   />
 
-                  <FaWallet className="w-5 h-5 text-gray-600" />
+                  <Wallet className="w-5 h-5 text-gray-600" />
                   
                   <div className="flex-1">
                     <span className="font-medium">Tiền mặt</span>
@@ -393,7 +393,7 @@ const CheckoutClient = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-24">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <FaShoppingBag className="w-5 h-5 text-green-600" />
+                <ShoppingBag className="w-5 h-5 text-green-600" />
                 Tóm tắt đơn hàng
               </h3>
               

@@ -3,9 +3,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
-import { FaAngleDown } from "react-icons/fa"
-import { SlMagnifier } from "react-icons/sl"
-import { RxHamburgerMenu } from "react-icons/rx";
+import { ChevronDown, Menu, Search } from "lucide-react";
 
 const Navbar = () => {
   const [isDropdownOpenPartner, setIsDropdownOpenPartner] = useState(false)
@@ -53,7 +51,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center">
             <div className='cursor-pointer border-solid border-1 border-black p-1.5 rounded-sm hover:border-white text-white'>
-              <RxHamburgerMenu className='w-6 h-6 ml-1.5' width={200} height={200} />
+              <Menu className='w-6 h-6 ml-1.5' width={200} height={200} />
               
               <div className='text-sm'>Menu</div>
             </div>
@@ -77,7 +75,7 @@ const Navbar = () => {
             {/* Partner Dropdown */}
             <div className="relative" ref={partnerRef}>
               <div className="text-white hover:text-green-600 cursor-pointer" onClick={partnerChoiceSelector}>
-                Trở thành Đối tác của FastDeli <FaAngleDown className="inline-block ml-1" />
+                Trở thành Đối tác của FastDeli <ChevronDown className="inline-block ml-1" />
               </div>
 
               {isDropdownOpenPartner && (
@@ -90,13 +88,13 @@ const Navbar = () => {
             </div>
 
             <div className="text-white hover:text-green-600 cursor-pointer" onClick={() => {}}>
-              Giới thiệu <FaAngleDown className="inline-block ml-1" />
+              Giới thiệu <ChevronDown className="inline-block ml-1" />
             </div>
 
             {/* Language Dropdown */}
             <div className="relative" ref={languageRef}>
               <div className="bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 cursor-pointer" onClick={languageSelector}>
-                Tiếng Việt <FaAngleDown className="inline-block ml-1" />
+                Tiếng Việt <ChevronDown className="inline-block ml-1" />
               </div>
 
               {isDropdownOpenLanguage && (
@@ -106,7 +104,7 @@ const Navbar = () => {
               )}
             </div>
 
-            <SlMagnifier className="cursor-pointer" />
+            <Search className="cursor-pointer" />
           </div>
         </div>
       </div>

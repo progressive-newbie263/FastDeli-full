@@ -5,8 +5,8 @@ import { Food } from '../interfaces';
 import Image from 'next/image';
 import OrderDetailPopup from './OrderDetailPopup';
 
-import { FaUtensils } from 'react-icons/fa';
-import { MdOutlineShoppingCart } from "react-icons/md";
+import { Utensils } from 'lucide-react';
+import { ShoppingCart } from "lucide-react";
 
 import {
   RestaurantGroup,
@@ -118,7 +118,7 @@ const CartClient = () => {
         <div className="text-center py-12 items-center w-[300px] mx-auto">
           <ClientLink href="/restaurants">
             <div className="text-6xl mb-4 flex justify-center">
-              <MdOutlineShoppingCart />
+              <ShoppingCart />
             </div>
 
             <p className="text-gray-500 text-lg">Người dùng chưa đăng nhập.</p>
@@ -137,7 +137,7 @@ const CartClient = () => {
         <div className="text-center py-12 items-center w-[300px] mx-auto">
           <ClientLink href="/restaurants">
             <div className="text-6xl mb-4 flex justify-center">
-              <MdOutlineShoppingCart />
+              <ShoppingCart />
             </div>
 
             <p className="text-gray-500 text-lg">Giỏ hàng của bạn đang trống.</p>
@@ -170,7 +170,7 @@ const CartClient = () => {
 
                   <div className='flex flex-col'>
                     <h3 className="font-bold text-2xl sm:text-lg text-gray-800 flex gap-2 mb-3 items-center">
-                      <FaUtensils className="text-xl text-green-600" />
+                      <Utensils className="text-xl text-green-600" />
                       {group.restaurant_name}
                     </h3>
                     

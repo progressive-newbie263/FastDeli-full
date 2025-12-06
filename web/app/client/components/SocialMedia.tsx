@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import React from 'react'
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter } from 'react-icons/fa'
+import { Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 
 const SocialMedia = () => {
   return (
@@ -10,21 +10,21 @@ const SocialMedia = () => {
       {/* mạng xã hội liên kết */}
       <div className='flex flex-row gap-4 mt-4 justify-evenly'>
         <Link href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer">
-          <FaFacebookF className='text-[28px] cursor-pointer text-blue-800 px-1 rounded-sm' />
+          <Facebook className='text-[28px] cursor-pointer text-blue-800 px-1 rounded-sm' />
         </Link>
 
         <Link href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">
-          <FaInstagram href='/' className='text-[28px] cursor-pointer text-white bg-pink-600 px-1 rounded-sm' />
+          <Instagram href='/' className='text-[28px] cursor-pointer text-white bg-pink-600 px-1 rounded-sm' />
         </Link>
         
         
         <Link href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">
-          <FaLinkedinIn href='/' className='text-[28px] cursor-pointer text-white bg-blue-500 px-1 rounded-sm' />
+          <Linkedin href='/' className='text-[28px] cursor-pointer text-white bg-blue-500 px-1 rounded-sm' />
         </Link>
         
         
         <Link href="https://www.x.com/" target="_blank" rel="noopener noreferrer">
-          <FaTwitter href='/' className='text-[28px] cursor-pointer text-white bg-blue-300 px-1 rounded-sm' />
+          <Twitter href='/' className='text-[28px] cursor-pointer text-white bg-blue-300 px-1 rounded-sm' />
         </Link>
       </div>
     </section>

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import FoodCategories, {Category} from '../components/FoodCategories';
-import { TiTick } from "react-icons/ti";
+import { Check } from "lucide-react";
 
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -605,22 +605,22 @@ const Home = () => {
 
         <ul className="space-y-4" role="list">
           <li className="flex items-start" role="listitem">
-            <TiTick className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
+            <Check className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
             <span><strong>Giao đồ thần tốc</strong> - FoodDeli mang đến dịch vụ giao đồ ăn nhanh nhất thị trường.</span>
           </li>
 
           <li className="flex items-start" role="listitem">
-            <TiTick className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
+            <Check className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
             <span><strong>Thân thiện và tiện lợi để sử dụng</strong> - Việc đặt món giờ đây chỉ cần vài cú nhấp hoặc chạm, để có trải nghiệm nhanh chóng, đầy đủ và tiện ích.</span>
           </li>
           
           <li className="flex items-start" role="listitem">
-            <TiTick className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
+            <Check className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
             <span><strong>Thỏa mãn mọi khẩu vị của người dùng</strong> - Từ món ăn đường phố đến các nhà hàng chất lượng nhất, đáp ứng mọi khẩu vị từ quý khách.</span>
           </li>
           
           <li className="flex items-start" role="listitem">
-            <TiTick className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
+            <Check className="text-green-500 mt-1 mr-3 flex-shrink-0" aria-hidden="true" />
             <span><strong>Hệ thống tích điểm thưởng riêng</strong> - Nhận điểm tích lũy cho mỗi đơn hàng và đổi lấy nhiều phần quà và ưu đãi hấp dẫn.</span>
           </li>
         </ul>

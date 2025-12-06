@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaUtensils } from 'react-icons/fa';
+import { Utensils } from 'lucide-react';
 
 import { RestaurantGroup } from '../utils/cartHandler';
 import Link from 'next/link';
@@ -53,7 +53,7 @@ const OrderDetailPopup: React.FC<Props> = ({
             <div>
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-3">
                 <Link className='flex items-center gap-2' href={`/client/food-service/restaurants/${restaurant.restaurant_id}`}>
-                  <FaUtensils className="text-xl text-gray-300" />
+                  <Utensils className="text-xl text-gray-300" />
                   {restaurant.restaurant_name}
                 </Link>
               </h2>

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { FaChevronLeft, FaQrcode } from "react-icons/fa";
+import { ChevronLeft, QrCode } from "lucide-react";
 import Link from "next/link";
 
 const generateQRPattern = (seed: string) => {
@@ -187,7 +187,7 @@ const PaymentClient = () => {
           href={`/client/food-service/checkout?restaurantId=${payload.orderData.restaurant_id || ""}`}
           className="flex items-center text-gray-600 hover:text-gray-800"
         >
-          <FaChevronLeft className="text-gray-600 mr-2 cursor-pointer" />
+          <ChevronLeft className="text-gray-600 mr-2 cursor-pointer" />
         </Link>
         <h1 className="text-xl font-semibold">Thanh toán đơn hàng</h1>
       </div>
@@ -199,7 +199,7 @@ const PaymentClient = () => {
             <div className="w-64 h-64 bg-white border-2 border-gray-300 rounded-lg flex items-center justify-center relative overflow-hidden">
               {qrGrid}
               <div className="relative z-10 text-center">
-                <FaQrcode className="w-16 h-16 text-gray-400 mx-auto mb-2" />
+                <QrCode className="w-16 h-16 text-gray-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-500 font-medium">QR Payment</p>
                 <p className="text-xs text-gray-400">
                   #{orderCode || orderIdFromQuery || "NEW"}

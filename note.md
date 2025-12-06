@@ -147,3 +147,14 @@ Ví dụ
 7+	            < 1 cm	         Mức GPS chuyên dụng (không cần cho app food)
 => làm bản đồ quán ăn thì có thể dùng 5-6 chữ số thập phân cho kinh/vĩ độ để lấy chính xác được
 vị trí quán ăn, vị trí người dùng, ....
+
+
+
+
+-----------------------------------------------------------------------------
+------------------------------GITPUSH, 30-11-2025-----------------------------
+
+Danh sach cac api endpoint dang co (dan vao terminal):
+
++ cd server/food-service
++ Get-ChildItem -Recurse routes\* | Select-String "router\.(get|post|put|delete)"

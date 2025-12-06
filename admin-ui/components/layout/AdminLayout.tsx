@@ -6,18 +6,17 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 import {
-  FaTachometerAlt,
-  FaShoppingCart,
-  FaUtensils,
-  FaUsers,
-  FaCar,
-  FaCog,
-  FaChartBar,
-  FaSignOutAlt,
-  FaBars,
-  FaTimes,
-} from 'react-icons/fa';
-
+  LayoutDashboard,
+  ShoppingCart,
+  Utensils,
+  Users,
+  Car,
+  Settings,
+  BarChart3,
+  LogOut,
+  Menu,
+  X,
+} from 'lucide-react';
 
 interface NavItem {
   href: string;
@@ -26,13 +25,13 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/', icon: <FaTachometerAlt />, label: 'Dashboard' },
-  { href: '/analytics', icon: <FaChartBar />, label: 'Thống kê' },
-  { href: '/orders', icon: <FaShoppingCart />, label: 'Đơn hàng' },
-  { href: '/restaurants', icon: <FaUtensils />, label: 'Nhà hàng' },
-  { href: '/users', icon: <FaUsers />, label: 'Người dùng' },
-  { href: '/drivers', icon: <FaCar />, label: 'Tài xế' },
-  { href: '/settings', icon: <FaCog />, label: 'Cài đặt' },
+  { href: '/', icon: <LayoutDashboard />, label: 'Dashboard' },
+  { href: '/analytics', icon: <BarChart3 />, label: 'Thống kê' },
+  { href: '/orders', icon: <ShoppingCart />, label: 'Đơn hàng' },
+  { href: '/restaurants', icon: <Utensils />, label: 'Nhà hàng' },
+  { href: '/users', icon: <Users />, label: 'Người dùng' },
+  { href: '/drivers', icon: <Car />, label: 'Tài xế' },
+  { href: '/settings', icon: <Settings />, label: 'Cài đặt' },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -102,7 +101,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             onClick={() => setIsSidebarOpen(false)}
             className="lg:hidden text-gray-500 hover:text-gray-700"
           >
-            <FaTimes size={24} />
+            <X size={24} />
           </button>
         </div>
 
@@ -149,7 +148,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg cursor-pointer
               text-red-600 hover:bg-red-50 transition-all duration-200 font-medium"
           >
-            <FaSignOutAlt className="text-lg" />
+            <LogOut className="text-lg" />
             <span className="text-sm">Đăng xuất</span>
           </button>
         </div>
@@ -163,7 +162,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             onClick={() => setIsSidebarOpen(true)}
             className="text-gray-700 hover:text-blue-600"
           >
-            <FaBars size={24} />
+            <Menu size={24} />
           </button>
           <h1 className="text-lg font-bold text-gray-800">FastDeli Admin</h1>
           <div className="w-6" /> {/* Spacer for centering */}

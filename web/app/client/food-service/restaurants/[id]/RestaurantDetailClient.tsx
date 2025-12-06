@@ -4,11 +4,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Restaurant, Food } from '../../interfaces';
-import { FaCirclePlus } from "react-icons/fa6";
 import { useAuth } from '@food/context/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { FaMapMarkerAlt, FaPhoneAlt, FaStar } from 'react-icons/fa';
+import { MapPin, Phone, Star, Truck, Plus } from 'lucide-react';
 
 // Type cho cart structure
 interface CartItem {
@@ -188,17 +187,17 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
           
           <div>
             <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-              <FaMapMarkerAlt className="text-red-500" />
+              <MapPin className="text-red-500" />
               {restaurant.address}
             </p>
             
             <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
-              <FaPhoneAlt className="text-green-500" />
+              <Phone className="text-green-500" />
               {restaurant.phone}
             </p>
             
             <div className="flex items-center text-sm text-yellow-600 font-medium gap-1 mt-1">
-              <FaStar />
+              <Star />
               {parseFloat(restaurant.rating).toFixed(1)} ({restaurant.total_reviews.toLocaleString()} đánh giá)
             </div>
           </div>
@@ -255,7 +254,7 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
                       onClick={() => handleAddToCart(food.food_id)}
                       className="text-green-600 cursor-pointer"
                     >
-                      <FaCirclePlus size={28} />
+                      <Plus size={28} />
                     </button>
                   )}
                 </div>

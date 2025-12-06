@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IoPersonSharp } from "react-icons/io5";
+import { User } from 'lucide-react';
 
 const PartnerButton = () => {
   return (
@@ -8,7 +8,7 @@ const PartnerButton = () => {
       text-white rounded-lg p-5 cursor-pointer
       flex flex-col items-center justify-center space-y-2
     '>
-      <IoPersonSharp className="text-5xl" />
+      <User className="text-5xl" />
 
       <p className='text-sm text-center'>Trở Thành Nhà Hàng Đối Tác</p>
     </button> 
