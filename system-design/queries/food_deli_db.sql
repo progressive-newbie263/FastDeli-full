@@ -161,3 +161,72 @@ VALUES
 (3, 'Trà Sữa Truyền Thống', 'Trà sữa đài loan chính hiệu', 30000, 6, 8),
 (3, 'Trà Sữa Matcha', 'Trà sữa vị matcha Nhật Bản', 35000, 6, 8),
 (3, 'Bánh Flan', 'Bánh flan mềm mịn', 20000, 7, NULL);
+
+
+
+-- ============================================
+-- MIGRATION: Add role to users & Drop user_roles
+-- Date: 2025-12-18
+-- ============================================
+\c db_shared_deli
+
+-- STEP 1: Backup trước khi sửa (recommended)
+CREATE TABLE users_backup_20251218 AS SELECT * FROM users;
+CREATE TABLE user_roles_backup_20251218 AS SELECT * FROM user_roles;
+
+-- STEP 2: Thêm cột role vào users
+ALTER TABLE users 
+ADD COLUMN role VARCHAR(50) DEFAULT 'customer';
+
+-- STEP 3: Migrate data từ user_roles sang users.role
+UPDATE users u
+SET role = (
+  SELECT role_name 
+  FROM user_roles ur 
+  WHERE ur.user_id = u.user_id 
+  LIMIT 1
+);
+
+-- STEP 4: Kiểm tra có user nào thiếu role không
+SELECT user_id, full_name, email, role 
+FROM users 
+WHERE role IS NULL;
+
+-- Nếu có NULL, set default
+UPDATE users SET role = 'customer' WHERE role IS NULL;
+
+-- STEP 5: Set NOT NULL constraint
+ALTER TABLE users 
+ALTER COLUMN role SET NOT NULL;
+
+-- STEP 6: Thêm CHECK constraint (data validation)
+ALTER TABLE users
+ADD CONSTRAINT check_user_role 
+CHECK (role IN ('customer', 'restaurant_owner', 'admin', 'shipper'));
+
+-- STEP 7: Tạo index cho performance
+CREATE INDEX idx_users_role ON users(role);
+
+-- STEP 8: Xóa bảng user_roles (không cần nữa)
+DROP TABLE user_roles CASCADE;
+
+-- STEP 9: Verify migration
+SELECT 
+  role, 
+  COUNT(*) as count
+FROM users
+GROUP BY role
+ORDER BY count DESC;
+
+-- STEP 10: Check structure
+\d users
+
+-- ============================================
+-- ROLLBACK PLAN (nếu cần)
+-- ============================================
+-- DROP TABLE IF EXISTS user_roles;
+-- CREATE TABLE user_roles AS SELECT * FROM user_roles_backup_20251218;
+-- ALTER TABLE users DROP COLUMN role;
+-- DROP TABLE users_backup_20251218;
+-- DROP TABLE user_roles_backup_20251218;
+-- ============================================

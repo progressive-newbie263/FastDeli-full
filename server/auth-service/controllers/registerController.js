@@ -5,7 +5,14 @@ const { generateToken } = require('../utils/tokenGenerator');
 // @route   POST /api/auth/register
 // @access  Public
 const register = async (req, res) => {
-  const { phone_number, email, password, full_name, gender, date_of_birth } = req.body;
+  const { 
+    phone_number, 
+    email, 
+    password, 
+    full_name, 
+    gender, 
+    date_of_birth 
+  } = req.body;
 
   try {
     // đăng kí thì check xem sđt đã đc đăng kí trước đó chưa.
@@ -33,14 +40,15 @@ const register = async (req, res) => {
       password,
       full_name,
       gender,
-      date_of_birth
+      date_of_birth,
+      role: 'customer' // mặc định
     });
 
     // role mặc định là user
-    await User.createUserRole(user.user_id);
+    // await User.createUserRole(user.user_id);
 
     // token jwt.
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.role);
 
     res.status(201).json({
       success: true,
@@ -53,7 +61,8 @@ const register = async (req, res) => {
         full_name: user.full_name,
         gender: user.gender,
         date_of_birth: user.date_of_birth,
-        avatar_url: user.avatar_url
+        avatar_url: user.avatar_url,
+        role: user.role
       }
     });
   } catch (error) {

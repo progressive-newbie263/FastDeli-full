@@ -4,6 +4,7 @@ const config = require('./config/config');
 
 //food category routes
 const adminStatsRoutes = require('./routes/adminStats');
+const adminRoutes = require('./routes/admin');
 const foodCategoryRoutes = require('./routes/foodCategories');
 const restaurantRoutes = require('./routes/restaurants');
 const foodRoutes = require('./routes/foods');
@@ -31,6 +32,7 @@ app.use('/api/promotions', promotionRoutes);
 // app.use('/api/banners', bannerRoutes);
 // app.use('/api/featured-items', featuredItemRoutes);
 app.use('/api/admin', adminStatsRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 app.get('/food-service/restaurants/:id');

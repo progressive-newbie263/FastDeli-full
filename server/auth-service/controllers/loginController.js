@@ -18,7 +18,6 @@ const login = async (req, res) => {
       });
     }
 
-    // Check if user is active
     if (!user.is_active) {
       return res.status(401).json({
         success: false,
@@ -26,7 +25,6 @@ const login = async (req, res) => {
       });
     }
 
-    // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
       return res.status(401).json({
@@ -35,8 +33,7 @@ const login = async (req, res) => {
       });
     }
 
-    // Generate JWT token
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.role); 
 
     res.status(200).json({
       success: true,
@@ -49,7 +46,8 @@ const login = async (req, res) => {
         full_name: user.full_name,
         gender: user.gender,
         date_of_birth: user.date_of_birth,
-        avatar_url: user.avatar_url
+        avatar_url: user.avatar_url,
+        role: user.role  
       }
     });
   } catch (error) {
@@ -61,8 +59,6 @@ const login = async (req, res) => {
     });
   }
 };
-
-
 
 module.exports = {
   login,
