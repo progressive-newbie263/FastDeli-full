@@ -1,41 +1,63 @@
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { getRelativeTime } from '@/lib/utils';
-import type { Restaurant } from '@/lib/types';
+import type { Restaurant } from '@/app/types/admin';
 
 const mockApprovedRestaurants: Restaurant[] = [
   {
-    id: '101',
+    id: 101,
     name: 'Pizza House',
-    ownerName: 'Mario Rossi',
     address: '123 Nguyễn Du, Q.1, TP.HCM',
-    cuisine: 'Pizza Ý',
-    status: 'approved',
-    createdAt: '2024-01-10T10:00:00Z',
+    phone: '0901111111',
     email: 'mario@pizzahouse.com',
-    phone: '0901111111'
+    description: 'Nhà hàng pizza Ý chính thống',
+    image_url: '/images/pizza-house.jpg',
+    rating: 4.5,
+    total_reviews: 245,
+    is_active: true,
+    created_at: '2024-01-10T10:00:00Z',
+    updated_at: '2024-01-10T10:00:00Z'
   },
   {
-    id: '102',
+    id: 102,
     name: 'Phở Hà Nội',
-    ownerName: 'Nguyễn Văn Phở',
     address: '456 Lê Lợi, Q.1, TP.HCM',
-    cuisine: 'Phở Việt Nam',
-    status: 'approved',
-    createdAt: '2024-01-08T14:30:00Z',
+    phone: '0902222222',
     email: 'pho@hanoi.com',
-    phone: '0902222222'
+    description: 'Phở truyền thống Hà Nội',
+    image_url: '/images/pho-hanoi.jpg',
+    rating: 4.8,
+    total_reviews: 567,
+    is_active: true,
+    created_at: '2024-01-08T14:30:00Z',
+    updated_at: '2024-01-08T14:30:00Z'
   },
   {
-    id: '103',
+    id: 103,
     name: 'KFC Saigon',
-    ownerName: 'Colonel Sanders',
     address: '789 Hai Bà Trưng, Q.3, TP.HCM',
-    cuisine: 'Gà rán',
-    status: 'approved',
-    createdAt: '2024-01-05T09:15:00Z',
+    phone: '0903333333',
     email: 'kfc@saigon.com',
-    phone: '0903333333'
+    description: 'Gà rán kiểu Mỹ',
+    image_url: '/images/kfc.jpg',
+    rating: 4.2,
+    total_reviews: 892,
+    is_active: true,
+    created_at: '2024-01-05T09:15:00Z',
+    updated_at: '2024-01-05T09:15:00Z'
+  },
+  {
+    id: 104,
+    name: 'Lẩu Thái Tomyum',
+    address: '321 Võ Văn Tần, Q.3, TP.HCM',
+    phone: '0904444444',
+    email: 'lauthai@tomyum.com',
+    description: 'Lẩu Thái chuẩn vị',
+    rating: 4.6,
+    total_reviews: 178,
+    is_active: false,
+    created_at: '2024-01-03T11:20:00Z',
+    updated_at: '2024-01-15T08:30:00Z'
   },
 ];
 
@@ -80,13 +102,13 @@ export default function ApprovedRestaurantsPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Loại hình
+              Đánh giá
             </label>
             <select className="border border-gray-300 rounded-md px-3 py-2 bg-white text-sm">
-              <option value="">Tất cả loại hình</option>
-              <option value="vietnamese">Việt Nam</option>
-              <option value="asian">Châu Á</option>
-              <option value="western">Phương Tây</option>
+              <option value="">Tất cả</option>
+              <option value="5">5 sao</option>
+              <option value="4">4 sao trở lên</option>
+              <option value="3">3 sao trở lên</option>
             </select>
           </div>
           <div>
@@ -95,7 +117,7 @@ export default function ApprovedRestaurantsPage() {
             </label>
             <input 
               type="text" 
-              placeholder="Tên nhà hàng, chủ sở hữu..."
+              placeholder="Tên nhà hàng, email..."
               className="border border-gray-300 rounded-md px-3 py-2 bg-white text-sm w-64"
             />
           </div>
@@ -133,16 +155,13 @@ export default function ApprovedRestaurantsPage() {
                   Nhà hàng
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Chủ sở hữu
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Liên hệ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Địa chỉ
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Loại hình
+                  Đánh giá
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
@@ -161,48 +180,63 @@ export default function ApprovedRestaurantsPage() {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-10 w-10">
-                        <div className="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center">
-                          <span className="text-primary-600 font-medium text-sm">
-                            {restaurant.name.charAt(0)}
-                          </span>
-                        </div>
+                        <img
+                          className="h-10 w-10 rounded-full object-cover"
+                          src={restaurant.image_url || '/placeholder-restaurant.jpg'}
+                          alt={restaurant.name}
+                        />
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
                           {restaurant.name}
                         </div>
-                        <div className="text-sm text-gray-500">ID: {restaurant.id}</div>
+                        <div className="text-sm text-gray-500">
+                          {restaurant.description}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {restaurant.ownerName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div>{restaurant.email}</div>
-                    <div>{restaurant.email}</div>
-                    <div>{restaurant.phone}</div>
+                    <div className="text-gray-500">{restaurant.phone}</div>
                   </td>
-                  
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-gray-900">
                     {restaurant.address}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {restaurant.cuisine}
+                    <div className="flex items-center">
+                      <span className="text-yellow-500 mr-1">⭐</span>
+                      <span className="font-semibold">{restaurant.rating}</span>
+                      <span className="text-gray-500 ml-1">
+                        ({restaurant.total_reviews} đánh giá)
+                      </span>
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <StatusBadge status={restaurant.status} />
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      restaurant.is_active 
+                        ? 'bg-green-100 text-green-700' 
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
+                      {restaurant.is_active ? 'Hoạt động' : 'Tạm dừng'}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {getRelativeTime(restaurant.createdAt)}
+                    {getRelativeTime(restaurant.created_at)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <button className="text-primary-600 hover:underline mr-4">
-                      Xem chi tiết
-                    </button>
-                    <button className="text-red-600 hover:underline">
-                      Gỡ
-                    </button>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex gap-2">
+                      <button className="text-primary-600 hover:text-primary-700">
+                        Chi tiết
+                      </button>
+                      <button className={`${
+                        restaurant.is_active 
+                          ? 'text-orange-600 hover:text-orange-700' 
+                          : 'text-green-600 hover:text-green-700'
+                      }`}>
+                        {restaurant.is_active ? 'Tạm dừng' : 'Kích hoạt'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -213,5 +247,3 @@ export default function ApprovedRestaurantsPage() {
     </AdminLayout>
   );
 }
-
-                  

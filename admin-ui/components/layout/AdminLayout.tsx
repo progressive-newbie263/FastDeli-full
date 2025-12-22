@@ -20,8 +20,15 @@ import {
 
 interface NavItem {
   href: string;
-  icon: JSX.Element;
+  icon: React.ReactElement;
   label: string;
+}
+
+// ✅ THÊM INTERFACE CHO PROPS
+interface AdminLayoutProps {
+  children: ReactNode;
+  title?: string;
+  subtitle?: string;
 }
 
 const navItems: NavItem[] = [
@@ -34,29 +41,18 @@ const navItems: NavItem[] = [
   { href: '/settings', icon: <Settings />, label: 'Cài đặt' },
 ];
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+/*
+  * FIX:
+  * =============================
+  * Truyền thêm props title và subtitle vào AdminLayout để có thể sử dụng chúng ở các page con.
+*/
+export default function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
   const router = useRouter();
-  // xử lí logic: xóa bỏ token khi logout
   const pathname = usePathname();
   const { logout, user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  // const [adminName, setAdminName] = useState('Admin');
 
-  // Lấy tên của admin từ AuthContext, thay vì mặc định Admin. ko có thì mới lấy Admin
   const adminName = user?.full_name || 'Admin';
-
-  useEffect(() => {
-    // Lấy thông tin admin từ localStorage
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      try {
-        const parsed = JSON.parse(userData);
-        if (parsed.name) setAdminName(parsed.name);
-      } catch (error) {
-        console.error('Error parsing userData:', error);
-      }
-    }
-  }, []);
 
   const handleLogout = () => {
     logout();
@@ -69,12 +65,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* 
-        Mobile Overlay 
-          + lưu ý: bg-black sẽ là optional cho className liền dưới. 
-          + Có thể thiết kế để khi mở 'sidebar' với mobile hoặc màn hình nhỏ
-          thì background phía sau mờ đi.
-      */}
+      {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-black/60 z-40 lg:hidden"
@@ -120,7 +111,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Navigation - Chiếm phần giữa, có thể scroll */}
+        {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           {navItems.map((item) => (
             <Link
@@ -141,7 +132,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        {/* Logout Button - Cố định ở dưới cùng, CHIẾM ĐỦ WIDTH SIDEBAR */}
+        {/* Logout Button */}
         <div className="border-t border-gray-200 p-3">
           <button
             onClick={handleLogout}
@@ -165,12 +156,32 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <Menu size={24} />
           </button>
           <h1 className="text-lg font-bold text-gray-800">FastDeli Admin</h1>
-          <div className="w-6" /> {/* Spacer for centering */}
+          <div className="w-6" />
         </header>
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-8">
           <div className="max-w-7xl mx-auto">
+            {/* 
+              * Feat: 
+              * =============================
+              * Hiển thị title và subtitle.
+            */}
+            {(title || subtitle) && (
+              <div className="mb-6">
+                {title && (
+                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                    {title}
+                  </h1>
+                )}
+                {subtitle && (
+                  <p className="mt-1 text-sm text-gray-600">
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+            )}
+            
             {children}
           </div>
         </main>

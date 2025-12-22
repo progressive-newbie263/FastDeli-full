@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ApiService from '@/lib/api';
-import type { Restaurant } from '@/lib/types';
+import type { Restaurant } from '@/app/types/admin';
 
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -19,8 +19,17 @@ export default function RestaurantsPage() {
     try {
       setIsLoading(true);
       const response = await ApiService.getRestaurants();
+      
+      /*
+        * debugger : lỗi dữ liệu không đúng định dạng mảng
+        * nó trả về "object" dạng array, thay vì array đúng nghĩa 
+      */
+      // console.log('API response:', response);
+      // console.log('response.data type:', typeof response.data);
+      // console.log('Is array?', Array.isArray(response.data));
+
       if (response.success) {
-        setRestaurants(response.data);
+        setRestaurants(response.data.restaurants);
       }
     } catch (error) {
       console.error('Error fetching restaurants:', error);
@@ -41,6 +50,8 @@ export default function RestaurantsPage() {
       console.error('Error updating status:', error);
     }
   };
+
+
 
   const filteredRestaurants = filter === 'all' 
     ? restaurants 

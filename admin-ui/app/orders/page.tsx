@@ -6,7 +6,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ApiService from '@/lib/api';
 import { formatCurrency, getRelativeTime } from '@/lib/utils';
-import type { Order } from '@/lib/types';
+import type { Order } from '@/app/types/admin';
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -49,7 +49,7 @@ export default function OrdersPage() {
       case 'confirmed': return 'blue';
       case 'processing': return 'blue';
       case 'delivering': return 'purple';
-      case 'completed': return 'green';
+      case 'delivered': return 'green';
       case 'cancelled': return 'red';
       default: return 'gray';
     }
@@ -61,7 +61,7 @@ export default function OrdersPage() {
       case 'confirmed': return 'Đã xác nhận';
       case 'processing': return 'Đang chuẩn bị';
       case 'delivering': return 'Đang giao';
-      case 'completed': return 'Hoàn thành';
+      case 'delivered': return 'Hoàn thành';
       case 'cancelled': return 'Đã hủy';
       default: return status;
     }
@@ -79,7 +79,7 @@ export default function OrdersPage() {
       {/* Filters */}
       <div className="mb-6">
         <div className="flex gap-2">
-          {['all', 'pending', 'confirmed', 'processing', 'delivering', 'completed', 'cancelled'].map((status) => (
+          {['all', 'pending', 'confirmed', 'processing', 'delivering', 'delivered', 'cancelled'].map((status) => (
             <button
               key={status}
               onClick={() => setFilter(status)}
@@ -165,11 +165,15 @@ export default function OrdersPage() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <StatusBadge 
                         status={order.payment_status}
-                        color={order.payment_status === 'paid' ? 'green' : 
-                               order.payment_status === 'refunded' ? 'gray' : 'yellow'}
+                        color={
+                          order.payment_status === 'paid' ? 'green' : 
+                          order.payment_status === 'refunded' ? 'gray' : 'yellow'
+                        }
                       >
-                        {order.payment_status === 'pending' ? 'Chờ thanh toán' :
-                         order.payment_status === 'paid' ? 'Đã thanh toán' : 'Đã hoàn tiền'}
+                        {
+                          order.payment_status === 'pending' ? 'Chờ thanh toán' :
+                          order.payment_status === 'paid' ? 'Đã thanh toán' : 'Đã hoàn tiền'
+                        }
                       </StatusBadge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

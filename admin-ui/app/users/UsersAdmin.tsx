@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { adminAPI } from '@/app/utils/api';
-import type { User, UsersResponse } from '@/types/admin';
+import type { User, UsersResponse } from '@/app/types/admin';
 import { formatCurrency } from '@/lib/utils';
 
 export default function UsersAdmin() {
@@ -117,7 +117,7 @@ export default function UsersAdmin() {
             {data?.users.map((user) => (
               <tr key={user.user_id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 text-sm">{user.user_id}</td>
-                <td className="px-6 py-4 text-sm font-medium">{user.name}</td>
+                <td className="px-6 py-4 text-sm font-medium">{user.full_name}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
                 <td className="px-6 py-4 text-sm text-gray-600">{user.phone_number}</td>
                 <td className="px-6 py-4">

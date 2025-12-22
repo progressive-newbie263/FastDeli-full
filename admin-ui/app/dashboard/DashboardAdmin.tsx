@@ -256,20 +256,26 @@ export default function DashboardAdmin() {
                         <span className="font-mono text-sm font-medium text-gray-900">
                           #{order.order_code}
                         </span>
+
+                        {/* kiểm tra kĩ status đoạn này ? */}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           order.order_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                           order.order_status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
-                          order.order_status === 'preparing' ? 'bg-orange-100 text-orange-700' :
-                          order.order_status === 'shipping' ? 'bg-indigo-100 text-indigo-700' :
+                          order.order_status === 'processing' ? 'bg-orange-100 text-orange-700' :
+                          order.order_status === 'delivering' ? 'bg-indigo-100 text-indigo-700' :
                           order.order_status === 'delivered' ? 'bg-green-100 text-green-700' :
+                          order.order_status === 'cancelled' ? 'bg-red-500 text-white' :
                           'bg-red-100 text-red-700'
                         }`}>
-                          {order.order_status === 'pending' ? 'Chờ xác nhận' :
-                          order.order_status === 'confirmed' ? 'Đã xác nhận' :
-                          order.order_status === 'preparing' ? 'Đang chuẩn bị' :
-                          order.order_status === 'shipping' ? 'Đang giao' :
-                          order.order_status === 'delivered' ? 'Đã giao' :
-                          'Đã hủy'}
+                          {
+                            order.order_status === 'pending' ? 'Chờ xác nhận' :
+                            order.order_status === 'confirmed' ? 'Đã xác nhận' :
+                            order.order_status === 'processing' ? 'Đang chuẩn bị' :
+                            order.order_status === 'delivering' ? 'Đang giao' :
+                            order.order_status === 'delivered' ? 'Đã giao' :
+                            order.order_status === 'cancelled' ? 'Đã hủy' :
+                            'Đã hủy'
+                          }
                         </span>
                       </div>
                       <p className="text-sm text-gray-600 mb-1">

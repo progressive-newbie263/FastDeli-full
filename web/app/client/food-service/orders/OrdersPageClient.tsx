@@ -13,7 +13,7 @@ interface Order {
   user_phone: string;
   delivery_address: string;
   total_amount: string;
-  order_status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  order_status: 'pending' | 'confirmed' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
   notes?: string;
   created_at: string;
   delivery_fee: string;
@@ -26,7 +26,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
   // tạm thời chỉ sử dụng 4 state này. Sau này khi phát triển thêm, sẽ có thêm state như "delivering". 
   // "processing" sẽ là hiển thị mặc định khi load.
   // rerender nó khi đủ 5 phút - thời gian giới hạn hủy đơn
-  const [filteredOrder, setFilteredOrder] = useState<'pending' | 'processing' | 'completed' | 'cancelled'>('processing')
+  const [filteredOrder, setFilteredOrder] = useState<'pending' | 'processing' | 'delivered' | 'cancelled'>('processing')
   const [timeNow, setTimeNow] = useState(() => dayjs()); 
 
   useEffect(() => {
@@ -61,12 +61,12 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         if (data?.success && Array.isArray(data.data)) {
           const now = dayjs();
           
-          // sau 30 phút, cập nhật trạng thái đơn "processing"(đang xử lí) thành "completed" (hoàn thành).
+          // sau 30 phút, cập nhật trạng thái đơn "processing"(đang xử lí) thành "delivered" (hoàn thành).
           const processedData = data.data.map((order: Order) => {
             if (order.order_status === 'processing') {
               const createdTime = dayjs(order.created_at);
               if (now.diff(createdTime, 'minute') >= 30) {
-                return { ...order, order_status: 'completed' };
+                return { ...order, order_status: 'delivered' };
               }
             }
             return order;
@@ -111,7 +111,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
       case 'processing':
         return 'bg-blue-50 text-blue-700 border border-blue-200';
-      case 'completed':
+      case 'delivered':
         return 'bg-green-50 text-green-700 border border-green-200';
       case 'cancelled':
         return 'bg-red-50 text-red-700 border border-red-200';
@@ -126,7 +126,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         return 'Đang chờ xử lý';
       case 'processing':
         return 'Đang xử lý';
-      case 'completed':
+      case 'delivered':
         return 'Hoàn thành';
       case 'cancelled':
         return 'Đã hủy';
@@ -154,7 +154,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         {[
           { label: 'Đang chờ', value: 'pending' },
           { label: 'Đang xử lí', value: 'processing' },
-          { label: 'Hoàn thành', value: 'completed' },
+          { label: 'Hoàn thành', value: 'delivered' },
           { label: 'Đã hủy', value: 'cancelled' },
         ].map((filter) => (
           <div

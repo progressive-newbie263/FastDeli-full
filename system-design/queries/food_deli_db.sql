@@ -63,7 +63,7 @@ CREATE TABLE orders (
   total_amount DECIMAL(12, 2) NOT NULL,
   delivery_fee DECIMAL(10, 2) DEFAULT 0,
 
-  order_status VARCHAR(30) DEFAULT 'pending',   -- pending, confirmed, preparing, delivering, completed, cancelled
+  order_status VARCHAR(30) DEFAULT 'pending',   -- pending, confirmed, processing, delivering, delivered, cancelled
   payment_status VARCHAR(30) DEFAULT 'pending', -- pending, paid, refunded
   notes TEXT,
 

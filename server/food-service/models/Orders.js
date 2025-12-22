@@ -277,8 +277,8 @@ class Order {
 
       const order = res.rows[0];
 
-      // Nếu đã cancel hoặc completed => không hủy nữa
-      if (order.order_status === 'cancelled' || order.order_status === 'completed') {
+      // Nếu đã cancel hoặc delivered => không hủy nữa
+      if (order.order_status === 'cancelled' || order.order_status === 'delivered') {
         throw new Error('ALREADY_PROCESSED');
       }
 
