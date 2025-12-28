@@ -5,7 +5,7 @@
 -- Dumped from database version 17.5
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-12-02 17:58:46
+-- Started on 2025-12-27 14:54:25
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -77,7 +77,7 @@ CREATE SEQUENCE public.banners_banner_id_seq
 ALTER SEQUENCE public.banners_banner_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5029 (class 0 OID 0)
+-- TOC entry 5045 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: banners_banner_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -116,7 +116,7 @@ CREATE SEQUENCE public.food_categories_category_id_seq
 ALTER SEQUENCE public.food_categories_category_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5030 (class 0 OID 0)
+-- TOC entry 5046 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: food_categories_category_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -163,7 +163,7 @@ CREATE SEQUENCE public.foods_food_id_seq
 ALTER SEQUENCE public.foods_food_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5031 (class 0 OID 0)
+-- TOC entry 5047 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: foods_food_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -206,7 +206,7 @@ CREATE SEQUENCE public.order_items_order_item_id_seq
 ALTER SEQUENCE public.order_items_order_item_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5032 (class 0 OID 0)
+-- TOC entry 5048 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: order_items_order_item_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -256,7 +256,7 @@ CREATE SEQUENCE public.orders_id_seq
 ALTER SEQUENCE public.orders_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5033 (class 0 OID 0)
+-- TOC entry 5049 (class 0 OID 0)
 -- Dependencies: 229
 -- Name: orders_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -295,7 +295,7 @@ CREATE SEQUENCE public.promotion_restaurants_id_seq
 ALTER SEQUENCE public.promotion_restaurants_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5034 (class 0 OID 0)
+-- TOC entry 5050 (class 0 OID 0)
 -- Dependencies: 233
 -- Name: promotion_restaurants_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -345,7 +345,7 @@ CREATE SEQUENCE public.promotions_id_seq
 ALTER SEQUENCE public.promotions_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5035 (class 0 OID 0)
+-- TOC entry 5051 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: promotions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -396,7 +396,7 @@ CREATE SEQUENCE public.restaurants_restaurant_id_seq
 ALTER SEQUENCE public.restaurants_restaurant_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5036 (class 0 OID 0)
+-- TOC entry 5052 (class 0 OID 0)
 -- Dependencies: 217
 -- Name: restaurants_restaurant_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -440,7 +440,7 @@ CREATE SEQUENCE public.reviews_review_id_seq
 ALTER SEQUENCE public.reviews_review_id_seq OWNER TO postgres;
 
 --
--- TOC entry 5037 (class 0 OID 0)
+-- TOC entry 5053 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: reviews_review_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -521,7 +521,7 @@ ALTER TABLE ONLY public.reviews ALTER COLUMN review_id SET DEFAULT nextval('publ
 
 
 --
--- TOC entry 5017 (class 0 OID 99068)
+-- TOC entry 5033 (class 0 OID 99068)
 -- Dependencies: 228
 -- Data for Name: banners; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -531,7 +531,7 @@ COPY public.banners (banner_id, title, subtitle, image_url, link_url, is_active,
 
 
 --
--- TOC entry 5009 (class 0 OID 98980)
+-- TOC entry 5025 (class 0 OID 98980)
 -- Dependencies: 220
 -- Data for Name: food_categories; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -549,7 +549,7 @@ COPY public.food_categories (category_id, category_name, image_url) FROM stdin;
 
 
 --
--- TOC entry 5011 (class 0 OID 98989)
+-- TOC entry 5027 (class 0 OID 98989)
 -- Dependencies: 222
 -- Data for Name: foods; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -568,7 +568,7 @@ COPY public.foods (food_id, restaurant_id, food_name, description, price, image_
 
 
 --
--- TOC entry 5013 (class 0 OID 99028)
+-- TOC entry 5029 (class 0 OID 99028)
 -- Dependencies: 224
 -- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -634,11 +634,24 @@ COPY public.order_items (order_item_id, order_id, food_id, food_name, food_price
 110	58	18	Bánh Flan	20000.00	1	2025-11-04 16:40:03.52191
 111	60	10	Cơm Tấm Sườn Nướng	45000.00	2	2025-11-20 15:45:42.841176
 112	60	12	Nước Ngọt	15000.00	2	2025-11-20 15:45:42.841176
+113	62	17	Trà Sữa Matcha	35000.00	4	2025-12-03 13:57:27.194161
+114	62	18	Bánh Flan	20000.00	3	2025-12-03 13:57:27.194161
+115	64	13	Pizza Margherita	120000.00	15	2025-12-18 11:39:04.560376
+116	64	14	Pizza Hải Sản	180000.00	20	2025-12-18 11:39:04.560376
+117	66	16	Trà Sữa Truyền Thống	30000.00	3	2025-12-18 15:27:18.16781
+118	66	17	Trà Sữa Matcha	35000.00	3	2025-12-18 15:27:18.16781
+119	68	16	Trà Sữa Truyền Thống	30000.00	2	2025-12-19 14:38:41.297904
+120	68	17	Trà Sữa Matcha	35000.00	2	2025-12-19 14:38:41.297904
+121	70	11	Cơm Tấm Bì Chả	40000.00	3	2025-12-22 16:27:54.136391
+122	70	12	Nước Ngọt	15000.00	3	2025-12-22 16:27:54.136391
+123	72	13	Pizza Margherita	120000.00	3	2025-12-22 17:02:25.319468
+124	72	14	Pizza Hải Sản	180000.00	2	2025-12-22 17:02:25.319468
+125	72	15	Nước Cam Tươi	25000.00	4	2025-12-22 17:02:25.319468
 \.
 
 
 --
--- TOC entry 5019 (class 0 OID 271328)
+-- TOC entry 5035 (class 0 OID 271328)
 -- Dependencies: 230
 -- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -647,6 +660,9 @@ COPY public.orders (id, order_code, user_id, restaurant_id, user_name, user_phon
 58	ORD20251104-000059	2	3	Jack Frost	0912345678	Công an phường Cầu Giấy, 1, Ngõ 84 Phố Trần Thái Tông, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	165000.00	20000.00	processing	paid		2025-11-04 16:40:03.52191	2025-11-04 16:40:03.601723
 60	ORD20251120-000061	2	1	Jack Frost	0912345678	Công an phường Cầu Giấy, 1, Ngõ 84 Phố Trần Thái Tông, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	140000.00	20000.00	processing	paid		2025-11-20 15:45:42.841176	2025-11-20 15:45:42.949433
 28	ORD20250918-000029	2	2	Jack Frost	0947554629	216 Trần Phú, phường Lam Sơn, thành phố Thanh Hóa	5415000.00	15000.00	pending	pending	Giao giờ nghỉ trưa	2025-09-18 17:16:30.464816	2025-09-18 17:16:30.464816
+62	ORD20251203-000063	2	3	Jack Frost	0912345678	Công an phường Cầu Giấy, 1, Ngõ 84 Phố Trần Thái Tông, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	220000.00	20000.00	processing	paid	skywalker	2025-12-03 13:57:27.194161	2025-12-03 13:57:27.754411
+64	ORD20251218-000065	2	2	Jack Frost	0947554629	216 Trần Phú, phường Lam Sơn, thành phố Thanh Hóa	5415000.00	15000.00	pending	pending	Giao giờ nghỉ trưa	2025-12-18 11:39:04.560376	2025-12-18 11:39:04.560376
+66	ORD20251218-000067	2	3	Jack Frost	0912345678	Công an phường Cầu Giấy, 1, Ngõ 84 Phố Trần Thái Tông, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	215000.00	20000.00	cancelled	refunded	test sau khi migrate database	2025-12-18 15:27:18.16781	2025-12-18 15:27:22.540385
 40	ORD20250923-000041	2	1	Jack Frost	0912345678	Phường Định Công, Hà Nội, 11718, Việt Nam	180000.00	20000.00	cancelled	refunded		2025-09-23 03:10:49.900602	2025-09-23 03:10:56.36239
 42	ORD20250923-000043	2	1	Jack Frost	0912345678	Cà Phê Aha, 38, Phố Duy Tân, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	345000.00	20000.00	processing	paid	abcdefghiklmnopqrstuvwyz	2025-09-23 16:23:35.089958	2025-09-23 16:23:35.125733
 44	ORD20250923-000045	2	2	Jack Frost	0912345678	Cà Phê Aha, 38, Phố Duy Tân, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	995000.00	20000.00	processing	paid	cho nhiều sốt tương cà nhé.	2025-09-23 16:49:40.525041	2025-09-23 16:49:40.549897
@@ -656,11 +672,14 @@ COPY public.orders (id, order_code, user_id, restaurant_id, user_name, user_phon
 52	ORD20251003-000053	2	3	Jack Frost	0912345678	Tống Duy Tân, Lam Sơn, Phường Hạc Thành, Tỉnh Thanh Hóa, 45000, Việt Nam	255000.00	20000.00	processing	paid		2025-10-03 14:43:35.539465	2025-10-03 14:43:35.579763
 54	ORD20251004-000055	2	3	Jack Frost	0912345678	BIDV, 7, Phố Duy Tân, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	140000.00	20000.00	cancelled	refunded	123123 ~~	2025-10-04 17:15:08.895383	2025-10-04 17:15:14.66202
 56	ORD20251016-000057	2	3	Jack Frost	0912345678	Cầu vượt Ngã tư Vọng, Phường Bạch Mai, Hà Nội, 10999, Việt Nam	345000.00	20000.00	processing	paid		2025-10-16 13:46:32.236319	2025-10-16 13:46:32.289803
+68	ORD20251219-000069	6	3	December 18	0911111112	Công an phường Cầu Giấy, 1, Ngõ 84 Phố Trần Thái Tông, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	150000.00	20000.00	cancelled	refunded	yoloooo	2025-12-19 14:38:41.297904	2025-12-19 14:39:42.746587
+70	ORD20251222-000071	6	1	December 18	0911111112	Công an phường Cầu Giấy, 1, Ngõ 84 Phố Trần Thái Tông, Phường Cầu Giấy, Hà Nội, 10192, Việt Nam	185000.00	20000.00	processing	paid	12313123113	2025-12-22 16:27:54.136391	2025-12-22 16:27:54.216277
+72	ORD20251222-000073	2	2	Jack Frost	0912345678	Cà Phê Aha, 38, Phố Duy Tân, Dịch Vọng Hậu, Phường Cầu Giấy, Hà Nội, 11314, Việt Nam	840000.00	20000.00	cancelled	refunded		2025-12-22 17:02:25.319468	2025-12-22 17:02:32.151753
 \.
 
 
 --
--- TOC entry 5023 (class 0 OID 304142)
+-- TOC entry 5039 (class 0 OID 304142)
 -- Dependencies: 234
 -- Data for Name: promotion_restaurants; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -671,7 +690,7 @@ COPY public.promotion_restaurants (id, promotion_id, restaurant_id) FROM stdin;
 
 
 --
--- TOC entry 5021 (class 0 OID 304129)
+-- TOC entry 5037 (class 0 OID 304129)
 -- Dependencies: 232
 -- Data for Name: promotions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -685,7 +704,7 @@ COPY public.promotions (id, title, description, discount_type, discount_value, m
 
 
 --
--- TOC entry 5007 (class 0 OID 98963)
+-- TOC entry 5023 (class 0 OID 98963)
 -- Dependencies: 218
 -- Data for Name: restaurants; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -708,7 +727,7 @@ COPY public.restaurants (id, name, address, phone, image_url, description, is_ac
 
 
 --
--- TOC entry 5015 (class 0 OID 99047)
+-- TOC entry 5031 (class 0 OID 99047)
 -- Dependencies: 226
 -- Data for Name: reviews; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -718,7 +737,7 @@ COPY public.reviews (review_id, order_id, user_id, restaurant_id, rating, commen
 
 
 --
--- TOC entry 5038 (class 0 OID 0)
+-- TOC entry 5054 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: banners_banner_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -727,7 +746,7 @@ SELECT pg_catalog.setval('public.banners_banner_id_seq', 1, false);
 
 
 --
--- TOC entry 5039 (class 0 OID 0)
+-- TOC entry 5055 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: food_categories_category_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -736,7 +755,7 @@ SELECT pg_catalog.setval('public.food_categories_category_id_seq', 11, true);
 
 
 --
--- TOC entry 5040 (class 0 OID 0)
+-- TOC entry 5056 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: foods_food_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -745,25 +764,25 @@ SELECT pg_catalog.setval('public.foods_food_id_seq', 18, true);
 
 
 --
--- TOC entry 5041 (class 0 OID 0)
+-- TOC entry 5057 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: order_items_order_item_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.order_items_order_item_id_seq', 112, true);
+SELECT pg_catalog.setval('public.order_items_order_item_id_seq', 125, true);
 
 
 --
--- TOC entry 5042 (class 0 OID 0)
+-- TOC entry 5058 (class 0 OID 0)
 -- Dependencies: 229
 -- Name: orders_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.orders_id_seq', 61, true);
+SELECT pg_catalog.setval('public.orders_id_seq', 73, true);
 
 
 --
--- TOC entry 5043 (class 0 OID 0)
+-- TOC entry 5059 (class 0 OID 0)
 -- Dependencies: 233
 -- Name: promotion_restaurants_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -772,7 +791,7 @@ SELECT pg_catalog.setval('public.promotion_restaurants_id_seq', 1, true);
 
 
 --
--- TOC entry 5044 (class 0 OID 0)
+-- TOC entry 5060 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: promotions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -781,7 +800,7 @@ SELECT pg_catalog.setval('public.promotions_id_seq', 4, true);
 
 
 --
--- TOC entry 5045 (class 0 OID 0)
+-- TOC entry 5061 (class 0 OID 0)
 -- Dependencies: 217
 -- Name: restaurants_restaurant_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -790,7 +809,7 @@ SELECT pg_catalog.setval('public.restaurants_restaurant_id_seq', 28, true);
 
 
 --
--- TOC entry 5046 (class 0 OID 0)
+-- TOC entry 5062 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: reviews_review_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -799,7 +818,7 @@ SELECT pg_catalog.setval('public.reviews_review_id_seq', 1, false);
 
 
 --
--- TOC entry 4839 (class 2606 OID 99078)
+-- TOC entry 4851 (class 2606 OID 99078)
 -- Name: banners banners_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -808,7 +827,7 @@ ALTER TABLE ONLY public.banners
 
 
 --
--- TOC entry 4825 (class 2606 OID 98987)
+-- TOC entry 4828 (class 2606 OID 98987)
 -- Name: food_categories food_categories_category_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -817,7 +836,7 @@ ALTER TABLE ONLY public.food_categories
 
 
 --
--- TOC entry 4827 (class 2606 OID 98985)
+-- TOC entry 4830 (class 2606 OID 98985)
 -- Name: food_categories food_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -826,7 +845,7 @@ ALTER TABLE ONLY public.food_categories
 
 
 --
--- TOC entry 4829 (class 2606 OID 98999)
+-- TOC entry 4833 (class 2606 OID 98999)
 -- Name: foods foods_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -835,7 +854,7 @@ ALTER TABLE ONLY public.foods
 
 
 --
--- TOC entry 4834 (class 2606 OID 99035)
+-- TOC entry 4844 (class 2606 OID 99035)
 -- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -844,7 +863,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- TOC entry 4845 (class 2606 OID 271342)
+-- TOC entry 4859 (class 2606 OID 271342)
 -- Name: orders orders_order_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -853,7 +872,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- TOC entry 4847 (class 2606 OID 271340)
+-- TOC entry 4861 (class 2606 OID 271340)
 -- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -862,7 +881,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- TOC entry 4851 (class 2606 OID 304147)
+-- TOC entry 4867 (class 2606 OID 304147)
 -- Name: promotion_restaurants promotion_restaurants_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -871,7 +890,7 @@ ALTER TABLE ONLY public.promotion_restaurants
 
 
 --
--- TOC entry 4849 (class 2606 OID 304140)
+-- TOC entry 4865 (class 2606 OID 304140)
 -- Name: promotions promotions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -880,7 +899,7 @@ ALTER TABLE ONLY public.promotions
 
 
 --
--- TOC entry 4823 (class 2606 OID 98978)
+-- TOC entry 4826 (class 2606 OID 98978)
 -- Name: restaurants restaurants_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -889,7 +908,7 @@ ALTER TABLE ONLY public.restaurants
 
 
 --
--- TOC entry 4837 (class 2606 OID 99056)
+-- TOC entry 4849 (class 2606 OID 99056)
 -- Name: reviews reviews_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -898,7 +917,47 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- TOC entry 4830 (class 1259 OID 99079)
+-- TOC entry 4852 (class 1259 OID 377997)
+-- Name: idx_banners_is_active; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_banners_is_active ON public.banners USING btree (is_active, sort_order) WHERE (is_active = true);
+
+
+--
+-- TOC entry 4831 (class 1259 OID 377994)
+-- Name: idx_food_categories_category_name; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_food_categories_category_name ON public.food_categories USING btree (category_name);
+
+
+--
+-- TOC entry 4834 (class 1259 OID 377989)
+-- Name: idx_foods_is_available; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_foods_is_available ON public.foods USING btree (is_available) WHERE (is_available = true);
+
+
+--
+-- TOC entry 4835 (class 1259 OID 377993)
+-- Name: idx_foods_is_featured; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_foods_is_featured ON public.foods USING btree (is_featured) WHERE (is_featured = true);
+
+
+--
+-- TOC entry 4836 (class 1259 OID 377990)
+-- Name: idx_foods_primary_category; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_foods_primary_category ON public.foods USING btree (primary_category_id) WHERE (primary_category_id IS NOT NULL);
+
+
+--
+-- TOC entry 4837 (class 1259 OID 99079)
 -- Name: idx_foods_restaurant; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -906,7 +965,31 @@ CREATE INDEX idx_foods_restaurant ON public.foods USING btree (restaurant_id);
 
 
 --
--- TOC entry 4831 (class 1259 OID 99083)
+-- TOC entry 4838 (class 1259 OID 377992)
+-- Name: idx_foods_restaurant_available; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_foods_restaurant_available ON public.foods USING btree (restaurant_id, is_available, primary_category_id);
+
+
+--
+-- TOC entry 4839 (class 1259 OID 377991)
+-- Name: idx_foods_secondary_category; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_foods_secondary_category ON public.foods USING btree (secondary_category_id) WHERE (secondary_category_id IS NOT NULL);
+
+
+--
+-- TOC entry 4840 (class 1259 OID 377995)
+-- Name: idx_order_items_food_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_order_items_food_id ON public.order_items USING btree (food_id);
+
+
+--
+-- TOC entry 4841 (class 1259 OID 99083)
 -- Name: idx_order_items_order; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -914,7 +997,7 @@ CREATE INDEX idx_order_items_order ON public.order_items USING btree (order_id);
 
 
 --
--- TOC entry 4832 (class 1259 OID 279529)
+-- TOC entry 4842 (class 1259 OID 279529)
 -- Name: idx_order_items_order_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -922,7 +1005,15 @@ CREATE INDEX idx_order_items_order_id ON public.order_items USING btree (order_i
 
 
 --
--- TOC entry 4840 (class 1259 OID 279526)
+-- TOC entry 4853 (class 1259 OID 377996)
+-- Name: idx_orders_created_at; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_orders_created_at ON public.orders USING btree (created_at DESC);
+
+
+--
+-- TOC entry 4854 (class 1259 OID 279526)
 -- Name: idx_orders_restaurant; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -930,7 +1021,7 @@ CREATE INDEX idx_orders_restaurant ON public.orders USING btree (restaurant_id);
 
 
 --
--- TOC entry 4841 (class 1259 OID 279527)
+-- TOC entry 4855 (class 1259 OID 279527)
 -- Name: idx_orders_status; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -938,7 +1029,7 @@ CREATE INDEX idx_orders_status ON public.orders USING btree (order_status);
 
 
 --
--- TOC entry 4842 (class 1259 OID 279525)
+-- TOC entry 4856 (class 1259 OID 279525)
 -- Name: idx_orders_user; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -946,7 +1037,7 @@ CREATE INDEX idx_orders_user ON public.orders USING btree (user_id);
 
 
 --
--- TOC entry 4843 (class 1259 OID 279528)
+-- TOC entry 4857 (class 1259 OID 279528)
 -- Name: idx_orders_user_status; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -954,7 +1045,55 @@ CREATE INDEX idx_orders_user_status ON public.orders USING btree (user_id, order
 
 
 --
--- TOC entry 4835 (class 1259 OID 99084)
+-- TOC entry 4862 (class 1259 OID 377999)
+-- Name: idx_promotions_active; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_promotions_active ON public.promotions USING btree (is_active, is_platform);
+
+
+--
+-- TOC entry 4863 (class 1259 OID 377998)
+-- Name: idx_promotions_dates; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_promotions_dates ON public.promotions USING btree (start_date, end_date, is_active) WHERE (is_active = true);
+
+
+--
+-- TOC entry 4822 (class 1259 OID 377986)
+-- Name: idx_restaurants_created_at; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_restaurants_created_at ON public.restaurants USING btree (created_at DESC);
+
+
+--
+-- TOC entry 4823 (class 1259 OID 377984)
+-- Name: idx_restaurants_is_active; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_restaurants_is_active ON public.restaurants USING btree (is_active) WHERE (is_active = true);
+
+
+--
+-- TOC entry 4824 (class 1259 OID 377985)
+-- Name: idx_restaurants_is_featured; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_restaurants_is_featured ON public.restaurants USING btree (is_featured) WHERE (is_featured = true);
+
+
+--
+-- TOC entry 4845 (class 1259 OID 377987)
+-- Name: idx_reviews_rating; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reviews_rating ON public.reviews USING btree (rating);
+
+
+--
+-- TOC entry 4846 (class 1259 OID 99084)
 -- Name: idx_reviews_restaurant; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -962,7 +1101,15 @@ CREATE INDEX idx_reviews_restaurant ON public.reviews USING btree (restaurant_id
 
 
 --
--- TOC entry 4860 (class 2620 OID 271350)
+-- TOC entry 4847 (class 1259 OID 377988)
+-- Name: idx_reviews_restaurant_rating; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_reviews_restaurant_rating ON public.reviews USING btree (restaurant_id, rating);
+
+
+--
+-- TOC entry 4876 (class 2620 OID 271350)
 -- Name: orders trg_generate_order_code; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -970,7 +1117,7 @@ CREATE TRIGGER trg_generate_order_code BEFORE INSERT ON public.orders FOR EACH R
 
 
 --
--- TOC entry 4852 (class 2606 OID 99106)
+-- TOC entry 4868 (class 2606 OID 99106)
 -- Name: foods foods_primary_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -979,7 +1126,7 @@ ALTER TABLE ONLY public.foods
 
 
 --
--- TOC entry 4853 (class 2606 OID 271351)
+-- TOC entry 4869 (class 2606 OID 271351)
 -- Name: foods foods_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -988,7 +1135,7 @@ ALTER TABLE ONLY public.foods
 
 
 --
--- TOC entry 4854 (class 2606 OID 99111)
+-- TOC entry 4870 (class 2606 OID 99111)
 -- Name: foods foods_secondary_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -997,7 +1144,7 @@ ALTER TABLE ONLY public.foods
 
 
 --
--- TOC entry 4855 (class 2606 OID 99041)
+-- TOC entry 4871 (class 2606 OID 99041)
 -- Name: order_items order_items_food_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1006,7 +1153,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- TOC entry 4857 (class 2606 OID 271356)
+-- TOC entry 4873 (class 2606 OID 271356)
 -- Name: orders orders_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1015,7 +1162,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- TOC entry 4858 (class 2606 OID 304148)
+-- TOC entry 4874 (class 2606 OID 304148)
 -- Name: promotion_restaurants promotion_restaurants_promotion_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1024,7 +1171,7 @@ ALTER TABLE ONLY public.promotion_restaurants
 
 
 --
--- TOC entry 4859 (class 2606 OID 304153)
+-- TOC entry 4875 (class 2606 OID 304153)
 -- Name: promotion_restaurants promotion_restaurants_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1033,7 +1180,7 @@ ALTER TABLE ONLY public.promotion_restaurants
 
 
 --
--- TOC entry 4856 (class 2606 OID 99062)
+-- TOC entry 4872 (class 2606 OID 99062)
 -- Name: reviews reviews_restaurant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1041,7 +1188,7 @@ ALTER TABLE ONLY public.reviews
     ADD CONSTRAINT reviews_restaurant_id_fkey FOREIGN KEY (restaurant_id) REFERENCES public.restaurants(id);
 
 
--- Completed on 2025-12-02 17:58:46
+-- Completed on 2025-12-27 14:54:26
 
 --
 -- PostgreSQL database dump complete

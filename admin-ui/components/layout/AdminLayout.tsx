@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   X,
+  Clock
 } from 'lucide-react';
 
 interface NavItem {
@@ -24,7 +25,6 @@ interface NavItem {
   label: string;
 }
 
-// ✅ THÊM INTERFACE CHO PROPS
 interface AdminLayoutProps {
   children: ReactNode;
   title?: string;
@@ -32,13 +32,41 @@ interface AdminLayoutProps {
 }
 
 const navItems: NavItem[] = [
-  { href: '/', icon: <LayoutDashboard />, label: 'Dashboard' },
-  { href: '/analytics', icon: <BarChart3 />, label: 'Thống kê' },
-  { href: '/orders', icon: <ShoppingCart />, label: 'Đơn hàng' },
-  { href: '/restaurants', icon: <Utensils />, label: 'Nhà hàng' },
-  { href: '/users', icon: <Users />, label: 'Người dùng' },
-  { href: '/drivers', icon: <Car />, label: 'Tài xế' },
-  { href: '/settings', icon: <Settings />, label: 'Cài đặt' },
+  { 
+    href: '/', 
+    icon: <LayoutDashboard />, 
+    label: 'Dashboard' 
+  },
+  { 
+    href: '/analytics',
+    icon: <BarChart3 />, 
+    label: 'Thống kê' 
+  },
+  { 
+    href: '/orders', 
+    icon: <ShoppingCart />, 
+    label: 'Đơn hàng' 
+  },
+  { 
+    href: '/restaurants', 
+    icon: <Utensils />, 
+    label: 'Nhà hàng' 
+  },
+  { 
+    href: '/users', 
+    icon: <Users />, 
+    label: 'Người dùng' 
+  },
+  { 
+    href: '/drivers', 
+    icon: <Car />, 
+    label: 'Tài xế' 
+  },
+  { 
+    href: '/settings', 
+    icon: <Settings />, 
+    label: 'Cài đặt' 
+  }
 ];
 
 /*
@@ -46,7 +74,11 @@ const navItems: NavItem[] = [
   * =============================
   * Truyền thêm props title và subtitle vào AdminLayout để có thể sử dụng chúng ở các page con.
 */
-export default function AdminLayout({ children, title, subtitle }: AdminLayoutProps) {
+export default function AdminLayout({ 
+  children,
+  title, 
+  subtitle 
+}: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
   const { logout, user } = useAuth();
@@ -148,14 +180,17 @@ export default function AdminLayout({ children, title, subtitle }: AdminLayoutPr
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header - Mobile Menu Button */}
-        <header className="lg:hidden bg-white shadow-sm px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={() => setIsSidebarOpen(true)}
-            className="text-gray-700 hover:text-blue-600"
-          >
+        <header className="lg:hidden bg-white shadow-sm px-4 
+          py-3 flex items-center justify-between
+        ">
+          <button onClick={() => setIsSidebarOpen(true)} className="text-gray-700 hover:text-blue-600">
             <Menu size={24} />
           </button>
-          <h1 className="text-lg font-bold text-gray-800">FastDeli Admin</h1>
+
+          <h1 className="text-lg font-bold text-gray-800">
+            FastDeli Admin
+          </h1>
+          
           <div className="w-6" />
         </header>
 

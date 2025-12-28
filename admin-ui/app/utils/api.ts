@@ -73,6 +73,54 @@ export const adminAPI = {
   getChartData: () => 
     fetchAPI('/api/admin/chart-data'),
 
+  /* 
+    thu thập restaurants 
+  */
+  getRestaurants: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    search?: string;
+  }): Promise<RestaurantsResponse> => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    
+    return fetchAPI(`/api/admin/restaurants?${query.toString()}`);
+  },
+
+  /* 
+    thông tin chi tiết nhà hàng 
+  */
+  getRestaurantDetail: (id: number): Promise<{
+    restaurant: RestaurantDetail;
+    owner: User;
+    stats: {
+      total_foods: number;
+      total_orders: number;
+      total_revenue: number;
+    };
+  }> => fetchAPI(`/api/admin/restaurants/${id}`),
+
+  // duyệt hoặc từ chối nhà hàng
+  approveRestaurant: (id: number) =>
+    fetchAPI(`/api/admin/restaurants/${id}/approve`, { 
+      method: 'PUT' 
+    }),
+
+  rejectRestaurant: (id: number, reason?: string) =>
+    fetchAPI(`/api/admin/restaurants/${id}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ reason })
+    }),
+
+  toggleRestaurantActive: (id: number) =>
+    fetchAPI(`/api/admin/restaurants/${id}/toggle-active`, { 
+      method: 'PUT' 
+    }),
+
   /*
     * phần bổ sung: users
     * Hiện tại đang bị 1 số vấn đề. Tạm thời đang thử nghiệm là chính

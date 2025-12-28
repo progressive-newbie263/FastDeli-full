@@ -1,67 +1,49 @@
-import AdminLayout from '@/components/layout/AdminLayout';
-import StatusBadge from '@/components/ui/StatusBadge';
-import { getRelativeTime } from '@/lib/utils';
-import type { Restaurant } from '@/app/types/admin';
+'use client';
 
-const mockApprovedRestaurants: Restaurant[] = [
-  {
-    id: 101,
-    name: 'Pizza House',
-    address: '123 Nguyễn Du, Q.1, TP.HCM',
-    phone: '0901111111',
-    email: 'mario@pizzahouse.com',
-    description: 'Nhà hàng pizza Ý chính thống',
-    image_url: '/images/pizza-house.jpg',
-    rating: 4.5,
-    total_reviews: 245,
-    is_active: true,
-    created_at: '2024-01-10T10:00:00Z',
-    updated_at: '2024-01-10T10:00:00Z'
-  },
-  {
-    id: 102,
-    name: 'Phở Hà Nội',
-    address: '456 Lê Lợi, Q.1, TP.HCM',
-    phone: '0902222222',
-    email: 'pho@hanoi.com',
-    description: 'Phở truyền thống Hà Nội',
-    image_url: '/images/pho-hanoi.jpg',
-    rating: 4.8,
-    total_reviews: 567,
-    is_active: true,
-    created_at: '2024-01-08T14:30:00Z',
-    updated_at: '2024-01-08T14:30:00Z'
-  },
-  {
-    id: 103,
-    name: 'KFC Saigon',
-    address: '789 Hai Bà Trưng, Q.3, TP.HCM',
-    phone: '0903333333',
-    email: 'kfc@saigon.com',
-    description: 'Gà rán kiểu Mỹ',
-    image_url: '/images/kfc.jpg',
-    rating: 4.2,
-    total_reviews: 892,
-    is_active: true,
-    created_at: '2024-01-05T09:15:00Z',
-    updated_at: '2024-01-05T09:15:00Z'
-  },
-  {
-    id: 104,
-    name: 'Lẩu Thái Tomyum',
-    address: '321 Võ Văn Tần, Q.3, TP.HCM',
-    phone: '0904444444',
-    email: 'lauthai@tomyum.com',
-    description: 'Lẩu Thái chuẩn vị',
-    rating: 4.6,
-    total_reviews: 178,
-    is_active: false,
-    created_at: '2024-01-03T11:20:00Z',
-    updated_at: '2024-01-15T08:30:00Z'
-  },
-];
+import { useState, useEffect } from 'react';
+import AdminLayout from '@/components/layout/AdminLayout';
+import { adminAPI } from '@/app/utils/api';
+import type { Restaurant, RestaurantsResponse } from '@/app/types/admin';
+import { getRelativeTime } from '@/lib/utils';
 
 export default function ApprovedRestaurantsPage() {
+  const [data, setData] = useState<RestaurantsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  useEffect(() => {
+    fetchRestaurants();
+  }, [statusFilter]);
+
+  const fetchRestaurants = async () => {
+    try {
+      setLoading(true);
+
+      const result = await adminAPI.getRestaurants({
+        status: 'active', // Chỉ lấy approved/active
+        search
+      });
+      
+      setData(result);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleActive = async (id: number, currentStatus: boolean) => {
+    if (!confirm(`${currentStatus ? 'Tạm dừng' : 'Kích hoạt'} nhà hàng này?`)) return;
+    try {
+      await adminAPI.toggleRestaurantActive(id);
+      fetchRestaurants();
+    } catch (error) {
+      alert('Có lỗi xảy ra!');
+    }
+  };
+
+
   return (
     <AdminLayout 
       title="Nhà hàng đã duyệt" 
@@ -135,7 +117,7 @@ export default function ApprovedRestaurantsPage() {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Nhà hàng đã phê duyệt</h2>
-              <p className="text-gray-600 mt-1">Quản lý {mockApprovedRestaurants.length} nhà hàng</p>
+              <p className="text-gray-600 mt-1">Quản lý {data?.restaurants.length || 0} nhà hàng</p>
             </div>
             <div className="flex space-x-3">
               <button className="bg-primary-500 text-white px-4 py-2 rounded-md hover:bg-primary-600 transition-colors">
@@ -175,7 +157,7 @@ export default function ApprovedRestaurantsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {mockApprovedRestaurants.map((restaurant) => (
+              {data?.restaurants.map((restaurant) => (
                 <tr key={restaurant.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
