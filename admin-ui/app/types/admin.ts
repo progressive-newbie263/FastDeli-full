@@ -88,16 +88,23 @@ export interface Restaurant {
   //banner_url?: string;
   rating: number;
   total_reviews: number;
-  //status: 'pending' | 'active' | 'inactive' | 'rejected';
-  is_active: boolean;
-  //owner_id: number;
+  total_foods?: number;
+  status: string; //'pending' | 'approved' | 'rejected' | 'inactive'
+  
+  // thời gian đăng kí/cập nhật gần nhất của nhà hàng
   created_at: string;
   updated_at: string;
-  // owner?: {
-  //   full_name: string;
-  //   email: string;
-  //   phone_number: string;
-  // };
+
+  // áp dụng cho api phía admin (func getRestaurantsByIdAdmin)
+  delivery_time: string;
+  delivery_time_min: number;
+  delivery_time_max: number;
+  delivery_fee: string | number;
+  min_order_value: string | number;
+  
+  // Operating hours
+  opening_time: string;
+  closing_time: string;
 }
 
 export interface RestaurantDetail extends Restaurant {
@@ -159,16 +166,36 @@ export interface OrdersResponse {
  * ============================================
  */
 export interface Food {
-  id: number;
+  food_id: number;
+  food_name: string;
   restaurant_id: number;
-  name: string;
   description?: string;
   price: number;
   image_url?: string;
-  category_id?: number;
   is_available: boolean;
   created_at: string;
   updated_at: string;
+
+  /* 
+    * bổ sung: 2 trường này hỗ trợ hiển thị 1 vài thông số nâng cao.
+    primary_category và secondary_category. 
+    
+      *primary là thể loại thức ăn chính: ví dụ, món ăn là "cơm gà" 
+    thì cơm hay gà sẽ là primary_category?
+    
+      *secondary là thể loại thức ăn phụ: ví dụ, món ăn là "cơm gà" 
+    nếu cơm là primary_category thì gà sẽ là secondary_category
+
+    * Nếu món ăn chỉ có 1 thể loại thì secondary_category sẽ là null
+  */
+  primary_category: {
+    id: number;
+    name: string;
+  };
+  secondary_category: {
+    id: number;
+    name: string;
+  } | null;
 }
 
 /**

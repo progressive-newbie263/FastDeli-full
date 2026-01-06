@@ -1,4 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+import { RestaurantDetail, RestaurantsResponse, User } from "../types/admin";
+
+const ADMIN_FOOD_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
 export class APIError extends Error {
   constructor(
@@ -18,7 +20,7 @@ export async function fetchAPI<T = any>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${ADMIN_FOOD_URL}${endpoint}`;
 
   try {
     const response = await fetch(url, {

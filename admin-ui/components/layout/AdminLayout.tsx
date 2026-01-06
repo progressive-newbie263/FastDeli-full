@@ -100,15 +100,15 @@ export default function AdminLayout({
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 z-40 md:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
         {/* Header */}
@@ -122,7 +122,7 @@ export default function AdminLayout({
           
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="lg:hidden text-gray-500 hover:text-gray-700"
+            className="md:hidden text-gray-500 hover:text-gray-700"
           >
             <X size={24} />
           </button>
@@ -180,7 +180,7 @@ export default function AdminLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header - Mobile Menu Button */}
-        <header className="lg:hidden bg-white shadow-sm px-4 
+        <header className="md:hidden bg-white shadow-sm px-4 
           py-3 flex items-center justify-between
         ">
           <button onClick={() => setIsSidebarOpen(true)} className="text-gray-700 hover:text-blue-600">
@@ -195,7 +195,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             {/* 
               * Feat: 
@@ -205,7 +205,7 @@ export default function AdminLayout({
             {(title || subtitle) && (
               <div className="mb-6">
                 {title && (
-                  <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                     {title}
                   </h1>
                 )}

@@ -40,6 +40,7 @@ class RestaurantController {
   }
 
   // Controller lấy nhà hàng theo ID và danh sách món ăn
+  // note: đây là 1 api khó vcđ
   static async getFoodsByRestaurant(req, res) {
     try {
       const { id } = req.params;

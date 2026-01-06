@@ -23,9 +23,11 @@ router.get('/stats', async (req, res) => {
     
     // Active restaurants
     const restaurantsResult = await foodPool.query(
-      `SELECT COUNT(*) as count 
-       FROM restaurants 
-       WHERE is_active = true`
+      `
+        SELECT COUNT(*) as count 
+        FROM restaurants 
+        WHERE status = 'active'
+      `
     );
     
     // Total users

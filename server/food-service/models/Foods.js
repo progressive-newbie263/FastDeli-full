@@ -12,7 +12,7 @@ class Food {
       FROM foods f
       LEFT JOIN restaurants r ON f.restaurant_id = r.restaurant_id
       LEFT JOIN food_categories fc ON f.category_id = fc.category_id
-      WHERE f.is_available = true AND r.is_active = true
+      WHERE f.is_available = true AND r.status = 'active'
     `;
     
     const params = [];
@@ -75,7 +75,7 @@ class Food {
       FROM foods f
       LEFT JOIN restaurants r ON f.restaurant_id = r.restaurant_id
       LEFT JOIN food_categories fc ON f.category_id = fc.category_id
-      WHERE f.food_id = $1 AND f.is_available = true AND r.is_active = true
+      WHERE f.food_id = $1 AND f.is_available = true AND r.status = 'active'
     `;
     
     const result = await foodPool.query(query, [id]);
@@ -176,6 +176,7 @@ class Food {
   }
 
   // Lấy món ăn nổi bật (trending)
+  //note is_active có thể cần fix.
   static async getFeatured(type = 'trending_food', limit = 10) {
     const query = `
       SELECT f.*, 
@@ -188,7 +189,7 @@ class Food {
       LEFT JOIN restaurants r ON f.restaurant_id = r.restaurant_id
       LEFT JOIN food_categories fc ON f.category_id = fc.category_id
       WHERE fi.type = $1 AND fi.is_active = true 
-            AND f.is_available = true AND r.is_active = true
+            AND f.is_available = true AND r.status = 'active'
       ORDER BY fi.sort_order ASC, fi.created_at DESC
       LIMIT $2
     `;

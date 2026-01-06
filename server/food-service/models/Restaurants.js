@@ -1,6 +1,15 @@
 const { foodPool } = require('../config/db');
 
 class Restaurant {
+  /*
+    ================================================================
+    ================================================================
+
+    API cho nhà hàng client-side (dùng bên khách hàng)
+
+    ================================================================
+    ================================================================
+  */
   // lấy tất cả nhà hàng (GET /restaurants )
   static async getAll(filters = {}) {
     let query = `
@@ -9,7 +18,7 @@ class Restaurant {
              COUNT(rev.review_id) as review_count
       FROM restaurants r
       LEFT JOIN reviews rev ON r.id = rev.restaurant_id
-      WHERE r.is_active = true
+      WHERE r.status = 'active'
     `;
     
     const params = [];
@@ -51,11 +60,11 @@ class Restaurant {
         phone,
         image_url,
         description,
-        is_active,
+        status,
         rating,
         total_reviews
       FROM restaurants
-      WHERE id = $1 AND is_active = true
+      WHERE id = $1 AND status = 'active'
     `;
 
     try {
@@ -71,104 +80,6 @@ class Restaurant {
       throw new Error('Lỗi khi lấy thông tin nhà hàng');
     }
   }
-
-  // lấy nhà hàng theo id và kèm theo món ăn của nhà hàng đó (GET /restaurants/:id/foods )
-  // Lấy nhà hàng theo ID kèm theo danh sách món ăn (GET /restaurants/:id/foods)
-  static async getFoodsByRestaurantId(id, filters = {}) {
-    try {
-      let query = `
-        SELECT 
-          f.food_id,
-          f.food_name,
-          f.description,
-          f.price,
-          f.image_url,
-          f.is_available,
-          f.created_at,
-          fc1.category_id AS primary_category_id,
-          fc1.category_name AS primary_category_name,
-          fc2.category_id AS secondary_category_id,
-          fc2.category_name AS secondary_category_name
-        FROM foods f
-        LEFT JOIN food_categories fc1 ON f.primary_category_id = fc1.category_id
-        LEFT JOIN food_categories fc2 ON f.secondary_category_id = fc2.category_id
-        JOIN restaurants r ON f.restaurant_id = r.id
-        WHERE f.restaurant_id = $1 AND f.is_available = true AND r.is_active = true
-      `;
-
-      const params = [id];
-      let paramIndex = 2;
-
-      if (filters.primary_category_id) {
-        query += ` AND f.primary_category_id = $${paramIndex}`;
-        params.push(filters.primary_category_id);
-        paramIndex++;
-      }
-
-      if (filters.secondary_category_id) {
-        query += ` AND f.secondary_category_id = $${paramIndex}`;
-        params.push(filters.secondary_category_id);
-        paramIndex++;
-      }
-
-      if (filters.search) {
-        query += ` AND f.food_name ILIKE $${paramIndex}`;
-        params.push(`%${filters.search}%`);
-        paramIndex++;
-      }
-
-      if (filters.min_price) {
-        query += ` AND f.price >= $${paramIndex}`;
-        params.push(filters.min_price);
-        paramIndex++;
-      }
-
-      if (filters.max_price) {
-        query += ` AND f.price <= $${paramIndex}`;
-        params.push(filters.max_price);
-        paramIndex++;
-      }
-
-      query += ` ORDER BY f.created_at DESC`;
-
-      if (filters.limit) {
-        query += ` LIMIT $${paramIndex}`;
-        params.push(filters.limit);
-      }
-
-      const result = await foodPool.query(query, params);
-
-      const foods = result.rows.map(row => ({
-        food_id: row.food_id,
-        food_name: row.food_name,
-        image_url: row.image_url || null,
-        price: row.price,
-        is_available: row.is_available,
-        primary_category: {
-          id: row.primary_category_id,
-          name: row.primary_category_name
-        },
-        secondary_category: row.secondary_category_id
-          ? {
-              id: row.secondary_category_id,
-              name: row.secondary_category_name
-            }
-          : null
-      }));
-
-      return {
-        foods,
-        total_foods: foods.length
-      };
-
-    } catch (err) {
-      console.error('Database error in getFoodsByRestaurantId:', err);
-      throw new Error('Lỗi khi lấy danh sách món ăn');
-    }
-  }
-
-
-
 
   // tạo thêm nhà hàng vào csdl (nhà hàng đó đăng kí chẳng hạn) (POST /restaurants )
   // api dùng cho 'nhà hàng' đăng kí làm dịch vụ
@@ -213,6 +124,191 @@ class Restaurant {
 
     const result = await foodPool.query(query, [id, ...values]);
     return result.rows[0];
+  }
+
+  /*
+    ================================================================
+    ================================================================
+
+    API cho nhà hàng SERVER-SIDE (dùng bên ADMIN)
+
+    ================================================================
+    ================================================================
+  */
+  
+  /*
+    Lấy tất cả nhà hàng với phân trang (cho admin)
+  */
+  static async getAllWithPagination(page = 1, limit = 10, filters = {}) {
+    try {
+      const offset = (page - 1) * limit;
+      let query = `
+        SELECT 
+          r.*,
+          COUNT(f.food_id) as total_foods
+        FROM restaurants r
+        LEFT JOIN foods f ON r.id = f.restaurant_id
+        WHERE 1=1
+      `;
+      
+      const params = [];
+      let paramIndex = 1;
+
+      // Filter by status
+      if (filters.status) {
+        query += ` AND r.status = $${paramIndex}`;
+        params.push(filters.status);
+        paramIndex++;
+      }
+
+      // Filter by search
+      if (filters.search) {
+        query += ` AND (r.name ILIKE $${paramIndex} OR r.address ILIKE $${paramIndex})`;
+        params.push(`%${filters.search}%`);
+        paramIndex++;
+      }
+
+      query += ` GROUP BY r.id`;
+      query += ` ORDER BY r.created_at DESC`;
+      query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+      params.push(limit, offset);
+
+      const result = await foodPool.query(query, params);
+
+      // Get total count
+      let countQuery = `SELECT COUNT(DISTINCT r.id) as total FROM restaurants r WHERE 1=1`;
+      const countParams = [];
+      let countParamIndex = 1;
+
+      if (filters.status) {
+        countQuery += ` AND r.status = $${countParamIndex}`;
+        countParams.push(filters.status);
+        countParamIndex++;
+      }
+
+      if (filters.search) {
+        countQuery += ` AND (r.name ILIKE $${countParamIndex} OR r.address ILIKE $${countParamIndex})`;
+        countParams.push(`%${filters.search}%`);
+      }
+
+      const countResult = await foodPool.query(countQuery, countParams);
+      const total = parseInt(countResult.rows[0].total);
+
+      return {
+        restaurants: result.rows,
+        pagination: {
+          current_page: page,
+          per_page: limit,
+          total_items: total,
+          total_pages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /*
+    Lấy thống kê nhà hàng (cho admin dashboard)
+  */
+  static async getStatistics() {
+    try {
+      const query = `
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'active') as active_count,
+          COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
+          COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count,
+          COUNT(*) FILTER (WHERE status = 'inactive') as inactive_count,
+          COUNT(*) as total_count,
+          COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '30 days') as new_this_month
+        FROM restaurants
+      `;
+
+      const result = await foodPool.query(query);
+      return result.rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /*
+    Cập nhật trạng thái nhà hàng
+  */
+  static async updateStatus(id, status, reason = null) {
+    try {
+      const query = `
+        UPDATE restaurants 
+        SET 
+          status = $1,
+          rejection_reason = $2,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $3
+        RETURNING *
+      `;
+
+      const result = await foodPool.query(query, [status, reason, id]);
+      
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      return result.rows[0];
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /*
+    Phê duyệt nhà hàng.
+    default status là inactive, chuyển sang active là nhà hàng được phép hoạt động
+  */
+  static async approveRestaurant(id) {
+    return await this.updateStatus(id, 'active', null);
+  }
+
+  /*
+    Từ chối nhà hàng
+  */
+  static async rejectRestaurant(id, reason) {
+    if (!reason || reason.trim() === '') {
+      throw new Error('Lý do từ chối là bắt buộc');
+    }
+    return await this.updateStatus(id, 'rejected', reason);
+  }
+
+  /*
+      Lấy chi tiết nhà hàng theo ID (trang admin)
+  */
+  static async getRestaurantByIdAdmin(id) {
+    try {
+      const query = `
+        SELECT 
+          r.*,
+          COUNT(DISTINCT f.food_id) as total_foods,
+          COUNT(DISTINCT CASE WHEN f.is_available = true THEN f.food_id END) as available_foods
+        FROM restaurants r
+        LEFT JOIN foods f ON r.id = f.restaurant_id
+        WHERE r.id = $1
+        GROUP BY r.id
+      `;
+
+      const result = await foodPool.query(query, [id]);
+      
+      if (result.rows.length === 0) {
+        return null;
+      }
+
+      // Convert total_foods từ string sang number
+      const restaurant = {
+        ...result.rows[0],
+        total_foods: parseInt(result.rows[0].total_foods) || 0,
+        available_foods: parseInt(result.rows[0].available_foods) || 0
+      };
+
+      return restaurant;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

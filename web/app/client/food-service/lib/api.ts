@@ -1,5 +1,5 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
-const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5000';
+const CLIENT_FOOD_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+const CLIENT_AUTH_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5000'; //KO CẦN 
 
 export class APIError extends Error {
   constructor(public status: number, message: string, public data?: any) {
@@ -32,7 +32,7 @@ export async function fetchAPI<T = any>(
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${CLIENT_FOOD_URL}${endpoint}`, {
       ...fetchOptions,
       headers,
     });
