@@ -1,4 +1,11 @@
-/* admin-ui/app/globals.css - Cập nhật */
+/* admin-ui/app/globals.css */
+/*
+  IMPORTANT (monorepo): Ensure Tailwind uses the admin-ui config.
+  Without this, Tailwind may fall back to defaults (darkMode: media),
+  causing `.dark` class toggling to have no effect.
+*/
+@config "../tailwind.config.js";
+
 @import "tailwindcss";
 
 /* 
@@ -11,7 +18,14 @@
   }
   
   body {
+    /* Prefer setting theme colors via classes in app/layout.tsx.
+       (Tailwind variants inside @apply are not reliable across setups.) */
     @apply bg-gray-50 text-gray-900;
+  }
+
+  .dark {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
   }
 }
 
@@ -32,6 +46,30 @@
     transform: translateY(-5px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   }
+}
+
+/* Smooth transitions for theme switching */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Custom scrollbar for dark mode */
+.dark::-webkit-scrollbar {
+  width: 10px;
+}
+
+.dark::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+.dark::-webkit-scrollbar-thumb {
+  @apply bg-gray-600 rounded-lg;
+}
+
+.dark::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
 }
 
 /* Custom primary colors */

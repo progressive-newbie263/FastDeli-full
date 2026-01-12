@@ -14,7 +14,7 @@ const addCacheHeaders = (req, res, next) => {
 // Public routes với cache
 router.get('/', addCacheHeaders, RestaurantController.getAllRestaurants);
 router.get('/:id', addCacheHeaders, RestaurantController.getRestaurantById);
-router.get('/:id/foods', addCacheHeaders, RestaurantController.getFoodsByRestaurant);
+router.get('/:id/foods', addCacheHeaders, RestaurantController.getFoodsByRestaurantId);
 
 // Protected routes (cần auth)
 //router.post('/', auth, validateRestaurant, RestaurantController.createRestaurant);

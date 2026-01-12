@@ -1,5 +1,6 @@
 const Restaurant = require('../models/Restaurants');
 const { successResponse, errorResponse } = require('../utils/response');
+const { foodPool } = require('../config/db');
 
 class RestaurantController {
   // controller cho phép lấy danh sách tất cả nhà hàng 
@@ -41,43 +42,42 @@ class RestaurantController {
 
   // Controller lấy nhà hàng theo ID và danh sách món ăn
   // note: đây là 1 api khó vcđ
-  static async getFoodsByRestaurant(req, res) {
+  // bổ sung (cóp lại bên admin-restaurantController)
+  static async getFoodsByRestaurantId(req, res) {
     try {
-      const { id } = req.params;
+      const restaurantId = Number(req.params.id);
+      if (!restaurantId || Number.isNaN(restaurantId)) {
+        return res.status(400).json({
+          success: false,
+          message: 'restaurantId không hợp lệ',
+          data: null,
+        });
+      }
 
-      const filters = {
-        primary_category_id: req.query.primary_category_id ? parseInt(req.query.primary_category_id) : null,
-        secondary_category_id: req.query.secondary_category_id ? parseInt(req.query.secondary_category_id) : null,
-        search: req.query.search,
-        min_price: req.query.min_price ? parseFloat(req.query.min_price) : null,
-        max_price: req.query.max_price ? parseFloat(req.query.max_price) : null,
-        limit: req.query.limit ? parseInt(req.query.limit) : null
-      };
+      const foodsQuery = `
+        SELECT f.*
+        FROM foods f
+        WHERE f.restaurant_id = $1
+        ORDER BY f.created_at DESC NULLS LAST, f.food_id DESC NULLS LAST
+      `;
+      const foodsResult = await foodPool.query(foodsQuery, [restaurantId]);
+      const foods = foodsResult.rows || [];
 
-      // Xoá các key không hợp lệ/null
-      Object.keys(filters).forEach(key => {
-        if (filters[key] === null || filters[key] === undefined || filters[key] === '') {
-          delete filters[key];
-        }
-      });
-
-      const { foods, total_foods } = await Restaurant.getFoodsByRestaurantId(id, filters);
-
-      res.json({
+      //Trả foods trong data (schema chuẩn)
+      return res.status(200).json({
         success: true,
+        message: 'OK',
         data: foods,
-        total_foods
       });
-
-    } catch (error) {
-      console.error('Error in getFoodsByRestaurant:', error);
-      res.status(500).json({
+    } catch (err) {
+      console.error('[food-service] Error in getFoodsByRestaurantId:', err);
+      return res.status(500).json({
         success: false,
-        message: 'Lỗi server khi lấy danh sách món ăn'
+        message: 'Lỗi server khi lấy món ăn của nhà hàng',
+        data: null,
       });
     }
   }
-
 
   //controller tạo nhà hàng mới (POST /restaurants)
   static async createRestaurant(req, res) {
@@ -105,6 +105,8 @@ class RestaurantController {
       return errorResponse(res, 'Lỗi khi cập nhật nhà hàng', error);
     }
   }
+
+  
 }
 
 module.exports = RestaurantController;

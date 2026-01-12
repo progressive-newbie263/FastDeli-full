@@ -90,7 +90,7 @@ export default function RestaurantsPage() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === status
                   ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
+                  : 'bg-white dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/15 border border-gray-200 dark:border-white/10'
               }`}
             >
               {status === 'all' ? 'Tất cả' : 
@@ -104,11 +104,11 @@ export default function RestaurantsPage() {
 
         {/* Items per page selector */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Hiển thị:</span>
+          <span className="text-sm text-gray-600 dark:text-gray-300">Hiển thị:</span>
           <select
             value={perPage}
             onChange={(e) => handlePerPageChange(Number(e.target.value))}
-            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
@@ -119,50 +119,50 @@ export default function RestaurantsPage() {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden lg:block bg-white rounded-xl card-shadow overflow-hidden">
+      <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl card-shadow overflow-hidden border border-transparent dark:border-gray-700">
         <div className="overflow-hidden">
-          <table className="w-full divide-y divide-gray-200 table-fixed">
-            <thead className="bg-gray-50">
+          <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
-                <th className="w-[26%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[26%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Nhà hàng
                 </th>
-                <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Địa chỉ
                 </th>
-                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Liên hệ
                 </th>
-                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Đánh giá
                 </th>
-                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Trạng thái
                 </th>
-                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Ngày tạo
                 </th>
-                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                     Đang tải...
                   </td>
                 </tr>
               ) : restaurants.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-3 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
                     Không có nhà hàng nào
                   </td>
                 </tr>
               ) : (
                 restaurants.map((restaurant) => (
-                  <tr key={restaurant.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={restaurant.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                     <td className="px-3 py-4">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
@@ -173,30 +173,30 @@ export default function RestaurantsPage() {
                           />
                         </div>
                         <div className="ml-3 min-w-0 flex-1">
-                          <div className="text-sm font-medium text-gray-900 truncate" title={restaurant.name}>
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={restaurant.name}>
                             {restaurant.name}
                           </div>
-                          <div className="text-xs text-gray-500 truncate" title={restaurant.description}>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate" title={restaurant.description}>
                             {restaurant.description}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-3 py-4">
-                      <div className="text-sm text-gray-900 line-clamp-2" title={restaurant.address}>
+                      <div className="text-sm text-gray-900 dark:text-gray-100 line-clamp-2" title={restaurant.address}>
                         {restaurant.address}
                       </div>
                     </td>
-                    <td className="px-3 py-4 text-sm text-gray-900">
+                    <td className="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
                       <div className="break-words">{restaurant.phone}</div>
                     </td>
                     <td className="px-3 py-4">
-                      <div className="text-sm text-gray-900">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">
                         <div className="flex items-center gap-1">
                           <span>⭐</span>
                           <span className="font-medium">{restaurant.rating || 0}</span>
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           {restaurant.total_reviews || 0} đánh giá
                         </div>
                       </div>
@@ -215,7 +215,7 @@ export default function RestaurantsPage() {
                          restaurant.status === "rejected" ? 'Từ chối' : 'Tạm dừng'}
                       </StatusBadge>
                     </td>
-                    <td className="px-3 py-4 text-sm text-gray-500">
+                    <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                       <div className="whitespace-nowrap">{new Date(restaurant.created_at).toLocaleDateString('vi-VN')}</div>
                     </td>
                     <td className="px-3 py-4 text-sm font-medium">

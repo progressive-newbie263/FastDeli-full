@@ -3,6 +3,35 @@ const express = require('express');
 const router = express.Router();
 const { foodPool, sharedPool } = require('../config/db');
 
+function toNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function calcTrend(currentValue, previousValue) {
+  const prev = toNumber(previousValue, 0);
+  const curr = toNumber(currentValue, 0);
+  if (prev <= 0) return 0;
+  return Number((((curr - prev) / prev) * 100).toFixed(1));
+}
+
+function distributePercent(total, buckets) {
+  const t = Math.max(0, toNumber(total, 0));
+  if (t === 0) return buckets.map(b => ({ ...b, value: 0 }));
+
+  // Round and then adjust last bucket to keep sum=100
+  const withPct = buckets.map(b => ({
+    ...b,
+    value: Math.round((toNumber(b.count, 0) / t) * 100)
+  }));
+  const sum = withPct.reduce((acc, b) => acc + b.value, 0);
+  const delta = 100 - sum;
+  if (withPct.length > 0) {
+    withPct[withPct.length - 1].value += delta;
+  }
+  return withPct;
+}
+
 /**
  * GET /api/admin/stats
  * Dashboard statistics
@@ -10,15 +39,22 @@ const { foodPool, sharedPool } = require('../config/db');
 router.get('/stats', async (req, res) => {
   try {
     // Total orders
-    const ordersResult = await foodPool.query(
-      'SELECT COUNT(DISTINCT user_id) as count FROM orders'
-    );
-    
-    // Total revenue (chỉ đơn đã giao)
+    const ordersResult = await foodPool.query('SELECT COUNT(*)::int as count FROM orders');
+
+    // Total revenue (đơn đã thanh toán, không tính cancelled) - tính từ order_items (food_price * quantity)
     const revenueResult = await foodPool.query(
-      `SELECT COALESCE(SUM(total_amount), 0) as total 
-       FROM orders 
-       WHERE order_status = 'delivered'`
+      `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
+       FROM (
+         SELECT
+           o.id,
+           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+         FROM orders o
+         LEFT JOIN order_items oi ON oi.order_id = o.id
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+         GROUP BY o.id
+       ) t`
     );
     
     // Active restaurants
@@ -42,12 +78,21 @@ router.get('/stats', async (req, res) => {
        WHERE order_status = 'pending'`
     );
 
-    // Today's revenue
+    // Today's revenue - tính từ order_items
     const todayRevenueResult = await foodPool.query(
-      `SELECT COALESCE(SUM(total_amount), 0) as total
-       FROM orders
-       WHERE DATE(created_at) = CURRENT_DATE
-       AND order_status = 'delivered'`
+      `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
+       FROM (
+         SELECT
+           o.id,
+           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+         FROM orders o
+         LEFT JOIN order_items oi ON oi.order_id = o.id
+         WHERE DATE(o.created_at) = CURRENT_DATE
+           AND o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+         GROUP BY o.id
+       ) t`
     );
 
     // Calculate trends (so với tháng trước)
@@ -70,6 +115,46 @@ router.get('/stats', async (req, res) => {
       ? ((currentMonthOrders - lastMonthOrders) / lastMonthOrders * 100).toFixed(1)
       : 0;
 
+    // Revenue trend (so với tháng trước)
+    const [currentMonthRevenueRes, lastMonthRevenueRes] = await Promise.all([
+      foodPool.query(
+        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
+         FROM (
+           SELECT
+             o.id,
+             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           WHERE o.payment_status = 'paid'
+             AND o.order_status <> 'cancelled'
+             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
+           GROUP BY o.id
+         ) t`
+      ),
+      foodPool.query(
+        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
+         FROM (
+           SELECT
+             o.id,
+             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           WHERE o.payment_status = 'paid'
+             AND o.order_status <> 'cancelled'
+             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)
+           GROUP BY o.id
+         ) t`
+      ),
+    ]);
+    const revenueTrend = calcTrend(
+      toNumber(currentMonthRevenueRes.rows[0]?.total, 0),
+      toNumber(lastMonthRevenueRes.rows[0]?.total, 0)
+    );
+
     // Response
     res.json({
       totalOrders: parseInt(ordersResult.rows[0].count),
@@ -79,7 +164,7 @@ router.get('/stats', async (req, res) => {
       pendingOrders: parseInt(pendingResult.rows[0].count),
       todayRevenue: parseFloat(todayRevenueResult.rows[0].total),
       ordersTrend: parseFloat(ordersTrend),
-      revenueTrend: 0, // TODO: Calculate
+      revenueTrend,
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
@@ -102,21 +187,24 @@ router.get('/recent-orders', async (req, res) => {
       * note: có thể cân nhắc thêm vào query này "user_phone"
       * Tạm thời xóa bỏ trong query: LEFT JOIN users u ON o.user_id = u.user_id
     */
-    const result = await foodPool.query(`
-      SELECT 
-        o.id as order_id,
-        o.order_code,
-        o.total_amount,
-        o.order_status,
-        o.payment_status,
-        o.created_at,
-        o.user_name as customer_name,
-        r.name as restaurant_name
-      FROM orders o     
-      LEFT JOIN restaurants r ON o.restaurant_id = r.id
-      ORDER BY o.created_at DESC
-      LIMIT $1
-    `, [limit]);
+    const result = await foodPool.query(
+      `SELECT
+         o.id as order_id,
+         o.order_code,
+         (COALESCE(SUM(oi.quantity * oi.food_price), 0) + COALESCE(MAX(o.delivery_fee), 0))::float AS total_amount,
+         o.order_status,
+         o.payment_status,
+         o.created_at,
+         o.user_name as customer_name,
+         r.name as restaurant_name
+       FROM orders o
+       LEFT JOIN order_items oi ON oi.order_id = o.id
+       LEFT JOIN restaurants r ON o.restaurant_id = r.id
+       GROUP BY o.id, r.name
+       ORDER BY o.created_at DESC
+       LIMIT $1`,
+      [limit]
+    );
     
     res.json(result.rows);
   } catch (error) {
@@ -134,16 +222,26 @@ router.get('/recent-orders', async (req, res) => {
  */
 router.get('/chart-data', async (req, res) => {
   try {
-    const result = await foodPool.query(`
-      SELECT 
-        TO_CHAR(DATE(created_at), 'YYYY-MM-DD') as date,
-        COUNT(*)::int as orders,
-        COALESCE(SUM(total_amount), 0)::float as revenue
-      FROM orders
-      WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `);
+    const result = await foodPool.query(
+      `WITH per_order AS (
+         SELECT
+           DATE(o.created_at) AS d,
+           o.id AS order_id,
+           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+         FROM orders o
+         LEFT JOIN order_items oi ON oi.order_id = o.id
+         WHERE o.created_at >= CURRENT_DATE - INTERVAL '7 days'
+         GROUP BY DATE(o.created_at), o.id
+       )
+       SELECT
+         TO_CHAR(d, 'YYYY-MM-DD') as date,
+         COUNT(*)::int as orders,
+         COALESCE(SUM(items_total + delivery_fee), 0)::float as revenue
+       FROM per_order
+       GROUP BY d
+       ORDER BY d ASC`
+    );
     
     res.json(result.rows);
   } catch (error) {
@@ -151,6 +249,324 @@ router.get('/chart-data', async (req, res) => {
     res.status(500).json({ 
       error: 'Internal server error',
       message: error.message 
+    });
+  }
+});
+
+/**
+ * GET /api/admin/analytics?year=2024&period=month
+ * Consolidated analytics data for admin-ui analytics page
+ */
+router.get('/analytics', async (req, res) => {
+  try {
+    const year = toNumber(req.query.year, new Date().getFullYear());
+    const period = (req.query.period || 'month').toString();
+    const allowedPeriods = new Set(['today', 'week', 'month']);
+    const effectivePeriod = allowedPeriods.has(period) ? period : 'month';
+
+    // Period ranges used for most "current" widgets
+    let rangeQuery;
+    if (effectivePeriod === 'today') {
+      rangeQuery = {
+        start: "CURRENT_DATE",
+        end: "CURRENT_DATE + INTERVAL '1 day'",
+      };
+    } else if (effectivePeriod === 'week') {
+      rangeQuery = {
+        start: "CURRENT_DATE - INTERVAL '7 days'",
+        end: "CURRENT_DATE + INTERVAL '1 day'",
+      };
+    } else {
+      rangeQuery = {
+        start: "DATE_TRUNC('month', CURRENT_DATE)",
+        end: "DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'",
+      };
+    }
+
+    // Key metrics for current month (these match the UI labels)
+    const [monthRevenueRes, lastMonthRevenueRes, monthOrdersRes, lastMonthOrdersRes, monthAvgOrderRes, lastMonthAvgOrderRes] = await Promise.all([
+      foodPool.query(
+        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
+         FROM (
+           SELECT
+             o.id,
+             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           WHERE o.payment_status = 'paid'
+             AND o.order_status <> 'cancelled'
+             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
+           GROUP BY o.id
+         ) t`
+      ),
+      foodPool.query(
+        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
+         FROM (
+           SELECT
+             o.id,
+             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           WHERE o.payment_status = 'paid'
+             AND o.order_status <> 'cancelled'
+             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)
+           GROUP BY o.id
+         ) t`
+      ),
+      foodPool.query(
+        `SELECT COUNT(*)::int AS count
+         FROM orders
+         WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+           AND created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'`
+      ),
+      foodPool.query(
+        `SELECT COUNT(*)::int AS count
+         FROM orders
+         WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+           AND created_at <  DATE_TRUNC('month', CURRENT_DATE)`
+      ),
+      foodPool.query(
+        `SELECT COALESCE(AVG(t.items_total + t.delivery_fee), 0)::float AS avg
+         FROM (
+           SELECT
+             o.id,
+             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           WHERE o.payment_status = 'paid'
+             AND o.order_status <> 'cancelled'
+             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
+           GROUP BY o.id
+         ) t`
+      ),
+      foodPool.query(
+        `SELECT COALESCE(AVG(t.items_total + t.delivery_fee), 0)::float AS avg
+         FROM (
+           SELECT
+             o.id,
+             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           WHERE o.payment_status = 'paid'
+             AND o.order_status <> 'cancelled'
+             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)
+           GROUP BY o.id
+         ) t`
+      ),
+    ]);
+
+    const monthRevenue = toNumber(monthRevenueRes.rows[0]?.total, 0);
+    const lastMonthRevenue = toNumber(lastMonthRevenueRes.rows[0]?.total, 0);
+    const monthOrders = toNumber(monthOrdersRes.rows[0]?.count, 0);
+    const lastMonthOrders = toNumber(lastMonthOrdersRes.rows[0]?.count, 0);
+    const avgOrderValue = toNumber(monthAvgOrderRes.rows[0]?.avg, 0);
+    const lastAvgOrderValue = toNumber(lastMonthAvgOrderRes.rows[0]?.avg, 0);
+
+    const dayOfMonth = Math.max(1, toNumber(new Date().getDate(), 1));
+    // Use days in last month for baseline
+    const lastMonthDaysRes = await foodPool.query(
+      `SELECT EXTRACT(DAY FROM (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day'))::int AS days`
+    );
+    const lastMonthDays = Math.max(1, toNumber(lastMonthDaysRes.rows[0]?.days, 30));
+
+    const avgOrdersPerDay = monthOrders / dayOfMonth;
+    const lastAvgOrdersPerDay = lastMonthOrders / lastMonthDays;
+
+    const metrics = {
+      monthRevenue,
+      monthRevenueTrend: calcTrend(monthRevenue, lastMonthRevenue),
+      monthOrders,
+      monthOrdersTrend: calcTrend(monthOrders, lastMonthOrders),
+      avgOrdersPerDay: Number(avgOrdersPerDay.toFixed(0)),
+      avgOrdersPerDayTrend: calcTrend(avgOrdersPerDay, lastAvgOrdersPerDay),
+      avgOrderValue,
+      avgOrderValueTrend: calcTrend(avgOrderValue, lastAvgOrderValue),
+    };
+
+    // Revenue by month (selected year)
+    const revenueByMonthRes = await foodPool.query(
+      `WITH months AS (
+         SELECT generate_series(1, 12)::int AS month
+       ),
+       orders_by_month AS (
+         SELECT
+           EXTRACT(MONTH FROM o.created_at)::int AS month,
+           COUNT(*)::int AS orders
+         FROM orders o
+         WHERE EXTRACT(YEAR FROM o.created_at) = $1
+         GROUP BY EXTRACT(MONTH FROM o.created_at)
+       ),
+       paid_revenue_by_month AS (
+         SELECT
+           EXTRACT(MONTH FROM o.created_at)::int AS month,
+           COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS revenue
+         FROM (
+           SELECT
+             o.id,
+             o.created_at,
+             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+           FROM orders o
+           LEFT JOIN order_items oi ON oi.order_id = o.id
+           WHERE o.payment_status = 'paid'
+             AND o.order_status <> 'cancelled'
+             AND EXTRACT(YEAR FROM o.created_at) = $1
+           GROUP BY o.id
+         ) t
+         JOIN orders o ON o.id = t.id
+         GROUP BY EXTRACT(MONTH FROM o.created_at)
+       )
+       SELECT
+         m.month,
+         COALESCE(dr.revenue, 0)::float AS revenue,
+         COALESCE(obm.orders, 0)::int AS orders
+       FROM months m
+       LEFT JOIN paid_revenue_by_month dr ON dr.month = m.month
+       LEFT JOIN orders_by_month obm ON obm.month = m.month
+       ORDER BY m.month ASC`,
+      [year]
+    );
+
+    const revenueByMonth = revenueByMonthRes.rows.map(r => ({
+      month: `T${r.month}`,
+      revenue: toNumber(r.revenue, 0),
+      orders: toNumber(r.orders, 0),
+    }));
+
+    // Orders by weekday (based on selected period)
+    const weekdayRes = await foodPool.query(
+      `SELECT EXTRACT(DOW FROM created_at)::int AS dow, COUNT(*)::int AS count
+       FROM orders
+       WHERE created_at >= ${rangeQuery.start}
+         AND created_at <  ${rangeQuery.end}
+       GROUP BY dow`
+    );
+    const weekdayMap = new Map(weekdayRes.rows.map(r => [toNumber(r.dow, 0), toNumber(r.count, 0)]));
+    const ordersByWeekday = [
+      { key: 1, day: 'T2' },
+      { key: 2, day: 'T3' },
+      { key: 3, day: 'T4' },
+      { key: 4, day: 'T5' },
+      { key: 5, day: 'T6' },
+      { key: 6, day: 'T7' },
+      { key: 0, day: 'CN' },
+    ].map(d => ({ day: d.day, orders: weekdayMap.get(d.key) || 0 }));
+
+    // Order status distribution (counts -> percent)
+    const statusRes = await foodPool.query(
+      `SELECT order_status, COUNT(*)::int AS count
+       FROM orders
+       WHERE created_at >= ${rangeQuery.start}
+         AND created_at <  ${rangeQuery.end}
+       GROUP BY order_status`
+    );
+
+    const statusCounts = {
+      delivered: 0,
+      processing: 0,
+      cancelled: 0,
+      pending: 0,
+      other: 0,
+    };
+    for (const row of statusRes.rows) {
+      const status = (row.order_status || '').toString();
+      const c = toNumber(row.count, 0);
+      if (status === 'delivered') statusCounts.delivered += c;
+      else if (status === 'cancelled') statusCounts.cancelled += c;
+      else if (status === 'pending') statusCounts.pending += c;
+      else if (['confirmed', 'preparing', 'ready', 'delivering', 'processing'].includes(status)) statusCounts.processing += c;
+      else statusCounts.other += c;
+    }
+    const totalStatus = Object.values(statusCounts).reduce((a, b) => a + b, 0);
+    const statusBuckets = [
+      { name: 'Hoàn thành', count: statusCounts.delivered, color: '#10B981' },
+      { name: 'Đang xử lý', count: statusCounts.processing, color: '#F59E0B' },
+      { name: 'Đã hủy', count: statusCounts.cancelled, color: '#EF4444' },
+      { name: 'Mới', count: statusCounts.pending, color: '#6366F1' },
+    ];
+    const orderStatus = distributePercent(totalStatus, statusBuckets).map(({ name, value, color }) => ({ name, value, color }));
+
+    // Top restaurants by delivered revenue (selected period)
+    const topRestaurantsRes = await foodPool.query(
+      `SELECT
+         COALESCE(r.name, 'N/A') AS name,
+         COUNT(*)::int AS orders,
+         COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS revenue
+       FROM (
+         SELECT
+           o.id,
+           o.restaurant_id,
+           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
+           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
+         FROM orders o
+         LEFT JOIN order_items oi ON oi.order_id = o.id
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= ${rangeQuery.start}
+           AND o.created_at <  ${rangeQuery.end}
+         GROUP BY o.id
+       ) t
+       LEFT JOIN restaurants r ON t.restaurant_id = r.id
+       GROUP BY r.name
+       ORDER BY revenue DESC
+       LIMIT 5`
+    );
+    const topRestaurants = topRestaurantsRes.rows.map(r => ({
+      name: r.name,
+      orders: toNumber(r.orders, 0),
+      revenue: toNumber(r.revenue, 0),
+    }));
+
+    // Recent activity: provide stable, pre-formatted strings to avoid client-side time mismatches
+    const recentOrdersRes = await foodPool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM orders
+       WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'`
+    );
+    const newRestaurantsRes = await foodPool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM restaurants
+       WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'`
+    );
+    const recentActivity = [
+      {
+        kind: 'orders',
+        title: `${toNumber(recentOrdersRes.rows[0]?.count, 0)} đơn hàng mới trong 24 giờ qua`,
+        time: 'Trong 24 giờ',
+      },
+      {
+        kind: 'revenue',
+        title: `Doanh thu tháng này: ${Math.round(monthRevenue).toLocaleString('vi-VN')} ₫`,
+        time: 'Cập nhật theo thời gian thực',
+      },
+      {
+        kind: 'restaurants',
+        title: `${toNumber(newRestaurantsRes.rows[0]?.count, 0)} nhà hàng mới trong 7 ngày qua`,
+        time: '7 ngày gần đây',
+      },
+    ];
+
+    res.json({
+      metrics,
+      revenueByMonth,
+      ordersByWeekday,
+      orderStatus,
+      topRestaurants,
+      recentActivity,
+    });
+  } catch (error) {
+    console.error('Error fetching admin analytics:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message,
     });
   }
 });

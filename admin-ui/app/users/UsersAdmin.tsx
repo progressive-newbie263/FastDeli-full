@@ -66,20 +66,20 @@ export default function UsersAdmin() {
   return (
     <AdminLayout title="Quản lý người dùng" subtitle={`Tổng: ${data?.pagination.total || 0} người dùng`}>
       {/* Search & Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-6 border border-transparent dark:border-gray-700">
         <form onSubmit={handleSearch} className="flex gap-4">
           <input
             type="text"
             placeholder="Tìm theo tên, email, số điện thoại..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500"
+            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
           />
           
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg"
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
           >
             <option value="">Tất cả vai trò</option>
             <option value="customer">Khách hàng</option>
@@ -98,34 +98,34 @@ export default function UsersAdmin() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-transparent dark:border-gray-700">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Điện thoại</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vai trò</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Đơn hàng</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chi tiêu</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">ID</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tên</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Điện thoại</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Vai trò</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Đơn hàng</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Chi tiêu</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Trạng thái</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {data?.users.map((user) => (
-              <tr key={user.user_id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm">{user.user_id}</td>
-                <td className="px-6 py-4 text-sm font-medium">{user.full_name}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{user.email}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{user.phone_number}</td>
+              <tr key={user.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{user.user_id}</td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{user.full_name}</td>
+                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.email}</td>
+                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.phone_number}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.role === 'admin' ? 'bg-red-100 text-red-700' :
-                    user.role === 'restaurant_owner' ? 'bg-purple-100 text-purple-700' :
-                    user.role === 'shipper' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-700'
+                    user.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                    user.role === 'restaurant_owner' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                    user.role === 'shipper' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
                   }`}>
                     {user.role === 'admin' ? 'Admin' :
                      user.role === 'restaurant_owner' ? 'Chủ NHà' :
@@ -133,13 +133,15 @@ export default function UsersAdmin() {
                      'Khách hàng'}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm">{user.total_orders || 0}</td>
-                <td className="px-6 py-4 text-sm font-semibold">
+                <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{user.total_orders || 0}</td>
+                <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
                   {formatCurrency(user.total_spent || 0)}
                 </td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    user.is_active
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                   }`}>
                     {user.is_active ? 'Hoạt động' : 'Vô hiệu'}
                   </span>
@@ -148,13 +150,13 @@ export default function UsersAdmin() {
                   <div className="flex gap-2">
                     <a
                       href={`/users/${user.user_id}`}
-                      className="text-primary-600 hover:text-primary-700 text-sm"
+                      className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm"
                     >
                       Chi tiết
                     </a>
                     <button
                       onClick={() => handleToggleActive(user.user_id, user.is_active)}
-                      className="text-orange-600 hover:text-orange-700 text-sm"
+                      className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-sm"
                     >
                       {user.is_active ? 'Vô hiệu' : 'Kích hoạt'}
                     </button>
@@ -167,22 +169,22 @@ export default function UsersAdmin() {
 
         {/* Pagination */}
         {data && data.pagination.totalPages > 1 && (
-          <div className="px-6 py-4 border-t flex justify-between items-center">
-            <div className="text-sm text-gray-600">
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div className="text-sm text-gray-600 dark:text-gray-300">
               Trang {data.pagination.page} / {data.pagination.totalPages}
             </div>
             <div className="flex gap-2">
               <button
                 disabled={page === 1}
                 onClick={() => setPage(page - 1)}
-                className="px-4 py-2 border rounded disabled:opacity-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-900"
               >
                 Trước
               </button>
               <button
                 disabled={page === data.pagination.totalPages}
                 onClick={() => setPage(page + 1)}
-                className="px-4 py-2 border rounded disabled:opacity-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded disabled:opacity-50 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-900"
               >
                 Sau
               </button>

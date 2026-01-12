@@ -50,25 +50,25 @@ const CartClient = () => {
 
           if (!resFoods.success || !resInfo.success) continue;
 
-          const foods: Food[] = resFoods.data;
+          const foods: Food[] = Array.isArray(resFoods?.data) ? (resFoods.data as Food[]) : [];
           const restaurantName: string = resInfo.data.name; // ✅ Đổi từ restaurant_name -> name
           const restaurantImage: string = resInfo.data.image_url || 'https://via.placeholder.com/80';
           const storedItems = parsedCart[restaurantId];
           const items: CartItem[] = [];
 
           storedItems.forEach(({ food_id, quantity }) => {
-            const food = foods.find(f => f.food_id === food_id);
-            if (food) {
-              items.push({
-                restaurant_id: restaurantId,
-                food_id: food.food_id,
-                food_name: food.food_name,
-                price: parseFloat(food.price),
-                image_url: food.image_url,
-                description: food.description,
-                quantity
-              });
-            }
+            const food = foods.find((f) => f.food_id === food_id);
+            if (!food) return;
+
+            items.push({
+              restaurant_id: restaurantId,
+              food_id: food.food_id,
+              food_name: food.food_name,
+              price: typeof food.price === 'number' ? food.price : parseFloat(String(food.price ?? 0)),
+              image_url: food.image_url,
+              description: food.description,
+              quantity,
+            });
           });
 
           if (items.length > 0) {

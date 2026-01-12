@@ -1,87 +1,150 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatsCard from '@/components/ui/StatsCard';
 import { formatCurrency } from '@/lib/utils';
+import { adminAPI } from '@/app/utils/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
-const revenueData = [
-  { month: 'T1', revenue: 2200000000, orders: 12450 },
-  { month: 'T2', revenue: 2400000000, orders: 13200 },
-  { month: 'T3', revenue: 2100000000, orders: 11800 },
-  { month: 'T4', revenue: 2600000000, orders: 14100 },
-  { month: 'T5', revenue: 2800000000, orders: 15300 },
-  { month: 'T6', revenue: 3200000000, orders: 16800 },
-  { month: 'T7', revenue: 3500000000, orders: 18200 },
-  { month: 'T8', revenue: 3300000000, orders: 17600 },
-  { month: 'T9', revenue: 3700000000, orders: 19400 },
-  { month: 'T10', revenue: 3900000000, orders: 20100 },
-  { month: 'T11', revenue: 4100000000, orders: 21500 },
-  { month: 'T12', revenue: 4300000000, orders: 22800 },
-];
+type Period = 'today' | 'week' | 'month';
 
-const topRestaurants = [
-  { name: 'Pizza House', orders: 1250, revenue: 850000000 },
-  { name: 'KFC Saigon', orders: 1180, revenue: 780000000 },
-  { name: 'Phở Hà Nội', orders: 980, revenue: 520000000 },
-  { name: 'Gà Rán Seoul', orders: 860, revenue: 640000000 },
-  { name: 'Bún Bò Huế', orders: 720, revenue: 380000000 },
-];
+type RevenueByMonth = { month: string; revenue: number; orders: number };
+type OrdersByWeekday = { day: string; orders: number };
+type OrderStatus = { name: string; value: number; color: string };
+type TopRestaurant = { name: string; orders: number; revenue: number };
+type RecentActivity = { kind: string; title: string; time: string };
 
-const orderStatusData = [
-  { name: 'Hoàn thành', value: 65, color: '#10B981' },
-  { name: 'Đang xử lý', value: 20, color: '#F59E0B' },
-  { name: 'Đã hủy', value: 10, color: '#EF4444' },
-  { name: 'Mới', value: 5, color: '#6366F1' },
-];
-
-const dailyOrdersData = [
-  { day: 'T2', orders: 145 },
-  { day: 'T3', orders: 132 },
-  { day: 'T4', orders: 168 },
-  { day: 'T5', orders: 189 },
-  { day: 'T6', orders: 234 },
-  { day: 'T7', orders: 267 },
-  { day: 'CN', orders: 198 },
-];
+type AnalyticsResponse = {
+  metrics: {
+    monthRevenue: number;
+    monthRevenueTrend: number;
+    monthOrders: number;
+    monthOrdersTrend: number;
+    avgOrdersPerDay: number;
+    avgOrdersPerDayTrend: number;
+    avgOrderValue: number;
+    avgOrderValueTrend: number;
+  };
+  revenueByMonth: RevenueByMonth[];
+  ordersByWeekday: OrdersByWeekday[];
+  orderStatus: OrderStatus[];
+  topRestaurants: TopRestaurant[];
+  recentActivity: RecentActivity[];
+};
 
 export default function AnalyticsPage() {
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [topPeriod, setTopPeriod] = useState<Period>('month');
+  const [data, setData] = useState<AnalyticsResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = (await adminAPI.getAnalytics({ year: selectedYear, period: topPeriod })) as AnalyticsResponse;
+
+        if (!cancelled) setData(res);
+      } catch (e) {
+        console.error('[analytics] Error:', e);
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Không thể tải dữ liệu thống kê');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedYear, topPeriod]);
+
+  const metrics = data?.metrics;
+  
+  // ✅ Parse revenue về number để Recharts vẽ đúng
+  const revenueData = useMemo<RevenueByMonth[]>(
+    () => {
+      const raw = data?.revenueByMonth ?? [];
+      return raw.map((item) => ({
+        month: item.month,
+        revenue: typeof item.revenue === 'number' ? item.revenue : parseFloat(String(item.revenue ?? 0)),
+        orders: typeof item.orders === 'number' ? item.orders : parseInt(String(item.orders ?? 0), 10),
+      }));
+    },
+    [data]
+  );
+
+  const dailyOrdersData = useMemo<OrdersByWeekday[]>(
+    () => data?.ordersByWeekday ?? [],
+    [data]
+  );
+  
+  const orderStatusData = useMemo<OrderStatus[]>(
+    () => data?.orderStatus ?? [],
+    [data]
+  );
+  
+  const topRestaurants = useMemo<TopRestaurant[]>(
+    () => data?.topRestaurants ?? [],
+    [data]
+  );
+  
+  const recentActivity = useMemo<RecentActivity[]>(
+    () => data?.recentActivity ?? [],
+    [data]
+  );
+
+  const formatTrend = (value: number) => {
+    const sign = value > 0 ? '+' : '';
+    return `${sign}${value}% so với tháng trước`;
+  };
+
   return (
     <AdminLayout 
       title="Báo cáo & Thống kê" 
       subtitle="Phân tích dữ liệu và xu hướng kinh doanh"
     >
+      {error && (
+        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm text-yellow-800 dark:text-yellow-200">
+          ⚠️ Không thể tải dữ liệu thống kê: {error}
+        </div>
+      )}
+
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatsCard
           title="Doanh thu tháng này"
-          value={formatCurrency(4300000000)}
-          trend="+12.5% so với tháng trước"
-          trendType="up"
+          value={formatCurrency(metrics?.monthRevenue || 0)}
+          trend={metrics ? formatTrend(metrics.monthRevenueTrend) : undefined}
+          trendType={metrics && metrics.monthRevenueTrend >= 0 ? 'up' : 'down'}
           icon="💰"
           color="green"
         />
         <StatsCard
           title="Đơn hàng tháng này"
-          value="22,800"
-          trend="+8.3% so với tháng trước"
-          trendType="up"
+          value={(metrics?.monthOrders || 0).toLocaleString('vi-VN')}
+          trend={metrics ? formatTrend(metrics.monthOrdersTrend) : undefined}
+          trendType={metrics && metrics.monthOrdersTrend >= 0 ? 'up' : 'down'}
           icon="📦"
           color="blue"
         />
         <StatsCard
           title="Đơn hàng trung bình/ngày"
-          value="760"
-          trend="+15.2% so với tháng trước"
-          trendType="up"
+          value={(metrics?.avgOrdersPerDay || 0).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}
+          trend={metrics ? formatTrend(metrics.avgOrdersPerDayTrend) : undefined}
+          trendType={metrics && metrics.avgOrdersPerDayTrend >= 0 ? 'up' : 'down'}
           icon="📊"
           color="purple"
         />
         <StatsCard
           title="Giá trị đơn hàng TB"
-          value={formatCurrency(188500)}
-          trend="+3.8% so với tháng trước"
-          trendType="up"
+          value={formatCurrency(metrics?.avgOrderValue || 0)}
+          trend={metrics ? formatTrend(metrics.avgOrderValueTrend) : undefined}
+          trendType={metrics && metrics.avgOrderValueTrend >= 0 ? 'up' : 'down'}
           icon="💵"
           color="orange"
         />
@@ -89,28 +152,55 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Revenue Chart */}
-        <div className="bg-white rounded-xl card-shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Doanh thu theo tháng</h2>
-            <select className="border border-gray-300 rounded-md px-3 py-2 text-sm">
-              <option>2024</option>
-              <option>2023</option>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Doanh thu theo tháng</h2>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value={2026}>2026</option>
+              <option value={2025}>2025</option>
+              <option value={2024}>2024</option>
+              <option value={2023}>2023</option>
             </select>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+
+                <XAxis 
+                  dataKey="month" 
+                  stroke="#6b7280" 
+                  fontSize={12}
+                  className="dark:stroke-gray-400"
+                />
+                
+                {/* ✅ YAxis tự động scale, không hardcode domain */}
                 <YAxis 
                   stroke="#6b7280" 
                   fontSize={12}
-                  tickFormatter={(value) => `${value/1000000000}B`}
+                  className="dark:stroke-gray-400"
+                  tickFormatter={(value) => {
+                    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                    if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+                    return value.toString();
+                  }}
                 />
+
                 <Tooltip 
                   formatter={(value) => [formatCurrency(value as number), 'Doanh thu']}
-                  labelStyle={{ color: '#374151' }}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    padding: '8px 12px'
+                  }}
+                  labelStyle={{ color: '#374151', fontWeight: 600 }}
                 />
+
                 <Line 
                   type="monotone" 
                   dataKey="revenue" 
@@ -125,19 +215,34 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Daily Orders Chart */}
-        <div className="bg-white rounded-xl card-shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Đơn hàng theo ngày trong tuần</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đơn hàng theo ngày trong tuần</h2>
           </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyOrdersData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="day" stroke="#6b7280" fontSize={12} />
-                <YAxis stroke="#6b7280" fontSize={12} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+                <XAxis 
+                  dataKey="day" 
+                  stroke="#6b7280" 
+                  fontSize={12}
+                  className="dark:stroke-gray-400"
+                />
+                <YAxis 
+                  stroke="#6b7280" 
+                  fontSize={12}
+                  className="dark:stroke-gray-400"
+                />
                 <Tooltip 
                   formatter={(value) => [value, 'Đơn hàng']}
-                  labelStyle={{ color: '#374151' }}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    padding: '8px 12px'
+                  }}
+                  labelStyle={{ color: '#374151', fontWeight: 600 }}
                 />
                 <Bar 
                   dataKey="orders" 
@@ -152,8 +257,8 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Order Status Distribution */}
-        <div className="bg-white rounded-xl card-shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Phân bố trạng thái đơn hàng</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Phân bố trạng thái đơn hàng</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -165,12 +270,22 @@ export default function AnalyticsPage() {
                   outerRadius={100}
                   paddingAngle={5}
                   dataKey="value"
+                  label={({ name, value }) => `${name}: ${value}%`}
+                  labelLine={{ stroke: '#6b7280', strokeWidth: 1 }}
                 >
                   {orderStatusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => [`${value}%`, 'Tỷ lệ']} />
+                <Tooltip 
+                  formatter={(value) => [`${value}%`, 'Tỷ lệ']}
+                  contentStyle={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    padding: '8px 12px'
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -182,87 +297,94 @@ export default function AnalyticsPage() {
                     className="w-3 h-3 rounded-full mr-2"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm text-gray-600">{item.name}</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{item.name}</span>
                 </div>
-                <span className="text-sm font-medium">{item.value}%</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.value}%</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Top Restaurants */}
-        <div className="lg:col-span-2 bg-white rounded-xl card-shadow p-6">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">Top nhà hàng theo doanh thu</h2>
-            <select className="border border-gray-300 rounded-md px-3 py-2 text-sm">
-              <option>Tháng này</option>
-              <option>Tuần này</option>
-              <option>Hôm nay</option>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Top nhà hàng theo doanh thu</h2>
+            <select
+              value={topPeriod}
+              onChange={(e) => setTopPeriod(e.target.value as Period)}
+              className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="month">Tháng này</option>
+              <option value="week">Tuần này</option>
+              <option value="today">Hôm nay</option>
             </select>
           </div>
           <div className="space-y-4">
-            {topRestaurants.map((restaurant, index) => (
-              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                    <span className="text-primary-600 font-semibold text-sm">
-                      {index + 1}
-                    </span>
+            {topRestaurants.length === 0 ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                {loading ? 'Đang tải dữ liệu...' : 'Chưa có dữ liệu nhà hàng'}
+              </div>
+            ) : (
+              topRestaurants.map((restaurant, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mr-3">
+                      <span className="text-primary-600 dark:text-primary-400 font-semibold text-sm">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">{restaurant.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {restaurant.orders} đơn hàng
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{restaurant.name}</div>
-                    <div className="text-sm text-gray-500">
-                      {restaurant.orders} đơn hàng
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900 dark:text-gray-100">
+                      {formatCurrency(restaurant.revenue)}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      TB: {formatCurrency(restaurant.orders > 0 ? restaurant.revenue / restaurant.orders : 0)}
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-semibold text-gray-900">
-                    {formatCurrency(restaurant.revenue)}
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    TB: {formatCurrency(restaurant.revenue / restaurant.orders)}
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="mt-8 bg-white rounded-xl card-shadow p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">Hoạt động gần đây</h2>
+      <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Hoạt động gần đây</h2>
         <div className="space-y-4">
-          <div className="flex items-center p-4 bg-blue-50 rounded-lg">
-            <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-              <span className="text-blue-600 text-lg">📊</span>
+          {recentActivity.length === 0 ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              {loading ? 'Đang tải dữ liệu...' : 'Chưa có dữ liệu hoạt động'}
             </div>
-            <div className="flex-1">
-              <div className="font-medium text-gray-900">Báo cáo doanh thu tháng 12 đã được tạo</div>
-              <div className="text-sm text-gray-500">2 giờ trước</div>
-            </div>
-          </div>
-          
-          <div className="flex items-center p-4 bg-green-50 rounded-lg">
-            <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4">
-              <span className="text-green-600 text-lg">📈</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-gray-900">Doanh thu đã vượt mục tiêu tháng 15%</div>
-              <div className="text-sm text-gray-500">1 ngày trước</div>
-            </div>
-          </div>
-          
-          <div className="flex items-center p-4 bg-purple-50 rounded-lg">
-            <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-              <span className="text-purple-600 text-lg">🏪</span>
-            </div>
-            <div className="flex-1">
-              <div className="font-medium text-gray-900">5 nhà hàng mới đã tham gia hệ thống</div>
-              <div className="text-sm text-gray-500">3 ngày trước</div>
-            </div>
-          </div>
+          ) : (
+            recentActivity.slice(0, 5).map((item, idx) => {
+              const style =
+                item.kind === 'revenue'
+                  ? { bg: 'bg-green-50 dark:bg-green-900/20', iconBg: 'bg-green-100 dark:bg-green-900/30', icon: '📈', iconText: 'text-green-600 dark:text-green-400' }
+                  : item.kind === 'restaurants'
+                    ? { bg: 'bg-purple-50 dark:bg-purple-900/20', iconBg: 'bg-purple-100 dark:bg-purple-900/30', icon: '🏪', iconText: 'text-purple-600 dark:text-purple-400' }
+                    : { bg: 'bg-blue-50 dark:bg-blue-900/20', iconBg: 'bg-blue-100 dark:bg-blue-900/30', icon: '📊', iconText: 'text-blue-600 dark:text-blue-400' };
+
+              return (
+                <div key={idx} className={`flex items-center p-4 ${style.bg} rounded-lg hover:shadow-sm transition-shadow`}>
+                  <div className={`flex-shrink-0 w-10 h-10 ${style.iconBg} rounded-full flex items-center justify-center mr-4`}>
+                    <span className={`${style.iconText} text-lg`}>{style.icon}</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900 dark:text-gray-100">{item.title}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{item.time}</div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </AdminLayout>

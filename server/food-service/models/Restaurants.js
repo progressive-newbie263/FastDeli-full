@@ -81,6 +81,8 @@ class Restaurant {
     }
   }
 
+  
+
   // tạo thêm nhà hàng vào csdl (nhà hàng đó đăng kí chẳng hạn) (POST /restaurants )
   // api dùng cho 'nhà hàng' đăng kí làm dịch vụ
   static async create(restaurantData) {

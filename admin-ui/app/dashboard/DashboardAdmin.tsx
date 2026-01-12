@@ -77,8 +77,8 @@ export default function DashboardAdmin() {
         <AdminLayout title="Dashboard" subtitle="Đang tải...">
           <div className="flex justify-center items-center h-64">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Đang tải dữ liệu...</p>
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 dark:border-primary-400 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu...</p>
             </div>
           </div>
         </AdminLayout>
@@ -94,32 +94,56 @@ export default function DashboardAdmin() {
       <ProtectedRoute>
         <AdminLayout title="Dashboard" subtitle="Lỗi">
           <div className="max-w-2xl mx-auto mt-10">
-            <div className="bg-red-50 border-l-4 border-red-500 rounded-lg p-6">
+            <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-400 rounded-lg p-6">
               <div className="flex items-start">
-                <svg className="w-6 h-6 text-red-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-red-500 dark:text-red-400 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
 
                 <div className="flex-1">
-                  <h3 className="text-red-800 font-semibold mb-2">Không thể tải dữ liệu</h3>
+                  <h3 className="text-red-800 dark:text-red-300 font-semibold mb-2">Không thể tải dữ liệu</h3>
                   
-                  <p className="text-red-700 text-sm mb-4">{error}</p>
+                  <p className="text-red-700 dark:text-red-400 text-sm mb-4">{error}</p>
                   
                   <div className="flex gap-3">
                     <button
                       onClick={handleRefresh}
                       disabled={refreshing}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                      className="px-4 py-2 bg-red-600 dark:bg-red-500 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition disabled:opacity-50"
                     >
                       {refreshing ? 'Đang thử lại...' : 'Thử lại'}
                     </button>
 
-                    <a href="/" className="px-4 py-2 bg-white text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition">
+                    <a href="/" className="px-4 py-2 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition">
                       Về trang chủ
                     </a>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </AdminLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <ProtectedRoute>
+        <AdminLayout title="Dashboard" subtitle="Không có dữ liệu">
+          <div className="max-w-2xl mx-auto mt-10">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl card-shadow p-6">
+              <h3 className="text-gray-900 dark:text-gray-100 font-semibold mb-2">Không thể tải thống kê</h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+                Vui lòng thử làm mới trang để tải lại dữ liệu.
+              </p>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition disabled:opacity-50"
+              >
+                {refreshing ? 'Đang tải...' : 'Làm mới'}
+              </button>
             </div>
           </div>
         </AdminLayout>
@@ -134,14 +158,14 @@ export default function DashboardAdmin() {
     <ProtectedRoute>
       <AdminLayout title="Dashboard" subtitle="Tổng quan hệ thống FoodDeli">
         <div className="flex justify-between items-center mb-6">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             Cập nhật lần cuối: {new Date().toLocaleTimeString('vi-VN')}
           </div>
           
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-600 transition disabled:opacity-50 flex items-center gap-2"
           >
             <svg 
               className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} 
@@ -159,8 +183,8 @@ export default function DashboardAdmin() {
 
         {/* báo lỗi nếu dữ liệu caching có vấn đề gì đó */}
         {error && stats && (
-          <div className="mb-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-            <p className="text-yellow-700 text-sm">
+          <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 rounded">
+            <p className="text-yellow-700 dark:text-yellow-300 text-sm">
               ⚠️ Không thể tải dữ liệu mới nhất. Hiển thị dữ liệu cache.
             </p>
           </div>
@@ -201,31 +225,31 @@ export default function DashboardAdmin() {
 
         {/* Today Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl card-shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Doanh thu hôm nay</h3>
-                <div className="text-2xl font-bold text-green-600 mb-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Doanh thu hôm nay</h3>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
                   {formatCurrency(stats?.todayRevenue || 0)}
                 </div>
-                <p className="text-gray-600 text-sm">Từ các đơn đã giao</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Từ các đơn đã thanh toán</p>
               </div>
-              <div className="bg-green-100 p-3 rounded-full">
+              <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
                 <span className="text-2xl">💵</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl card-shadow p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Cần xử lý</h3>
-                <div className="text-3xl font-bold text-orange-600 mb-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Cần xử lý</h3>
+                <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-1">
                   {stats?.pendingOrders || 0}
                 </div>
-                <p className="text-gray-600 text-sm">Đơn hàng chờ xác nhận</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Đơn hàng chờ xác nhận</p>
               </div>
-              <div className="bg-orange-100 p-3 rounded-full">
+              <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-full">
                 <span className="text-2xl">⏳</span>
               </div>
             </div>
@@ -233,11 +257,11 @@ export default function DashboardAdmin() {
         </div>
 
         {/* Recent Orders */}
-        <div className="bg-white rounded-xl card-shadow">
-          <div className="p-6 border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow">
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Đơn hàng gần đây</h2>
-              <a href="/orders" className="text-primary-600 hover:text-primary-700 text-sm font-medium">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đơn hàng gần đây</h2>
+              <a href="/orders" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium">
                 Xem tất cả →
               </a>
             </div>
@@ -245,27 +269,27 @@ export default function DashboardAdmin() {
           <div className="p-6">
             {orders.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">Chưa có đơn hàng nào</p>
+                <p className="text-gray-500 dark:text-gray-400">Chưa có đơn hàng nào</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {orders.map((order) => (
-                  <div key={order.order_id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                  <div key={order.order_id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="font-mono text-sm font-medium text-gray-900">
+                        <span className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">
                           #{order.order_code}
                         </span>
 
                         {/* kiểm tra kĩ status đoạn này ? */}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          order.order_status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                          order.order_status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
-                          order.order_status === 'processing' ? 'bg-orange-100 text-orange-700' :
-                          order.order_status === 'delivering' ? 'bg-indigo-100 text-indigo-700' :
-                          order.order_status === 'delivered' ? 'bg-green-100 text-green-700' :
-                          order.order_status === 'cancelled' ? 'bg-red-500 text-white' :
-                          'bg-red-100 text-red-700'
+                          order.order_status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
+                          order.order_status === 'confirmed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                          order.order_status === 'processing' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
+                          order.order_status === 'delivering' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' :
+                          order.order_status === 'delivered' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                          order.order_status === 'cancelled' ? 'bg-red-500 dark:bg-red-600 text-white' :
+                          'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
                         }`}>
                           {
                             order.order_status === 'pending' ? 'Chờ xác nhận' :
@@ -278,21 +302,21 @@ export default function DashboardAdmin() {
                           }
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                         {order.customer_name} • {order.restaurant_name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-500">
                         {getRelativeTime(order.created_at)}
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-semibold text-gray-900 dark:text-gray-100">
                         {formatCurrency(order.total_amount)}
                       </div>
                       <div className={`text-xs ${
-                        order.payment_status === 'paid' ? 'text-green-600' :
-                        order.payment_status === 'pending' ? 'text-yellow-600' :
-                        'text-red-600'
+                        order.payment_status === 'paid' ? 'text-green-600 dark:text-green-400' :
+                        order.payment_status === 'pending' ? 'text-yellow-600 dark:text-yellow-400' :
+                        'text-red-600 dark:text-red-400'
                       }`}>
                         {order.payment_status === 'paid' ? '✓ Đã thanh toán' :
                          order.payment_status === 'pending' ? '⏳ Chưa thanh toán' :

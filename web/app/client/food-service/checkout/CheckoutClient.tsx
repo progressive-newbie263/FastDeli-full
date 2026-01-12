@@ -55,7 +55,9 @@ const CheckoutClient = () => {
 
           if (!resFoods.success || !resInfo.success) continue;
 
-          const foods: Food[] = resFoods.data;
+          // ✅ normalize để không bao giờ bị null.find
+          const foods: Food[] = Array.isArray(resFoods?.data) ? (resFoods.data as Food[]) : [];
+
           const restaurantName = resInfo.data.name;
           const restaurantImage = resInfo.data.image_url || "https://via.placeholder.com/64";
           const storedItems = parsedCart[restaurantId];
@@ -63,17 +65,17 @@ const CheckoutClient = () => {
 
           storedItems.forEach(({ food_id, quantity }) => {
             const food = foods.find((f) => f.food_id === food_id);
-            if (food) {
-              items.push({
-                restaurant_id: restaurantId,
-                food_id: food.food_id,
-                food_name: food.food_name,
-                price: parseFloat(food.price),
-                image_url: food.image_url,
-                description: food.description,
-                quantity,
-              });
-            }
+            if (!food) return;
+
+            items.push({
+              restaurant_id: restaurantId,
+              food_id: food.food_id,
+              food_name: food.food_name,
+              price: typeof food.price === 'number' ? food.price : parseFloat(String(food.price ?? 0)),
+              image_url: food.image_url,
+              description: food.description,
+              quantity,
+            });
           });
 
           if (items.length > 0) {

@@ -75,6 +75,16 @@ export const adminAPI = {
   getChartData: () => 
     fetchAPI('/api/admin/chart-data'),
 
+  // Analytics dashboard (thống kê thật cho trang /analytics)
+  getAnalytics: (params?: { year?: number; period?: 'today' | 'week' | 'month' }) => {
+    const query = new URLSearchParams();
+    if (params?.year) query.append('year', params.year.toString());
+    if (params?.period) query.append('period', params.period);
+
+    const qs = query.toString();
+    return fetchAPI(`/api/admin/analytics${qs ? `?${qs}` : ''}`);
+  },
+
   /* 
     thu thập restaurants 
   */

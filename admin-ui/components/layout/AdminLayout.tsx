@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import ThemeToggle from '@/components/ThemeToggle';
 
 import {
   LayoutDashboard,
@@ -96,7 +97,7 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Mobile Overlay */}
       {isSidebarOpen && (
         <div
@@ -107,38 +108,38 @@ export default function AdminLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <Link href="/" className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">F</span>
             </div>
-            <span className="text-xl font-bold text-gray-800">FastDeli</span>
+            <span className="text-xl font-bold text-gray-800 dark:text-gray-100">FastDeli</span>
           </Link>
           
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="md:hidden text-gray-500 hover:text-gray-700"
+            className="md:hidden text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
           >
             <X size={24} />
           </button>
         </div>
 
         {/* Admin Info */}
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-semibold text-sm">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+              <span className="text-blue-600 dark:text-blue-300 font-semibold text-sm">
                 {adminName.charAt(0).toUpperCase()}
               </span>
             </div>
             <div>
-              <p className="text-sm font-semibold text-gray-800">{adminName}</p>
-              <p className="text-xs text-gray-500">Administrator</p>
+              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">{adminName}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
             </div>
           </div>
         </div>
@@ -153,8 +154,8 @@ export default function AdminLayout({
               className={`flex items-center space-x-3 px-4 py-3 mb-1 rounded-lg transition-all duration-200
                 ${
                   isActive(item.href)
-                    ? 'bg-blue-50 text-blue-600 font-semibold shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-blue-400'
                 }
               `}
             >
@@ -165,11 +166,13 @@ export default function AdminLayout({
         </nav>
 
         {/* Logout Button */}
-        <div className="border-t border-gray-200 p-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-3">
+          <ThemeToggle />
+          
           <button
             onClick={handleLogout}
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg cursor-pointer
-              text-red-600 hover:bg-red-50 transition-all duration-200 font-medium"
+              text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 font-medium"
           >
             <LogOut className="text-lg" />
             <span className="text-sm">Đăng xuất</span>
@@ -180,14 +183,14 @@ export default function AdminLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header - Mobile Menu Button */}
-        <header className="md:hidden bg-white shadow-sm px-4 
+        <header className="md:hidden bg-white dark:bg-gray-800 shadow-sm px-4 
           py-3 flex items-center justify-between
         ">
-          <button onClick={() => setIsSidebarOpen(true)} className="text-gray-700 hover:text-blue-600">
+          <button onClick={() => setIsSidebarOpen(true)} className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400">
             <Menu size={24} />
           </button>
 
-          <h1 className="text-lg font-bold text-gray-800">
+          <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">
             FastDeli Admin
           </h1>
           
@@ -205,12 +208,12 @@ export default function AdminLayout({
             {(title || subtitle) && (
               <div className="mb-6">
                 {title && (
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-gray-100">
                     {title}
                   </h1>
                 )}
                 {subtitle && (
-                  <p className="mt-1 text-sm text-gray-600">
+                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                     {subtitle}
                   </p>
                 )}
