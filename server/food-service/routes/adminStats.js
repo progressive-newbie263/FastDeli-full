@@ -18,30 +18,35 @@ function calcTrend(currentValue, previousValue) {
 function distributePercent(total, buckets) {
   const t = Math.max(0, toNumber(total, 0));
   if (t === 0) return buckets.map(b => ({ ...b, value: 0 }));
-
-  // Round and then adjust last bucket to keep sum=100
+  // Làm tròn theo phần trăm
+  // Điều chỉnh chính xác để tổng bằng 100%
   const withPct = buckets.map(b => ({
     ...b,
     value: Math.round((toNumber(b.count, 0) / t) * 100)
   }));
   const sum = withPct.reduce((acc, b) => acc + b.value, 0);
   const delta = 100 - sum;
+  
   if (withPct.length > 0) {
     withPct[withPct.length - 1].value += delta;
   }
   return withPct;
 }
 
-/**
- * GET /api/admin/stats
- * Dashboard statistics
- */
+/*
+  * GET /api/admin/stats (api sẽ cung cấp thông số bổ trợ cho trang dashboard của admin)
+  * Note: phần này khá phức tạp, phải thử nghiệm kỹ lưỡng chút.
+*/
 router.get('/stats', async (req, res) => {
   try {
-    // Total orders
+    // tổng toàn bộ đơn hàng
     const ordersResult = await foodPool.query('SELECT COUNT(*)::int as count FROM orders');
 
-    // Total revenue (đơn đã thanh toán, không tính cancelled) - tính từ order_items (food_price * quantity)
+    /*
+      - Query lấy tổng doanh thu 
+      - Chỉ tính các đơn đã thanh toán (paid), không tính các đơn cancelled
+      - Tính từ order_items (food_price * quantity)
+    */
     const revenueResult = await foodPool.query(
       `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
        FROM (
@@ -57,28 +62,26 @@ router.get('/stats', async (req, res) => {
        ) t`
     );
     
-    // Active restaurants
-    const restaurantsResult = await foodPool.query(
-      `
-        SELECT COUNT(*) as count 
-        FROM restaurants 
-        WHERE status = 'active'
-      `
-    );
+    // Cac nhà hàng đang hoạt động
+    const restaurantsResult = await foodPool.query(`
+      SELECT COUNT(*) as count 
+      FROM restaurants 
+      WHERE status = 'active'
+    `);
     
-    // Total users
+    // Số người dùng tổng cộng
     const usersResult = await sharedPool.query(
       'SELECT COUNT(*) as count FROM users'
     );
 
-    // Pending orders
-    const pendingResult = await foodPool.query(
-      `SELECT COUNT(*) as count 
-       FROM orders 
-       WHERE order_status = 'pending'`
-    );
+    // Đơn hàng đang chờ để xử lý
+    const pendingResult = await foodPool.query(`
+      SELECT COUNT(*) as count 
+      FROM orders 
+      WHERE order_status = 'pending'
+    `);
 
-    // Today's revenue - tính từ order_items
+    // Doanh thu kiếm được trong ngày
     const todayRevenueResult = await foodPool.query(
       `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
        FROM (
@@ -95,19 +98,20 @@ router.get('/stats', async (req, res) => {
        ) t`
     );
 
-    // Calculate trends (so với tháng trước)
-    const lastMonthOrdersResult = await foodPool.query(
-      `SELECT COUNT(*) as count
-       FROM orders
-       WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-       AND created_at < DATE_TRUNC('month', CURRENT_DATE)`
-    );
+    // Ước lượng xu hướng (so với tháng trước)
+    const lastMonthOrdersResult = await foodPool.query(`
+      SELECT COUNT(*) as count
+      FROM orders
+      WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+      AND created_at < DATE_TRUNC('month', CURRENT_DATE)
+    `);
 
-    const currentMonthOrdersResult = await foodPool.query(
-      `SELECT COUNT(*) as count
-       FROM orders
-       WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)`
-    );
+    // Đơn hàng trong tháng hiện tại
+    const currentMonthOrdersResult = await foodPool.query(`
+      SELECT COUNT(*) as count
+      FROM orders
+      WHERE created_at >= DATE_TRUNC('month', CURRENT_DATE)
+    `);
 
     const lastMonthOrders = parseInt(lastMonthOrdersResult.rows[0].count);
     const currentMonthOrders = parseInt(currentMonthOrdersResult.rows[0].count);
@@ -115,7 +119,7 @@ router.get('/stats', async (req, res) => {
       ? ((currentMonthOrders - lastMonthOrders) / lastMonthOrders * 100).toFixed(1)
       : 0;
 
-    // Revenue trend (so với tháng trước)
+    // Doanh thu theo xu hướng (so với tháng trước)
     const [currentMonthRevenueRes, lastMonthRevenueRes] = await Promise.all([
       foodPool.query(
         `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
@@ -150,6 +154,8 @@ router.get('/stats', async (req, res) => {
          ) t`
       ),
     ]);
+
+    // Tính toán xu hướng doanh thu
     const revenueTrend = calcTrend(
       toNumber(currentMonthRevenueRes.rows[0]?.total, 0),
       toNumber(lastMonthRevenueRes.rows[0]?.total, 0)
@@ -168,6 +174,7 @@ router.get('/stats', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
+
     res.status(500).json({ 
       error: 'Internal server error',
       message: error.message 
@@ -175,10 +182,11 @@ router.get('/stats', async (req, res) => {
   }
 });
 
-/**
- * GET /api/admin/recent-orders?limit=10
- * Recent orders with user and restaurant info
- */
+/*
+  * GET /api/admin/recent-orders?limit=10
+  * api này sẽ rút ra các đơn hàng mới nhất, dùng cho trang dashboard của admin
+  * hiển thị kèm thông tin của người dùng và thông tin của nhà hàng
+*/
 router.get('/recent-orders', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
@@ -216,10 +224,11 @@ router.get('/recent-orders', async (req, res) => {
   }
 });
 
-/**
- * GET /api/admin/chart-data
- * Last 7 days data for charts
- */
+/*
+  * GET /api/admin/chart-data
+  * Lấy dữ liệu x ngày bán hàng gần nhất cho biểu đồ trên trang dashboard của admin
+  * hiện tại, x = 7 (chọn cứng luôn).
+*/
 router.get('/chart-data', async (req, res) => {
   try {
     const result = await foodPool.query(
@@ -253,10 +262,10 @@ router.get('/chart-data', async (req, res) => {
   }
 });
 
-/**
- * GET /api/admin/analytics?year=2024&period=month
- * Consolidated analytics data for admin-ui analytics page
- */
+/*
+  * GET /api/admin/analytics?year=2024&period=month
+  * Lấy dữ liệu phân tích nâng cao cho trang dashboard của admin
+*/
 router.get('/analytics', async (req, res) => {
   try {
     const year = toNumber(req.query.year, new Date().getFullYear());
@@ -264,8 +273,10 @@ router.get('/analytics', async (req, res) => {
     const allowedPeriods = new Set(['today', 'week', 'month']);
     const effectivePeriod = allowedPeriods.has(period) ? period : 'month';
 
-    // Period ranges used for most "current" widgets
     let rangeQuery;
+
+    // set khoảng thời gian cho bộ lọc.
+    // Hiện tại, lưu động giữa 1 ngày, 1 tuần hoặc 1 tháng
     if (effectivePeriod === 'today') {
       rangeQuery = {
         start: "CURRENT_DATE",
@@ -283,8 +294,17 @@ router.get('/analytics', async (req, res) => {
       };
     }
 
-    // Key metrics for current month (these match the UI labels)
-    const [monthRevenueRes, lastMonthRevenueRes, monthOrdersRes, lastMonthOrdersRes, monthAvgOrderRes, lastMonthAvgOrderRes] = await Promise.all([
+    // khởi tạo các chỉ số chính
+    // api sẽ giúp tính toán xu hướng so với tháng trước
+    // bao gồm: doanh thu tháng, số đơn hàng tháng, giá trị đơn hàng trung bình
+    const [
+      monthRevenueRes, 
+      lastMonthRevenueRes, 
+      monthOrdersRes, 
+      lastMonthOrdersRes, 
+      monthAvgOrderRes, 
+      lastMonthAvgOrderRes
+    ] = await Promise.all([
       foodPool.query(
         `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
          FROM (
@@ -363,6 +383,12 @@ router.get('/analytics', async (req, res) => {
       ),
     ]);
 
+    /*
+      các chỉ số sẽ của tháng trước/tháng này để tính toán xu hướng sẽ là:
+        - revenue / doanh thu
+        - orders / tổng số lượng đơn hàng
+        - avg order value / giá trị đơn hàng trung bình (ví dụ: 100 đơn hàng, 20 triệu)
+    */
     const monthRevenue = toNumber(monthRevenueRes.rows[0]?.total, 0);
     const lastMonthRevenue = toNumber(lastMonthRevenueRes.rows[0]?.total, 0);
     const monthOrders = toNumber(monthOrdersRes.rows[0]?.count, 0);
@@ -371,12 +397,13 @@ router.get('/analytics', async (req, res) => {
     const lastAvgOrderValue = toNumber(lastMonthAvgOrderRes.rows[0]?.avg, 0);
 
     const dayOfMonth = Math.max(1, toNumber(new Date().getDate(), 1));
-    // Use days in last month for baseline
+
+    // cơ sở để so sánh sẽ là số ngày của tháng trước
     const lastMonthDaysRes = await foodPool.query(
       `SELECT EXTRACT(DAY FROM (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day'))::int AS days`
     );
-    const lastMonthDays = Math.max(1, toNumber(lastMonthDaysRes.rows[0]?.days, 30));
 
+    const lastMonthDays = Math.max(1, toNumber(lastMonthDaysRes.rows[0]?.days, 30));
     const avgOrdersPerDay = monthOrders / dayOfMonth;
     const lastAvgOrdersPerDay = lastMonthOrders / lastMonthDays;
 
@@ -391,7 +418,7 @@ router.get('/analytics', async (req, res) => {
       avgOrderValueTrend: calcTrend(avgOrderValue, lastAvgOrderValue),
     };
 
-    // Revenue by month (selected year)
+    // doanh thu theo tháng (lựa chọn năm trên thanh selector dropdown)
     const revenueByMonthRes = await foodPool.query(
       `WITH months AS (
          SELECT generate_series(1, 12)::int AS month
@@ -441,7 +468,7 @@ router.get('/analytics', async (req, res) => {
       orders: toNumber(r.orders, 0),
     }));
 
-    // Orders by weekday (based on selected period)
+    // Đơn hàng theo ngày trong tuần (Thứ 2 - Chủ nhật)
     const weekdayRes = await foodPool.query(
       `SELECT EXTRACT(DOW FROM created_at)::int AS dow, COUNT(*)::int AS count
        FROM orders
@@ -458,9 +485,12 @@ router.get('/analytics', async (req, res) => {
       { key: 5, day: 'T6' },
       { key: 6, day: 'T7' },
       { key: 0, day: 'CN' },
-    ].map(d => ({ day: d.day, orders: weekdayMap.get(d.key) || 0 }));
+    ].map(d => ({ 
+      day: d.day, 
+      orders: weekdayMap.get(d.key) || 0 
+    }));
 
-    // Order status distribution (counts -> percent)
+    // Phân phối trạng thái đơn hàng (số lượng -> phần trăm)
     const statusRes = await foodPool.query(
       `SELECT order_status, COUNT(*)::int AS count
        FROM orders
@@ -476,6 +506,7 @@ router.get('/analytics', async (req, res) => {
       pending: 0,
       other: 0,
     };
+    
     for (const row of statusRes.rows) {
       const status = (row.order_status || '').toString();
       const c = toNumber(row.count, 0);
@@ -494,7 +525,8 @@ router.get('/analytics', async (req, res) => {
     ];
     const orderStatus = distributePercent(totalStatus, statusBuckets).map(({ name, value, color }) => ({ name, value, color }));
 
-    // Top restaurants by delivered revenue (selected period)
+    // Top các nhà hàng theo doanh thu 
+    // gợi ý người dùng rằng nhà hàng này là ưu tiên hàng đầu của các khách hàng khác
     const topRestaurantsRes = await foodPool.query(
       `SELECT
          COALESCE(r.name, 'N/A') AS name,
@@ -525,17 +557,19 @@ router.get('/analytics', async (req, res) => {
       revenue: toNumber(r.revenue, 0),
     }));
 
-    // Recent activity: provide stable, pre-formatted strings to avoid client-side time mismatches
-    const recentOrdersRes = await foodPool.query(
-      `SELECT COUNT(*)::int AS count
-       FROM orders
-       WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'`
-    );
-    const newRestaurantsRes = await foodPool.query(
-      `SELECT COUNT(*)::int AS count
-       FROM restaurants
-       WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'`
-    );
+
+    // Hoạt động gần nhất:
+    const recentOrdersRes = await foodPool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM orders
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '24 hours'
+    `);
+    const newRestaurantsRes = await foodPool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM restaurants
+      WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'
+    `);
+    
     const recentActivity = [
       {
         kind: 'orders',

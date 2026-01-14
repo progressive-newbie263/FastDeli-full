@@ -3,9 +3,8 @@
  * SUPPLIER TYPES & INTERFACES
  * ============================================
  * Định nghĩa types cho supplier portal (restaurant owners)
- */
+*/
 
-// Restaurant info
 export interface Restaurant {
   id: number;
   name: string;
@@ -28,7 +27,6 @@ export interface Restaurant {
   longitude?: number;
 }
 
-// Food item
 export interface Food {
   food_id: number;
   food_name: string;
@@ -42,7 +40,6 @@ export interface Food {
   updated_at?: string;
 }
 
-// Order from customers
 export interface Order {
   order_id: number;
   order_code: string;
@@ -68,7 +65,6 @@ export interface OrderItem {
   subtotal: number;
 }
 
-// Dashboard statistics
 export interface SupplierStats {
   totalOrders: number;
   totalRevenue: number;
@@ -77,18 +73,16 @@ export interface SupplierStats {
   pendingOrders: number;
   todayOrders: number;
   todayRevenue: number;
-  ordersTrend?: number; // % thay đổi so với hôm qua
+  ordersTrend?: number;
   revenueTrend?: number;
 }
 
-// Food category
 export interface FoodCategory {
   category_id: number;
   category_name: string;
   description?: string;
 }
 
-// Promotion
 export interface Promotion {
   promotion_id: number;
   promotion_name: string;
@@ -98,7 +92,6 @@ export interface Promotion {
   is_active: boolean;
 }
 
-// Review from customers
 export interface Review {
   review_id: number;
   customer_name: string;
@@ -108,7 +101,6 @@ export interface Review {
   food_name?: string;
 }
 
-// Pagination meta
 export interface PaginationMeta {
   page: number;
   limit: number;
@@ -116,7 +108,6 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
-// API responses
 export interface ApiResponse<T = any> {
   success: boolean;
   message: string;
@@ -134,7 +125,7 @@ export interface FoodsResponse {
   pagination: PaginationMeta;
 }
 
-// User (supplier owner)
+// supplier / nhà hàng đối tác của dịch vụ
 export interface SupplierUser {
   user_id: number;
   full_name: string;
@@ -143,5 +134,5 @@ export interface SupplierUser {
   avatar_url?: string;
   role: 'restaurant_owner';
   restaurant_name?: string;
-  restaurant_id?: number; // Link to owned restaurant
+  restaurant_id?: number;
 }

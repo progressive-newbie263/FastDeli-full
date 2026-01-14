@@ -61,6 +61,8 @@ export function generateId(): string {
   return Math.random().toString(36).substr(2, 9);
 }
 
+// function này hỗ trợ chuyển chuỗi thành dạng slug để dùng trong URL
+// cải thiện tính thân thiện với SEO (sau này sẽ cần)
 export function slugify(text: string): string {
   return text
     .toString()
@@ -73,6 +75,8 @@ export function slugify(text: string): string {
     .replace(/-+$/, '');
 }
 
+// func rút gọn text (ví dụ: quán ăn tên rất dài. 
+// Truncate cắt chuỗi đó bớt đi, thêm ... vào cuối)
 export function truncate(text: string, length: number): string {
   return text.length > length ? text.slice(0, length) + '...' : text;
 }

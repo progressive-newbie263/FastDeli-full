@@ -8,17 +8,17 @@ import { formatCurrency, getRelativeTime } from '@/lib/utils';
 import { adminAPI, APIError } from '@/app/utils/api';
 import type { DashboardStats, RecentOrder } from '@/app/types/admin';
 
+/* 
+  note: component quan trọng
+*/
 export default function DashboardAdmin() {
-  // State management
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [orders, setOrders] = useState<RecentOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  /**
-   * Fetch dashboard data
-   */
+  // tổng hợp lại dữ liệu dashboard
   const fetchDashboardData = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) {
@@ -28,7 +28,6 @@ export default function DashboardAdmin() {
       }
       setError(null);
 
-      // giới hạn 1 số order gần đây - số lượng là 5.
       const [statsData, ordersData] = await Promise.all([
         adminAPI.getStats(),
         adminAPI.getRecentOrders(5),
@@ -39,7 +38,6 @@ export default function DashboardAdmin() {
         * console.log('Stats data:', statsData); 
         * console.log('Orders data:', ordersData); 
       */
-
       setStats(statsData);
       setOrders(ordersData);
     } catch (err) {
@@ -56,21 +54,14 @@ export default function DashboardAdmin() {
     }
   }, []);
 
-  // Initial load
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  /**
-   * Refresh handler
-   */
   const handleRefresh = () => {
     fetchDashboardData(true);
   };
 
-  /**
-   * Loading state
-   */
   if (loading) {
     return (
       <ProtectedRoute>
@@ -86,9 +77,7 @@ export default function DashboardAdmin() {
     );
   }
 
-  /**
-   * Error state
-   */
+  
   if (error && !stats) {
     return (
       <ProtectedRoute>
@@ -127,6 +116,7 @@ export default function DashboardAdmin() {
     );
   }
 
+  // Trang báo lỗi.
   if (!stats) {
     return (
       <ProtectedRoute>
@@ -151,9 +141,6 @@ export default function DashboardAdmin() {
     );
   }
 
-  /**
-   * Success state
-   */
   return (
     <ProtectedRoute>
       <AdminLayout title="Dashboard" subtitle="Tổng quan hệ thống FoodDeli">
@@ -190,7 +177,7 @@ export default function DashboardAdmin() {
           </div>
         )}
 
-        {/* Stats Cards */}
+        {/* Thẻ thống kê  */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
             title="Tổng đơn hàng"
@@ -199,22 +186,18 @@ export default function DashboardAdmin() {
             icon="📦"
             color="blue"
           />
-          
           <StatsCard
             title="Doanh thu"
             value={formatCurrency(stats.totalRevenue || 0)}
             icon="💰"
             color="green"
           />
-          
-          {/* ✅ Safe access với Optional Chaining */}
           <StatsCard
             title="Nhà hàng hoạt động"
             value={stats.activeRestaurants?.toString() || 'N/A'}
             icon="🏪"
             color="purple"
           />
-          
           <StatsCard
             title="Người dùng"
             value={stats.totalUsers?.toLocaleString() || '0'}
@@ -223,17 +206,22 @@ export default function DashboardAdmin() {
           />
         </div>
 
-        {/* Today Stats */}
+        {/* stats trong ngày */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Doanh thu hôm nay</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Doanh thu hôm nay
+                </h3>
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
                   {formatCurrency(stats?.todayRevenue || 0)}
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Từ các đơn đã thanh toán</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  Từ các đơn đã thanh toán
+                </p>
               </div>
+
               <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
                 <span className="text-2xl">💵</span>
               </div>
@@ -242,13 +230,19 @@ export default function DashboardAdmin() {
 
           <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
             <div className="flex items-center justify-between">
+              {/* Đơn hàng "pending" (dự kiến) */}
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Cần xử lý</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Cần xử lý
+                </h3>
                 <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-1">
                   {stats?.pendingOrders || 0}
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Đơn hàng chờ xác nhận</p>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  Đơn hàng chờ xác nhận
+                </p>
               </div>
+              
               <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-full">
                 <span className="text-2xl">⏳</span>
               </div>
@@ -256,16 +250,21 @@ export default function DashboardAdmin() {
           </div>
         </div>
 
-        {/* Recent Orders */}
+        {/* danh sách các đơn hàng gần đây */}
         <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow">
+          {/* Phần tiêu đề */}
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đơn hàng gần đây</h2>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Đơn hàng gần đây
+              </h2>
               <a href="/orders" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium">
                 Xem tất cả →
               </a>
             </div>
           </div>
+
+          {/* main */}
           <div className="p-6">
             {orders.length === 0 ? (
               <div className="text-center py-8">
@@ -302,25 +301,33 @@ export default function DashboardAdmin() {
                           }
                         </span>
                       </div>
+
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                         {order.customer_name} • {order.restaurant_name}
                       </p>
+                      
+                      {/* Thời gian tạo đơn hàng */}
                       <p className="text-xs text-gray-500 dark:text-gray-500">
                         {getRelativeTime(order.created_at)}
                       </p>
                     </div>
+
+                    {/* thanh toán và tổng tiền */}
                     <div className="text-right">
                       <div className="font-semibold text-gray-900 dark:text-gray-100">
                         {formatCurrency(order.total_amount)}
                       </div>
+
                       <div className={`text-xs ${
                         order.payment_status === 'paid' ? 'text-green-600 dark:text-green-400' :
                         order.payment_status === 'pending' ? 'text-yellow-600 dark:text-yellow-400' :
                         'text-red-600 dark:text-red-400'
                       }`}>
-                        {order.payment_status === 'paid' ? '✓ Đã thanh toán' :
-                         order.payment_status === 'pending' ? '⏳ Chưa thanh toán' :
-                         '✗ Thất bại'}
+                        {
+                          order.payment_status === 'paid' ? '✓ Đã thanh toán' :
+                          order.payment_status === 'pending' ? '⏳ Chưa thanh toán' :
+                          '✗ Thất bại'
+                        }
                       </div>
                     </div>
                   </div>

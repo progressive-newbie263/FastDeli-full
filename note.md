@@ -158,3 +158,13 @@ Danh sach cac api endpoint dang co (dan vao terminal):
 
 + cd server/food-service
 + Get-ChildItem -Recurse routes\* | Select-String "router\.(get|post|put|delete)"
+
+
+
+-----------------------------------------------------------------------------
+------------------------------GITPUSH, 12-1-2025-----------------------------
+
+* push của 12-1 là 1 push lớn. Nó ảnh hưởng nhiều đến các trang admin-ui và supplier
+* Rất nhiều api sẽ được copilot gen (nó khó với trình mình hiện tại -_-)
+* Do quên chưa comment lại nhiều chỗ nên giờ mình sẽ lục lại các file .js backend
+* Ưu tiên chú thích lại công dụng và đường lối thiết kế các api đó. (ưu tiên: cao).

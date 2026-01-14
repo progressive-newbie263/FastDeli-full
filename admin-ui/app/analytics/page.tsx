@@ -7,14 +7,15 @@ import { formatCurrency } from '@/lib/utils';
 import { adminAPI } from '@/app/utils/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
+// sẽ chỉ sử dụng 3 giá trị để lọc. Theo ngày, tuần, tháng
 type Period = 'today' | 'week' | 'month';
-
 type RevenueByMonth = { month: string; revenue: number; orders: number };
 type OrdersByWeekday = { day: string; orders: number };
 type OrderStatus = { name: string; value: number; color: string };
 type TopRestaurant = { name: string; orders: number; revenue: number };
 type RecentActivity = { kind: string; title: string; time: string };
 
+// Ép kiểu dữ liệu trả về từ API (main)
 type AnalyticsResponse = {
   metrics: {
     monthRevenue: number;
@@ -65,7 +66,7 @@ export default function AnalyticsPage() {
 
   const metrics = data?.metrics;
   
-  // ✅ Parse revenue về number để Recharts vẽ đúng
+  // ép doanh thu chuẩn "number" .Giúp tránh lỗi kiểu dữ liệu
   const revenueData = useMemo<RevenueByMonth[]>(
     () => {
       const raw = data?.revenueByMonth ?? [];
@@ -74,30 +75,27 @@ export default function AnalyticsPage() {
         revenue: typeof item.revenue === 'number' ? item.revenue : parseFloat(String(item.revenue ?? 0)),
         orders: typeof item.orders === 'number' ? item.orders : parseInt(String(item.orders ?? 0), 10),
       }));
-    },
+    }, 
     [data]
   );
 
+  // ép kiểu đơn hàng theo ngày trong tuần
   const dailyOrdersData = useMemo<OrdersByWeekday[]>(
     () => data?.ordersByWeekday ?? [],
     [data]
-  );
-  
+  );  
   const orderStatusData = useMemo<OrderStatus[]>(
     () => data?.orderStatus ?? [],
     [data]
   );
-  
   const topRestaurants = useMemo<TopRestaurant[]>(
     () => data?.topRestaurants ?? [],
     [data]
   );
-  
   const recentActivity = useMemo<RecentActivity[]>(
     () => data?.recentActivity ?? [],
     [data]
   );
-
   const formatTrend = (value: number) => {
     const sign = value > 0 ? '+' : '';
     return `${sign}${value}% so với tháng trước`;
@@ -108,13 +106,16 @@ export default function AnalyticsPage() {
       title="Báo cáo & Thống kê" 
       subtitle="Phân tích dữ liệu và xu hướng kinh doanh"
     >
+      {/* hiển thị lỗi, nếu có */}
       {error && (
-        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm text-yellow-800 dark:text-yellow-200">
+        <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 
+          border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm 
+          text-yellow-800 dark:text-yellow-200
+        ">
           ⚠️ Không thể tải dữ liệu thống kê: {error}
         </div>
       )}
 
-      {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatsCard
           title="Doanh thu tháng này"
@@ -154,7 +155,9 @@ export default function AnalyticsPage() {
         {/* Revenue Chart */}
         <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Doanh thu theo tháng</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Doanh thu theo tháng
+            </h2>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(parseInt(e.target.value))}
@@ -166,6 +169,7 @@ export default function AnalyticsPage() {
               <option value={2023}>2023</option>
             </select>
           </div>
+
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={revenueData}>
@@ -178,7 +182,18 @@ export default function AnalyticsPage() {
                   className="dark:stroke-gray-400"
                 />
                 
-                {/* ✅ YAxis tự động scale, không hardcode domain */}
+                {/* 
+                  - Tạm thời, hiển thị trục Y-axis sẽ kiểu này:
+                  - chọn ra 1 ngày bán được nhiều nhất trong tháng làm 'max'
+                  - chia đều trục Y-axis thành 5 phần. "max" sẽ ứng với đỉnh đó luôn
+                  
+                  - Ví dụ: Hiển thị theo tuần, ngày bán được nhiều nhất là 4 triệu
+                  ít nhất là 500k 
+                    + Trục Y chia 5 mốc: 0, 1m, 2m, 3m, 4m
+                    + 500k hiển thị sẽ đến được 1 nửa của mốc 1m. 
+                    + các giá trị khác tương tự. Nó sẽ hiển thị phụ thuộc vào độ
+                    cao của ngày có doanh thu lớn nhất trong tuần đó
+                */}
                 <YAxis 
                   stroke="#6b7280" 
                   fontSize={12}
@@ -214,11 +229,12 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Daily Orders Chart */}
+        {/* Biểu đồ đơn hàng hằng ngày */}
         <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Đơn hàng theo ngày trong tuần</h2>
           </div>
+
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dailyOrdersData}>
@@ -258,7 +274,9 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Order Status Distribution */}
         <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Phân bố trạng thái đơn hàng</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+            Phân bố trạng thái đơn hàng
+          </h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -289,6 +307,7 @@ export default function AnalyticsPage() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+
           <div className="mt-4 space-y-2">
             {orderStatusData.map((item, index) => (
               <div key={index} className="flex items-center justify-between">
@@ -299,7 +318,10 @@ export default function AnalyticsPage() {
                   />
                   <span className="text-sm text-gray-600 dark:text-gray-300">{item.name}</span>
                 </div>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.value}%</span>
+
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  {item.value}%
+                </span>
               </div>
             ))}
           </div>
@@ -308,7 +330,10 @@ export default function AnalyticsPage() {
         {/* Top Restaurants */}
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Top nhà hàng theo doanh thu</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Top nhà hàng theo doanh thu
+            </h2>
+            {/* dropdown selector (chọn hiển thị theo ngày/ tháng/ năm) */}
             <select
               value={topPeriod}
               onChange={(e) => setTopPeriod(e.target.value as Period)}
@@ -319,6 +344,7 @@ export default function AnalyticsPage() {
               <option value="today">Hôm nay</option>
             </select>
           </div>
+
           <div className="space-y-4">
             {topRestaurants.length === 0 ? (
               <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -333,19 +359,23 @@ export default function AnalyticsPage() {
                         {index + 1}
                       </span>
                     </div>
+                    {/* hiển thị số lượng đơn hàng của nhà hàng, tên nhà hàng */}
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">{restaurant.name}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {restaurant.name}
+                      </div>
                       <div className="text-sm text-gray-500 dark:text-gray-400">
                         {restaurant.orders} đơn hàng
                       </div>
                     </div>
                   </div>
+                  
                   <div className="text-right">
                     <div className="font-semibold text-gray-900 dark:text-gray-100">
                       {formatCurrency(restaurant.revenue)}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      TB: {formatCurrency(restaurant.orders > 0 ? restaurant.revenue / restaurant.orders : 0)}
+                      Trung bình: {formatCurrency(restaurant.orders > 0 ? restaurant.revenue / restaurant.orders : 0)}
                     </div>
                   </div>
                 </div>
@@ -355,9 +385,12 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* các hoạt động gần nhất (đặt hàng, ...) */}
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-transparent dark:border-gray-700">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Hoạt động gần đây</h2>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">
+          Hoạt động gần đây
+        </h2>
+
         <div className="space-y-4">
           {recentActivity.length === 0 ? (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -366,17 +399,31 @@ export default function AnalyticsPage() {
           ) : (
             recentActivity.slice(0, 5).map((item, idx) => {
               const style =
-                item.kind === 'revenue'
-                  ? { bg: 'bg-green-50 dark:bg-green-900/20', iconBg: 'bg-green-100 dark:bg-green-900/30', icon: '📈', iconText: 'text-green-600 dark:text-green-400' }
-                  : item.kind === 'restaurants'
-                    ? { bg: 'bg-purple-50 dark:bg-purple-900/20', iconBg: 'bg-purple-100 dark:bg-purple-900/30', icon: '🏪', iconText: 'text-purple-600 dark:text-purple-400' }
-                    : { bg: 'bg-blue-50 dark:bg-blue-900/20', iconBg: 'bg-blue-100 dark:bg-blue-900/30', icon: '📊', iconText: 'text-blue-600 dark:text-blue-400' };
+                item.kind === 'revenue' ? { 
+                  bg: 'bg-green-50 dark:bg-green-900/20', 
+                  iconBg: 'bg-green-100 dark:bg-green-900/30', 
+                  icon: '📈', 
+                  iconText: 'text-green-600 dark:text-green-400' 
+                }
+                  : item.kind === 'restaurants' ? { 
+                    bg: 'bg-purple-50 dark:bg-purple-900/20', 
+                    iconBg: 'bg-purple-100 dark:bg-purple-900/30', 
+                    icon: '🏪', 
+                    iconText: 'text-purple-600 dark:text-purple-400' 
+                  }
+                    : { 
+                      bg: 'bg-blue-50 dark:bg-blue-900/20', 
+                      iconBg: 'bg-blue-100 dark:bg-blue-900/30', 
+                      icon: '📊', 
+                      iconText: 'text-blue-600 dark:text-blue-400' 
+                    };
 
               return (
                 <div key={idx} className={`flex items-center p-4 ${style.bg} rounded-lg hover:shadow-sm transition-shadow`}>
                   <div className={`flex-shrink-0 w-10 h-10 ${style.iconBg} rounded-full flex items-center justify-center mr-4`}>
                     <span className={`${style.iconText} text-lg`}>{style.icon}</span>
                   </div>
+                  
                   <div className="flex-1">
                     <div className="font-medium text-gray-900 dark:text-gray-100">{item.title}</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">{item.time}</div>
