@@ -99,73 +99,88 @@ export default function UsersAdmin() {
 
       {/* Users Table */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-transparent dark:border-gray-700">
-        <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700/50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">ID</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tên</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Điện thoại</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Vai trò</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Đơn hàng</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Chi tiêu</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Trạng thái</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {data?.users.map((user) => (
-              <tr key={user.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{user.user_id}</td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{user.full_name}</td>
-                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.email}</td>
-                <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.phone_number}</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
-                    user.role === 'restaurant_owner' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
-                    user.role === 'shipper' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
-                    'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
-                  }`}>
-                    {user.role === 'admin' ? 'Admin' :
-                     user.role === 'restaurant_owner' ? 'Chủ NHà' :
-                     user.role === 'shipper' ? 'Shipper' :
-                     'Khách hàng'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{user.total_orders || 0}</td>
-                <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {formatCurrency(user.total_spent || 0)}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    user.is_active
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                  }`}>
-                    {user.is_active ? 'Hoạt động' : 'Vô hiệu'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <a
-                      href={`/users/${user.user_id}`}
-                      className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 text-sm"
-                    >
-                      Chi tiết
-                    </a>
-                    <button
-                      onClick={() => handleToggleActive(user.user_id, user.is_active)}
-                      className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-sm"
-                    >
-                      {user.is_active ? 'Vô hiệu' : 'Kích hoạt'}
-                    </button>
-                  </div>
-                </td>
+        {/* THÊM div bọc ngoài này để hỗ trợ cuộn ngang trên mobile thay vì vỡ dòng */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tên</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Điện thoại</th>
+                {/* Thêm whitespace-nowrap vào các header quan trọng */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Vai trò</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Đơn hàng</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Chi tiêu</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase whitespace-nowrap">Thao tác</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              {data?.users.map((user) => (
+                <tr key={user.user_id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{user.user_id}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{user.full_name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.email}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">{user.phone_number}</td>
+                  
+                  {/* Fix cột Vai trò */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      user.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
+                      user.role === 'restaurant_owner' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                      user.role === 'shipper' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
+                      'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+                    }`}>
+                      {user.role === 'admin' ? 'Admin' :
+                      user.role === 'restaurant_owner' ? 'Nhà hàng' :
+                      user.role === 'shipper' ? 'Shipper' :
+                      'Khách hàng'}
+                    </span>
+                  </td>
+                  
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 text-center">{user.total_orders || 0}</td>
+                  
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                    {formatCurrency(user.total_spent || 0)}
+                  </td>
+                  
+                  {/* Fix cột Trạng thái */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                      user.is_active
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                    }`}>
+                      {user.is_active ? 'Hoạt động' : 'Vô hiệu'}
+                    </span>
+                  </td>
+                  
+                  {/* Fix cột Thao tác */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-4">
+                      <a
+                        href={`/users/${user.user_id}`}
+                        className="text-primary-600 hover:underline dark:text-primary-400 font-medium text-sm"
+                      >
+                        Chi tiết
+                      </a>
+                      <button
+                        onClick={() => handleToggleActive(user.user_id, user.is_active)}
+                        className={`text-sm font-medium hover:underline ${
+                          user.is_active ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'
+                        }`}
+                      >
+                        {user.is_active ? 'Vô hiệu' : 'Kích hoạt'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         {/* Pagination */}
         {data && data.pagination.totalPages > 1 && (

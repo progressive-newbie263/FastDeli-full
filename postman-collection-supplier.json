@@ -1,0 +1,485 @@
+{
+  "info": {
+    "name": "Supplier Portal APIs",
+    "description": "Collection để test các API endpoints của Supplier Portal",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{supplier_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login as Restaurant Owner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"supplier@fastdeli.com\",\n  \"password\": \"supplier123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login để lấy JWT token. Copy token từ response vào biến {{supplier_token}}"
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5000/api/auth/profile",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Restaurant Management",
+      "item": [
+        {
+          "name": "Get My Restaurant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/my-restaurant",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "my-restaurant"]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/statistics",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "statistics"]
+            },
+            "description": "Thay '1' bằng restaurant_id thực tế"
+          }
+        },
+        {
+          "name": "Update Restaurant Info",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Phở Hà Nội - Chi nhánh mới\",\n  \"description\": \"Phở bò truyền thống\",\n  \"opening_hours\": \"7:00 AM - 10:00 PM\",\n  \"delivery_fee\": 15000,\n  \"minimum_order\": 50000\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Restaurant Reviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/reviews?page=1&limit=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "reviews"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order Management",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/orders?page=1&limit=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Orders by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/orders?status=pending&page=1&limit=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "description": "pending, confirmed, processing, delivering, delivered, cancelled"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/orders?search=Nguyen",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "orders"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Nguyen",
+                  "description": "Search by customer name, phone, or order ID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/orders/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "orders", "1"]
+            },
+            "description": "Thay '1' bằng order_id thực tế"
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/orders/1/status",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "orders", "1", "status"]
+            },
+            "description": "Allowed status: confirmed, processing, ready, cancelled"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Food/Menu Management",
+      "item": [
+        {
+          "name": "Get All Foods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/foods",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "foods"]
+            }
+          }
+        },
+        {
+          "name": "Get Foods by Category",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/foods?category=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "foods"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Foods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/foods?search=Pho",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "foods"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Pho"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Food",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Phở bò tái\",\n  \"description\": \"Phở bò tái chín đặc biệt\",\n  \"price\": 55000,\n  \"category_id\": 1,\n  \"image_url\": \"https://example.com/pho-bo.jpg\",\n  \"is_available\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/restaurants/1/foods",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "restaurants", "1", "foods"]
+            }
+          }
+        },
+        {
+          "name": "Update Food",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Phở bò tái (Updated)\",\n  \"price\": 60000,\n  \"description\": \"Món phở đặc biệt với thịt bò tươi\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/foods/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "foods", "1"]
+            },
+            "description": "Thay '1' bằng food_id thực tế"
+          }
+        },
+        {
+          "name": "Toggle Food Availability",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/foods/1/availability",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "foods", "1", "availability"]
+            },
+            "description": "Toggle is_available giữa true/false"
+          }
+        },
+        {
+          "name": "Delete Food",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supplier_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5001/api/supplier/foods/1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5001",
+              "path": ["api", "supplier", "foods", "1"]
+            },
+            "description": "Xóa món ăn (thay '1' bằng food_id thực tế)"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "supplier_token",
+      "value": "your_jwt_token_here",
+      "type": "string"
+    }
+  ]
+}

@@ -84,6 +84,14 @@
   --primary-700: #1d4ed8;
   --primary-800: #1e40af;
   --primary-900: #1e3a8a;
+  --tooltip-bg-rgb: 17, 24, 39;   /* #111827 - Gần như đen */
+  --tooltip-text-rgb: 255, 255, 255; /* Trắng */
+}
+
+/* Dark Mode */
+.dark {
+  --tooltip-bg-rgb: 255, 255, 255; /* Trắng */
+  --tooltip-text-rgb: 17, 24, 39;  /* #111827 - Đen */
 }
 
 .text-primary-600 { color: var(--primary-600); }
@@ -103,3 +111,10 @@
 .hover\:bg-primary-50:hover { background-color: var(--primary-50); }
 
 .hover\:border-primary-300:hover { border-color: var(--primary-300); }
+
+/* code hỗ trợ positioning cho tooltip */
+.recharts-tooltip-wrapper {
+  transition: none !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}

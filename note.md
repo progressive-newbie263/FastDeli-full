@@ -168,3 +168,79 @@ Danh sach cac api endpoint dang co (dan vao terminal):
 * Rất nhiều api sẽ được copilot gen (nó khó với trình mình hiện tại -_-)
 * Do quên chưa comment lại nhiều chỗ nên giờ mình sẽ lục lại các file .js backend
 * Ưu tiên chú thích lại công dụng và đường lối thiết kế các api đó. (ưu tiên: cao).
+
+
+
+========================================================================================
+========================================================================================
+=============================       BIG UPDATE      ====================================
+========================================================================================
+========================================================================================
+
+
+-----------------------------------------------------------------------------
+------------------------------GITPUSH, 15-1-2025-----------------------------
+
+* SUPPLIER PORTAL - PHASE 1 (BACKEND & FLOW)
+* Định hướng: Cải thiện hạ tầng Backend cho chủ nhà hàng (Supplier). Tích hợp luồng Auth.
+
+1. Database & Migration (3 SQL Scripts riêng biệt)
+- **db-shared-deli** (1_supplier_migration_users.sql): 
+  + Tạo 3 users mới với role 'restaurant_owner' (băm mật khẩu bằng bcrypt trước khi insert).
+  + sử dụng file "generate-supplier-passwords.js": 
+    cd server/auth-service
+    node generate-supplier-passwords.js
+  
+- **db-food-deli** (2_supplier_migration_restaurants.sql):
+  + Sửa owner_id từ VARCHAR → INTEGER (FK tham chiếu đến users.user_id trong db-shared-deli).
+  + Thêm verification_status (pending/approved/rejected), documents (JSONB).
+  + Tạo index idx_restaurants_owner_id tăng tốc truy vấn theo chủ sở hữu.
+  
+- **Helper Script** (3_link_restaurants_helper.sql):
+  Gắn restaurants với owners tương ứng (UPDATE restaurants SET owner_id = ...)
+
+2. Backend - Food Service
+- Middleware: supplierAuth.js.
+  Chặn xác thực JWT, kiểm tra role restaurant_owner và quyền sở hữu (ownership) đối với nhà hàng trước khi cho phép can thiệp dữ liệu.
+  
+- Controller: supplierController.js. 
+  Thực thi 12 hàm xử lý (Thống kê Dashboard, Quản lý đơn hàng, CRUD Menu/Food, Review).
+  
+- Routes: Bổ sung 15 API endpoints tại /api/supplier/*.
+
+3. Backend - Auth Service (Cross-Database Query)
+- Login Flow: Cập nhật loginController.js thực hiện query liên database.
+  + Bước 1: Query db-shared-deli để xác thực user (email/password/role).
+  + Bước 2: Query db-food-deli để lấy restaurant_id dựa trên owner_id.
+  
+- Response: Trả về thêm restaurant_id, name, verification_status trong JWT/Body khi chủ nhà hàng đăng nhập thành công.
+
+4. Frontend - Supplier Portal Integration
+- API Client (web/app/supplier/lib/api.ts): Chuyển USE_MOCK_DATA = false sang Real API.
+- State: Lưu restaurant_id vào localStorage sau khi login để gọi API đúng context.
+
+5. API Endpoints Chính (15 endpoints)
+- GET /api/supplier/statistics: Doanh thu (delivered), số lượng món, đánh giá trung bình.
+- GET /api/supplier/orders: Danh sách đơn hàng (filter, search, pagination).
+- PATCH /api/supplier/orders/:id/status: Xác nhận/Hủy/Chuyển trạng thái đơn hàng.
+- GET/POST/PATCH/DELETE /api/supplier/foods: Quản lý thực đơn của nhà hàng.
+- GET /api/supplier/reviews: Xem danh sách đánh giá.
+- PATCH /api/supplier/restaurant: Cập nhật thông tin nhà hàng.
+
+6. Bảo mật & Authorization
+- Cơ chế xác thực 2 lớp: 
+  (1) Token hợp lệ (verifyToken middleware).
+  (2) owner_id trong restaurants.owner_id khớp với userId trong JWT token.
+  
+- Fix lỗi CORS giữa Frontend (Port 3000) và Backend (Port 5001).
+
+7. Documentation & Testing
+- SUPPLIER_IMPLEMENTATION_GUIDE.md: Hướng dẫn chi tiết 60+ trang.
+- postman-collection-supplier.json: Collection test 15 API endpoints.
+- generate-supplier-passwords.js: Helper script tạo bcrypt hash.
+
+8. Nhiệm vụ tiếp theo (Phase 2):
+- Tích hợp Cloudinary cho upload ảnh món ăn.
+- Hệ thống đăng ký đối tác (Partner Registration) & Upload giấy phép kinh doanh.
+- Real-time thông báo đơn hàng mới qua Socket.io.
+- Email verification cho restaurant owners mới.

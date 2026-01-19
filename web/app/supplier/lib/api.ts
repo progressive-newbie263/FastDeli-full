@@ -22,8 +22,8 @@ import { MOCK_RESTAURANT, MOCK_FOODS, MOCK_ORDERS, MOCK_STATS, MOCK_CATEGORIES }
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5000';
 const FOOD_API_URL = process.env.NEXT_PUBLIC_FOOD_API_URL || 'http://localhost:5001';
 
-// Flag để bật/tắt mock mode
-const USE_MOCK_DATA = true;
+// Flag để bật/tắt mock mode - ĐỔI THÀNH FALSE ĐỂ DÙNG API THẬT
+const USE_MOCK_DATA = false;
 
 class SupplierAPI {
   /**
@@ -65,9 +65,9 @@ class SupplierAPI {
 
       const data = await response.json();
 
-      if (data.success && data.data) {
+      if (data.success && data.user) {
         // Kiểm tra role phải là restaurant_owner
-        if (data.data.user?.role !== 'restaurant_owner') {
+        if (data.user?.role !== 'restaurant_owner') {
           return {
             success: false,
             message: 'Tài khoản không có quyền truy cập supplier portal',
@@ -75,11 +75,13 @@ class SupplierAPI {
         }
 
         // Lưu token và user info
-        localStorage.setItem('supplier_token', data.data.token);
-        localStorage.setItem('supplier_user', JSON.stringify(data.data.user));
+        localStorage.setItem('supplier_token', data.token);
+        localStorage.setItem('supplier_user', JSON.stringify(data.user));
         
-        // TODO: Cần API để lấy restaurant_id của owner này
-        // Tạm thời hardcode hoặc lấy từ API riêng
+        // Lưu restaurant_id nếu có
+        if (data.user.restaurant_id) {
+          localStorage.setItem('supplier_restaurant_id', data.user.restaurant_id.toString());
+        }
       }
 
       return data;
@@ -201,7 +203,7 @@ class SupplierAPI {
     // Real API call
     try {
       const response = await fetch(
-        `${FOOD_API_URL}/api/restaurants/${restaurantId}/foods?page=${page}&limit=${limit}`,
+        `${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/foods?page=${page}&limit=${limit}`,
         {
           headers: this.getAuthHeaders(),
         }
@@ -242,10 +244,10 @@ class SupplierAPI {
 
     // Real API call
     try {
-      const response = await fetch(`${FOOD_API_URL}/api/supplier/foods`, {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/foods`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ ...foodData, restaurant_id: restaurantId }),
+        body: JSON.stringify(foodData),
       });
       return response.json();
     } catch (error) {
