@@ -18,16 +18,22 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    console.log('[Login] Attempt:', email);
+    
     // Check if user exists
     const user = await User.findByEmail(email);
     if (!user) {
+      console.log('[Login] User not found:', email);
       return res.status(401).json({
         success: false,
         message: 'Email hoặc mật khẩu không đúng'
       });
     }
 
+    console.log('[Login] User found:', { user_id: user.user_id, role: user.role, is_active: user.is_active });
+
     if (!user.is_active) {
+      console.log('[Login] User inactive:', email);
       return res.status(401).json({
         success: false,
         message: 'Tài khoản của bạn đã bị khóa'
@@ -35,6 +41,8 @@ const login = async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    console.log('[Login] Password match:', isMatch);
+    
     if (!isMatch) {
       return res.status(401).json({
         success: false,

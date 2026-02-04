@@ -11,7 +11,7 @@ const Intro = () => {
       <div className='max-w-3/5 text-center mx-auto'>
         <p className='mb-16'>
           Đặt đồ ăn giao hàng tận nhà nhanh chóng lấp đầy chiếc bụng đói của bạn với những món ngon yêu thích và dịch vụ giao hàng “thần tốc”. 
-          GrabFood hiện đang có mặt tại nhiều tỉnh thành ở Việt Nam: Thành phố Hồ Chí Minh, Hà Nội, Đà Nẵng, Vũng Tàu, Bình Dương, Đồng Nai, Cần Thơ, Đà Lạt,…. 
+          FoodDeli hiện đang có mặt tại nhiều tỉnh thành ở Việt Nam: Thành phố Hồ Chí Minh, Hà Nội, Đà Nẵng, Vũng Tàu, Bình Dương, Đồng Nai, Cần Thơ, Đà Lạt,…. 
           Chúng tôi đang dần mở rộng thêm nhiều khu vực trong thời gian tới!
         </p>
 

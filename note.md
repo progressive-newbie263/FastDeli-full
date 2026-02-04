@@ -119,7 +119,7 @@ file food_deli_db mới sẽ là 1 bản gọn gàng, tinh giản, đảm bảo 
 
 + trước hết, trong mỗi orders sẽ có thể áp dụng 1 mã khuyến mãi (nếu có). Giới hạn hiện tại là 1 đơn chỉ áp dụng 1 mã.
 + ý tưởng sẽ là: Ở giao diện thanh toán (payment page). Sẽ cho phép người dùng chọn giữa các phương thức promotions.
-+ Sẽ đan xen giữa : promotions từ chính Grabfood (nên để nó phèn phèn tí, mặc định phải có) để nếu nhà hàng có ưu đãi thì
++ Sẽ đan xen giữa : promotions từ chính FoodDeli (nên để nó phèn phèn tí, mặc định phải có) để nếu nhà hàng có ưu đãi thì
 ăn ưu đãi từ nhà hàng. Nếu ko có ưu đãi thì để cái ưu đãi phèn này gánh 1 tí tiền 
 + Có lẽ trước hết chỉ nên làm 1 phương thức thanh toán ảo. Tương đối khó làm 2 cái qr với momo, vì kể cả có chuyển xèng thành công thì nó vẫn là liên quan đến tiền thật, việc thật.
 + Bản vá thử nghiệm (mini patch)

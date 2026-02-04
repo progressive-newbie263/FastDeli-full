@@ -1,10 +1,10 @@
 /**
- * start-multi.js
+ * start.js
  *
  * Usage:
- *   node start-multi.js client   # starts web client + client-side services
- *   node start-multi.js admin    # starts admin UI + admin-side services
- *   node start-multi.js          # defaults to "client"
+ *   node start.js client   # starts web client + client-side services
+ *   node start.js admin    # starts admin UI + admin-side services
+ *   node start.js          # defaults to "client"
  *
  * Edit the "config" section below if your folders differ.
  */

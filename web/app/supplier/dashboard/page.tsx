@@ -138,16 +138,10 @@ export default function SupplierDashboard() {
             <div className="p-3 bg-green-100 rounded-lg">
               <DollarSign className="text-green-600" size={24} />
             </div>
-            {stats?.revenueTrend !== undefined && (
-              <div className={`flex items-center gap-1 text-sm ${stats.revenueTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stats.revenueTrend >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                <span>{Math.abs(stats.revenueTrend)}%</span>
-              </div>
-            )}
           </div>
           <h3 className="text-gray-600 text-sm mb-1">Tổng doanh thu</h3>
-          <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.totalRevenue || 0)}</p>
-          <p className="text-xs text-gray-500 mt-2">Hôm nay: {formatCurrency(stats?.todayRevenue || 0)}</p>
+          <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.revenue?.total || 0)}</p>
+          <p className="text-xs text-gray-500 mt-2">Hôm nay: {formatCurrency(stats?.revenue?.today || 0)}</p>
         </div>
 
         {/* Total Orders */}
@@ -156,16 +150,10 @@ export default function SupplierDashboard() {
             <div className="p-3 bg-blue-100 rounded-lg">
               <ShoppingBag className="text-blue-600" size={24} />
             </div>
-            {stats?.ordersTrend !== undefined && (
-              <div className={`flex items-center gap-1 text-sm ${stats.ordersTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {stats.ordersTrend >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
-                <span>{Math.abs(stats.ordersTrend)}%</span>
-              </div>
-            )}
           </div>
           <h3 className="text-gray-600 text-sm mb-1">Tổng đơn hàng</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats?.totalOrders || 0}</p>
-          <p className="text-xs text-gray-500 mt-2">Hôm nay: {stats?.todayOrders || 0} đơn</p>
+          <p className="text-2xl font-bold text-gray-900">{stats?.orders?.total_orders || 0}</p>
+          <p className="text-xs text-gray-500 mt-2">Hôm nay: {stats?.orders?.today_orders || 0} đơn</p>
         </div>
 
         {/* Total Foods */}
@@ -176,8 +164,8 @@ export default function SupplierDashboard() {
             </div>
           </div>
           <h3 className="text-gray-600 text-sm mb-1">Món ăn</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats?.totalFoods || 0}</p>
-          <p className="text-xs text-gray-500 mt-2">Đang bán</p>
+          <p className="text-2xl font-bold text-gray-900">{stats?.foods?.total_foods || 0}</p>
+          <p className="text-xs text-gray-500 mt-2">Đang bán: {stats?.foods?.available_foods || 0}</p>
         </div>
 
         {/* Average Rating */}
@@ -188,17 +176,25 @@ export default function SupplierDashboard() {
             </div>
           </div>
           <h3 className="text-gray-600 text-sm mb-1">Đánh giá trung bình</h3>
-          <p className="text-2xl font-bold text-gray-900">{stats?.avgRating?.toFixed(1) || '0.0'}</p>
-          <p className="text-xs text-gray-500 mt-2">⭐⭐⭐⭐⭐</p>
+          <p className="text-2xl font-bold text-gray-900">{Number(stats?.rating?.average || 0).toFixed(1)}</p>
+          <div className="flex gap-1 mt-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                size={12}
+                className={star <= (stats?.rating?.average || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Pending Orders Alert */}
-      {stats && stats.pendingOrders > 0 && (
+      {stats && stats.orders?.pending_orders > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-8 flex items-center gap-3">
           <Clock className="text-orange-600" size={24} />
           <div className="flex-1">
-            <h3 className="font-semibold text-orange-900">Có {stats.pendingOrders} đơn hàng chờ xác nhận</h3>
+            <h3 className="font-semibold text-orange-900">Có {stats.orders.pending_orders} đơn hàng chờ xác nhận</h3>
             <p className="text-sm text-orange-700">Vui lòng xác nhận đơn hàng để khách hàng không phải chờ lâu</p>
           </div>
           <a

@@ -42,9 +42,9 @@ INSERT INTO restaurants (
     owner_id
 )
 VALUES
-    (29, 'Nhà hàng Demo 13', '29 Nguyễn Văn Cừ, Long Biên, Hà Nội', '0901111013', 'restaurant-29@fastdeli.com', 'Nhà hàng demo cho supplier 13', 20, 30, 15000, 0, '08:00:00', '22:00:00', 'active', 13),
-    (30, 'Nhà hàng Demo 14', '30 Trần Duy Hưng, Cầu Giấy, Hà Nội', '0901111014', 'restaurant-30@fastdeli.com', 'Nhà hàng demo cho supplier 14', 25, 35, 12000, 0, '08:00:00', '22:00:00', 'active', 14),
-    (31, 'Nhà hàng Demo 15', '31 Lê Văn Lương, Thanh Xuân, Hà Nội', '0901111015', 'restaurant-31@fastdeli.com', 'Nhà hàng demo cho supplier 15', 15, 25, 10000, 0, '08:00:00', '22:00:00', 'active', 15)
+    (29, 'Nhà hàng Demo', '29 Nguyễn Văn Cừ, Long Biên, Hà Nội', '0901111013', 'supplier@fastdeli.com', 'Nhà hàng demo cho supplier 13', 20, 30, 15000, 0, '08:00:00', '22:00:00', 'active', 13),
+    (30, 'Phở Hà Nội', '30 Trần Duy Hưng, Cầu Giấy, Hà Nội', '0901111014', 'supplier2@fastdeli.com', 'Nhà hàng demo cho supplier 14', 25, 35, 12000, 0, '08:00:00', '22:00:00', 'active', 14),
+    (31, 'Bún Chả Hương Liên', '31 Lê Văn Lương, Thanh Xuân, Hà Nội', '0901111015', 'supplier3@fastdeli.com', 'Nhà hàng demo cho supplier 15', 15, 25, 10000, 0, '08:00:00', '22:00:00', 'active', 15)
 ON CONFLICT (id) DO NOTHING;
 
 COMMIT;

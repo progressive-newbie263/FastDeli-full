@@ -66,15 +66,23 @@ export interface OrderItem {
 }
 
 export interface SupplierStats {
-  totalOrders: number;
-  totalRevenue: number;
-  totalFoods: number;
-  avgRating: number;
-  pendingOrders: number;
-  todayOrders: number;
-  todayRevenue: number;
-  ordersTrend?: number;
-  revenueTrend?: number;
+  revenue: {
+    total: number;
+    today: number;
+  };
+  orders: {
+    total_orders: number;
+    today_orders: number;
+    pending_orders: number;
+  };
+  foods: {
+    total_foods: number;
+    available_foods: number;
+  };
+  rating: {
+    average: number;
+    count: number;
+  };
 }
 
 export interface FoodCategory {

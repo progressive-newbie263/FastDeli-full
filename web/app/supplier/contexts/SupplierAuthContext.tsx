@@ -19,21 +19,6 @@ interface SupplierAuthContextType {
 
 const SupplierAuthContext = createContext<SupplierAuthContextType | undefined>(undefined);
 
-//demo tài khoản ảo (nhà hàng liên kết)
-const DEMO_CREDENTIALS = {
-  email: 'supplier@fastdeli.com',
-  password: 'supplier123'
-};
-//demo tài khoản ảo (server side)
-const DEMO_USER: SupplierUser = {
-  user_id: 1,
-  email: 'supplier@fastdeli.com',
-  full_name: 'Nhà hàng Demo',
-  role: 'restaurant_owner',
-  restaurant_id: 1,
-  restaurant_name: 'Nhà hàng Phở Việt Nam',
-  avatar_url: ''
-};
 
 export function SupplierAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<SupplierUser | null>(null);
@@ -85,13 +70,11 @@ export function SupplierAuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
       setIsAuthenticated(true);
 
-      // Lấy thông tin nhà hàng nếu có restaurant_id
-      if (restaurantId) {
-        try {
-          await fetchRestaurantData(parseInt(restaurantId));
-        } catch (err) {
-          console.error('Failed to fetch restaurant data:', err);
-        }
+      // Lấy thông tin nhà hàng từ API
+      try {
+        await fetchRestaurantData();
+      } catch (err) {
+        console.error('Failed to fetch restaurant data:', err);
       }
 
       setIsLoading(false);
@@ -104,9 +87,9 @@ export function SupplierAuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const fetchRestaurantData = async (restaurantId: number): Promise<void> => {
+  const fetchRestaurantData = async (): Promise<void> => {
     try {
-      const response = await SupplierAPI.getMyRestaurant(restaurantId);
+      const response = await SupplierAPI.getMyRestaurant();
       if (response.success && response.data) {
         setRestaurant(response.data);
       }
@@ -118,35 +101,35 @@ export function SupplierAuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
     try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Call real API
+      const response = await SupplierAPI.login(email, password);
 
-      // Check hardcoded credentials
-      if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
-        // Mock token
-        const mockToken = 'demo_supplier_token_' + Date.now();
-
-        // Store in localStorage
-        localStorage.setItem('supplier_token', mockToken);
-        localStorage.setItem('supplier_user', JSON.stringify(DEMO_USER));
-        localStorage.setItem('supplier_restaurant_id', '1');
-
-        setUser(DEMO_USER);
-        setIsAuthenticated(true);
-        
-        // Load mock restaurant data
-        await fetchRestaurantData(1);
-
+      if (!response.success) {
         return {
-          success: true,
-          message: 'Đăng nhập thành công!'
+          success: false,
+          message: response.message || 'Đăng nhập thất bại.'
         };
       }
 
-      // Invalid credentials
+      // Token và user đã được lưu trong SupplierAPI.login()
+      const storedUser = localStorage.getItem('supplier_user');
+      if (storedUser) {
+        const userData: SupplierUser = JSON.parse(storedUser);
+        setUser(userData);
+        setIsAuthenticated(true);
+
+        // Lấy thông tin nhà hàng
+        const restaurantResponse = await SupplierAPI.getMyRestaurant();
+        if (restaurantResponse.success && restaurantResponse.data) {
+          setRestaurant(restaurantResponse.data);
+          // Lưu restaurant_id
+          localStorage.setItem('supplier_restaurant_id', restaurantResponse.data.id.toString());
+        }
+      }
+
       return {
-        success: false,
-        message: 'Email hoặc mật khẩu không đúng. Vui lòng sử dụng tài khoản demo.'
+        success: true,
+        message: 'Đăng nhập thành công!'
       };
 
     } catch (error) {
@@ -167,10 +150,7 @@ export function SupplierAuthProvider({ children }: { children: ReactNode }) {
   };
 
   const refreshRestaurantData = async () => {
-    const restaurantId = localStorage.getItem('supplier_restaurant_id');
-    if (restaurantId) {
-      await fetchRestaurantData(parseInt(restaurantId));
-    }
+    await fetchRestaurantData();
   };
 
   return (

@@ -31,6 +31,9 @@ class SupplierAPI {
    */
   private static getAuthHeaders(): HeadersInit {
     const token = typeof window !== 'undefined' ? localStorage.getItem('supplier_token') : null;
+    if (typeof window !== 'undefined') {
+      console.log('SupplierAPI: Getting auth token:', token ? token.substring(0, 10) + '...' : 'null');
+    }
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -118,7 +121,7 @@ class SupplierAPI {
   /**
    * Lấy thông tin nhà hàng của supplier
    */
-  static async getMyRestaurant(restaurantId: number): Promise<ApiResponse<Restaurant>> {
+  static async getMyRestaurant(): Promise<ApiResponse<Restaurant>> {
     // Mock mode: Return mock data
     if (USE_MOCK_DATA) {
       await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
@@ -131,7 +134,7 @@ class SupplierAPI {
 
     // Real API call
     try {
-      const response = await fetch(`${FOOD_API_URL}/api/restaurants/${restaurantId}`, {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/my-restaurant`, {
         headers: this.getAuthHeaders(),
       });
       return response.json();

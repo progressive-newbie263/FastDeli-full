@@ -319,7 +319,7 @@ CREATE TABLE promotions (
 
   -- ở thời điểm làm bảng này, tôi chỉ nghĩ sẽ làm 2 loại promo kiểu này, 1 loại từ hệ thống nhà hàng, 1 loại từ các nhà hàng đối tác
   -- sẽ phải thay đổi đoạn này, nếu sau này có thêm loại promo khác (mà chắc khả năng cao là ko có).
-  is_platform BOOLEAN DEFAULT FALSE,    -- TRUE = GrabFood tạo, FALSE = nhà hàng tự tạo (Sẽ chỉ có )
+  is_platform BOOLEAN DEFAULT FALSE,    -- TRUE = FoodDeli tạo, FALSE = nhà hàng tự tạo (Sẽ chỉ có )
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

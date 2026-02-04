@@ -10,12 +10,12 @@ type Question = {
 
 const questions: Question[] = [
   {
-    question: 'GrabFood là gì?',
-    answer: 'GrabFood là dịch vụ giao đồ ăn nhanh chóng, tiện lợi, giúp bạn đặt món ăn yêu thích từ nhiều nhà hàng chỉ bằng vài cú chạm.'
+    question: 'FoodDeli là gì?',
+    answer: 'FoodDeli là dịch vụ giao đồ ăn nhanh chóng, tiện lợi, giúp bạn đặt món ăn yêu thích từ nhiều nhà hàng chỉ bằng vài cú chạm.'
   },
   {
-    question: 'GrabFood hoạt động trong khung giờ nào?',
-    answer: 'GrabFood hoạt động từ 6:00 sáng đến 11:00 tối mỗi ngày. Một số nhà hàng có thể có thời gian phục vụ riêng.'
+    question: 'FoodDeli hoạt động trong khung giờ nào?',
+    answer: 'FoodDeli hoạt động từ 6:00 sáng đến 11:00 tối mỗi ngày. Một số nhà hàng có thể có thời gian phục vụ riêng.'
   },
   {
     question: 'Những nhà hàng, quán ăn nào trong khu vực của tôi giao hàng qua GrabFood?',

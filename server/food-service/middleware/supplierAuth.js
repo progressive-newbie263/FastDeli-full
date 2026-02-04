@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { foodPool, sharedPool } = require('../config/db');
 
 /**
  * Middleware xác thực supplier/restaurant owner
@@ -6,8 +7,11 @@ const jwt = require('jsonwebtoken');
  */
 const supplierAuth = (req, res, next) => {
   try {
-    // Lấy token từ header
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Lấy token từ header - hỗ trợ nhiều format
+    let token = req.headers.authorization || req.header('Authorization');
+    
+    console.log('[SupplierAuth] Request:', req.method, req.path);
+    console.log('[SupplierAuth] Token detected:', token ? 'YES (' + token.substring(0, 10) + '...)' : 'NO');
     
     if (!token) {
       return res.status(401).json({
@@ -15,9 +19,15 @@ const supplierAuth = (req, res, next) => {
         message: 'Không tìm thấy token xác thực. Vui lòng đăng nhập.'
       });
     }
+    
+    // Remove 'Bearer ' prefix if exists
+    if (token.startsWith('Bearer ')) {
+      token = token.substring(7);
+    }
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    console.log('[SupplierAuth] Decoded:', decoded);
     
     // Kiểm tra role
     if (decoded.role !== 'restaurant_owner') {
@@ -27,9 +37,9 @@ const supplierAuth = (req, res, next) => {
       });
     }
 
-    // Gắn thông tin user vào request
+    // Gắn thông tin user vào request - Map id -> userId
     req.user = {
-      userId: decoded.userId,
+      userId: decoded.id || decoded.userId,
       role: decoded.role
     };
 
@@ -78,7 +88,7 @@ const verifyRestaurantOwnership = async (req, res, next) => {
     const db = require('../config/db');
 
     // Kiểm tra owner_id
-    const result = await db.query(
+    const result = await foodPool.query(
       'SELECT owner_id FROM restaurants WHERE id = $1',
       [restaurantId]
     );

@@ -1,4 +1,24 @@
-const db = require('../config/db');
+const { foodPool, sharedPool } = require('../config/db');
+
+const buildUsersMap = async (userIds) => {
+  if (!userIds.length) {
+    return new Map();
+  }
+
+  const result = await sharedPool.query(
+    `SELECT user_id, full_name, phone_number, email, avatar_url
+     FROM users
+     WHERE user_id = ANY($1)`
+    , [userIds]
+  );
+
+  const map = new Map();
+  result.rows.forEach((row) => {
+    map.set(row.user_id, row);
+  });
+
+  return map;
+};
 
 /**
  * Lấy thông tin restaurant của supplier
@@ -7,12 +27,15 @@ const getMyRestaurant = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    const result = await db.query(
+    const result = await foodPool.query(
       `SELECT r.*, 
+        rl.longitude,
+        rl.latitude,
         (SELECT COUNT(*) FROM foods WHERE restaurant_id = r.id) as total_foods,
         (SELECT COUNT(*) FROM orders WHERE restaurant_id = r.id) as total_orders,
         (SELECT AVG(rating) FROM reviews WHERE restaurant_id = r.id) as avg_rating
        FROM restaurants r
+       LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
        WHERE r.owner_id = $1`,
       [userId]
     );
@@ -45,30 +68,30 @@ const getStatistics = async (req, res) => {
     const restaurantId = req.restaurantId;
 
     // Tổng doanh thu
-    const revenueResult = await db.query(
+    const revenueResult = await foodPool.query(
       `SELECT COALESCE(SUM(total_amount), 0) as total_revenue
        FROM orders 
-       WHERE restaurant_id = $1 AND status = 'delivered'`,
+       WHERE restaurant_id = $1 AND order_status = 'delivered'`,
       [restaurantId]
     );
 
     // Số lượng đơn hàng
-    const ordersResult = await db.query(
+    const ordersResult = await foodPool.query(
       `SELECT 
         COUNT(*) as total_orders,
-        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_orders,
-        COUNT(CASE WHEN status = 'confirmed' THEN 1 END) as confirmed_orders,
-        COUNT(CASE WHEN status = 'processing' THEN 1 END) as processing_orders,
-        COUNT(CASE WHEN status = 'delivering' THEN 1 END) as delivering_orders,
-        COUNT(CASE WHEN status = 'delivered' THEN 1 END) as delivered_orders,
-        COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_orders
+        COUNT(CASE WHEN order_status = 'pending' THEN 1 END) as pending_orders,
+        COUNT(CASE WHEN order_status = 'confirmed' THEN 1 END) as confirmed_orders,
+        COUNT(CASE WHEN order_status = 'processing' THEN 1 END) as processing_orders,
+        COUNT(CASE WHEN order_status = 'delivering' THEN 1 END) as delivering_orders,
+        COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_orders,
+        COUNT(CASE WHEN order_status = 'cancelled' THEN 1 END) as cancelled_orders
        FROM orders 
        WHERE restaurant_id = $1`,
       [restaurantId]
     );
 
     // Số lượng món ăn
-    const foodsResult = await db.query(
+    const foodsResult = await foodPool.query(
       `SELECT 
         COUNT(*) as total_foods,
         COUNT(CASE WHEN is_available = true THEN 1 END) as available_foods,
@@ -79,7 +102,7 @@ const getStatistics = async (req, res) => {
     );
 
     // Đánh giá trung bình
-    const ratingResult = await db.query(
+    const ratingResult = await foodPool.query(
       `SELECT 
         COALESCE(AVG(rating), 0) as avg_rating,
         COUNT(*) as total_reviews
@@ -89,14 +112,14 @@ const getStatistics = async (req, res) => {
     );
 
     // Doanh thu theo ngày (7 ngày gần nhất)
-    const revenueChartResult = await db.query(
+    const revenueChartResult = await foodPool.query(
       `SELECT 
         DATE(created_at) as date,
         COALESCE(SUM(total_amount), 0) as revenue,
         COUNT(*) as orders_count
        FROM orders
        WHERE restaurant_id = $1 
-         AND status = 'delivered'
+         AND order_status = 'delivered'
          AND created_at >= CURRENT_DATE - INTERVAL '7 days'
        GROUP BY DATE(created_at)
        ORDER BY date ASC`,
@@ -135,23 +158,20 @@ const getOrders = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
     const { status, page = 1, limit = 10, search } = req.query;
+    const { foodPool, sharedPool } = require('../config/db');
 
     let query = `
       SELECT o.*, 
-        u.full_name as customer_name,
-        u.phone_number as customer_phone,
         (SELECT json_agg(json_build_object(
-          'id', oi.id,
-          'food_name', f.name,
+          'order_item_id', oi.order_item_id,
+          'food_name', oi.food_name,
           'quantity', oi.quantity,
-          'price', oi.price
+          'food_price', oi.food_price
         ))
         FROM order_items oi
-        JOIN foods f ON oi.food_id = f.id
         WHERE oi.order_id = o.id
         ) as items
       FROM orders o
-      LEFT JOIN users u ON o.user_id = u.user_id
       WHERE o.restaurant_id = $1
     `;
 
@@ -161,18 +181,14 @@ const getOrders = async (req, res) => {
     // Filter by status
     if (status && status !== 'all') {
       paramCount++;
-      query += ` AND o.status = $${paramCount}`;
+      query += ` AND o.order_status = $${paramCount}`;
       params.push(status);
     }
 
-    // Search by customer name, phone, or order code
+    // Search by order code or ID
     if (search) {
       paramCount++;
-      query += ` AND (
-        u.full_name ILIKE $${paramCount} OR 
-        u.phone_number ILIKE $${paramCount} OR
-        o.id::text ILIKE $${paramCount}
-      )`;
+      query += ` AND (o.order_code ILIKE $${paramCount} OR o.id::text = $${paramCount})`;
       params.push(`%${search}%`);
     }
 
@@ -183,13 +199,34 @@ const getOrders = async (req, res) => {
     query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
     params.push(limit, offset);
 
-    const result = await db.query(query, params);
+    const result = await foodPool.query(query, params);
+    
+    // Fetch user info từ shared DB
+    const userIds = [...new Set(result.rows.map(r => r.user_id).filter(id => id))];
+    let usersMap = new Map();
+    if (userIds.length > 0) {
+      const usersResult = await sharedPool.query(
+        'SELECT user_id, full_name, phone_number, email FROM users WHERE user_id = ANY($1)',
+        [userIds]
+      );
+      usersResult.rows.forEach(u => usersMap.set(u.user_id, u));
+    }
+    
+    // Enrich orders with customer info
+    const enrichedOrders = result.rows.map(order => {
+      const user = usersMap.get(order.user_id) || {};
+      return {
+        ...order,
+        customer_name: user.full_name || order.user_name,
+        customer_phone: user.phone_number || order.user_phone,
+        customer_email: user.email
+      };
+    });
 
     // Get total count
     let countQuery = `
       SELECT COUNT(*) 
       FROM orders o
-      LEFT JOIN users u ON o.user_id = u.user_id
       WHERE o.restaurant_id = $1
     `;
     const countParams = [restaurantId];
@@ -197,31 +234,29 @@ const getOrders = async (req, res) => {
 
     if (status && status !== 'all') {
       countParamIndex++;
-      countQuery += ` AND o.status = $${countParamIndex}`;
+      countQuery += ` AND o.order_status = $${countParamIndex}`;
       countParams.push(status);
     }
 
     if (search) {
       countParamIndex++;
-      countQuery += ` AND (
-        u.full_name ILIKE $${countParamIndex} OR 
-        u.phone_number ILIKE $${countParamIndex} OR
-        o.id::text ILIKE $${countParamIndex}
-      )`;
+      countQuery += ` AND (o.order_code ILIKE $${countParamIndex} OR o.id::text = $${countParamIndex})`;
       countParams.push(`%${search}%`);
     }
 
-    const countResult = await db.query(countQuery, countParams);
+    const countResult = await foodPool.query(countQuery, countParams);
     const totalOrders = parseInt(countResult.rows[0].count);
 
     res.json({
       success: true,
-      data: result.rows,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalOrders / limit),
-        totalItems: totalOrders,
-        itemsPerPage: parseInt(limit)
+      data: {
+        orders: enrichedOrders,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.ceil(totalOrders / limit),
+          totalItems: totalOrders,
+          itemsPerPage: parseInt(limit)
+        }
       }
     });
   } catch (error) {
@@ -239,41 +274,61 @@ const getOrders = async (req, res) => {
 const getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const restaurantId = req.restaurantId;
+    const userId = req.user.userId;
+    const { foodPool, sharedPool } = require('../config/db');
 
-    const result = await db.query(
-      `SELECT o.*,
-        u.full_name as customer_name,
-        u.phone_number as customer_phone,
-        u.email as customer_email,
+    // Kiểm tra ownership
+    const ownershipResult = await foodPool.query(
+      `SELECT o.*, r.owner_id,
         (SELECT json_agg(json_build_object(
-          'id', oi.id,
+          'order_item_id', oi.order_item_id,
           'food_id', oi.food_id,
-          'food_name', f.name,
+          'food_name', oi.food_name,
           'quantity', oi.quantity,
-          'price', oi.price,
-          'image_url', f.image_url
+          'food_price', oi.food_price
         ))
         FROM order_items oi
-        JOIN foods f ON oi.food_id = f.id
         WHERE oi.order_id = o.id
         ) as items
        FROM orders o
-       LEFT JOIN users u ON o.user_id = u.user_id
-       WHERE o.id = $1 AND o.restaurant_id = $2`,
-      [orderId, restaurantId]
+       JOIN restaurants r ON o.restaurant_id = r.id
+       WHERE o.id = $1`,
+      [orderId]
     );
 
-    if (result.rows.length === 0) {
+    if (ownershipResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy đơn hàng.'
       });
     }
 
+    const order = ownershipResult.rows[0];
+
+    if (order.owner_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền truy cập đơn hàng này.'
+      });
+    }
+
+    // Lấy thông tin customer
+    const userResult = await sharedPool.query(
+      'SELECT user_id, full_name, phone_number, email FROM users WHERE user_id = $1',
+      [order.user_id]
+    );
+
+    const customer = userResult.rows[0];
+    const responseData = {
+      ...order,
+      customer_name: customer?.full_name || order.user_name,
+      customer_phone: customer?.phone_number || order.user_phone,
+      customer_email: customer?.email
+    };
+
     res.json({
       success: true,
-      data: result.rows[0]
+      data: responseData
     });
   } catch (error) {
     console.error('Get order by id error:', error);
@@ -303,8 +358,9 @@ const updateOrderStatus = async (req, res) => {
     }
 
     // Verify order belongs to restaurant
-    const checkResult = await db.query(
-      'SELECT status FROM orders WHERE id = $1 AND restaurant_id = $2',
+    const { foodPool } = require('../config/db');
+    const checkResult = await foodPool.query(
+      'SELECT order_status FROM orders WHERE id = $1 AND restaurant_id = $2',
       [orderId, restaurantId]
     );
 
@@ -316,9 +372,9 @@ const updateOrderStatus = async (req, res) => {
     }
 
     // Update status
-    const result = await db.query(
+    const result = await foodPool.query(
       `UPDATE orders 
-       SET status = $1, updated_at = NOW()
+       SET order_status = $1, updated_at = NOW()
        WHERE id = $2 AND restaurant_id = $3
        RETURNING *`,
       [status, orderId, restaurantId]
@@ -344,13 +400,14 @@ const updateOrderStatus = async (req, res) => {
 const getFoods = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
-    const { category, search, is_available } = req.query;
+    const { category, search, is_available, page = 1, limit = 100 } = req.query;
+    const { foodPool } = require('../config/db');
 
     let query = `
       SELECT f.*,
-        fc.name as category_name
+        fc.category_name as category_name
       FROM foods f
-      LEFT JOIN food_categories fc ON f.category_id = fc.id
+      LEFT JOIN food_categories fc ON f.primary_category_id = fc.category_id
       WHERE f.restaurant_id = $1
     `;
 
@@ -359,13 +416,13 @@ const getFoods = async (req, res) => {
 
     if (category) {
       paramCount++;
-      query += ` AND f.category_id = $${paramCount}`;
+      query += ` AND f.primary_category_id = $${paramCount}`;
       params.push(category);
     }
 
     if (search) {
       paramCount++;
-      query += ` AND f.name ILIKE $${paramCount}`;
+      query += ` AND f.food_name ILIKE $${paramCount}`;
       params.push(`%${search}%`);
     }
 
@@ -376,12 +433,51 @@ const getFoods = async (req, res) => {
     }
 
     query += ` ORDER BY f.created_at DESC`;
+    
+    // Pagination
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+    query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+    params.push(parseInt(limit), offset);
 
-    const result = await db.query(query, params);
+    const result = await foodPool.query(query, params);
+    
+    // Get total count
+    let countQuery = `SELECT COUNT(*) FROM foods f WHERE f.restaurant_id = $1`;
+    const countParams = [restaurantId];
+    let countParamIndex = 1;
+    
+    if (category) {
+      countParamIndex++;
+      countQuery += ` AND f.primary_category_id = $${countParamIndex}`;
+      countParams.push(category);
+    }
+    
+    if (search) {
+      countParamIndex++;
+      countQuery += ` AND f.food_name ILIKE $${countParamIndex}`;
+      countParams.push(`%${search}%`);
+    }
+    
+    if (is_available !== undefined) {
+      countParamIndex++;
+      countQuery += ` AND f.is_available = $${countParamIndex}`;
+      countParams.push(is_available === 'true');
+    }
+    
+    const countResult = await foodPool.query(countQuery, countParams);
+    const totalFoods = parseInt(countResult.rows[0].count);
 
     res.json({
       success: true,
-      data: result.rows
+      data: {
+        foods: result.rows,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages: Math.max(1, Math.ceil(totalFoods / parseInt(limit))),
+          totalItems: totalFoods,
+          itemsPerPage: parseInt(limit)
+        }
+      }
     });
   } catch (error) {
     console.error('Get foods error:', error);
@@ -408,9 +504,10 @@ const createFood = async (req, res) => {
       });
     }
 
-    const result = await db.query(
-      `INSERT INTO foods (restaurant_id, name, description, price, category_id, image_url, is_available, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
+    const { foodPool } = require('../config/db');
+    const result = await foodPool.query(
+      `INSERT INTO foods (restaurant_id, food_name, description, price, primary_category_id, image_url, is_available, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
        RETURNING *`,
       [restaurantId, name, description, price, category_id, image_url, is_available]
     );
@@ -435,13 +532,17 @@ const createFood = async (req, res) => {
 const updateFood = async (req, res) => {
   try {
     const { foodId } = req.params;
-    const restaurantId = req.restaurantId;
+    const userId = req.user.userId;
     const { name, description, price, category_id, image_url, is_available } = req.body;
+    const { foodPool } = require('../config/db');
 
     // Verify food belongs to restaurant
-    const checkResult = await db.query(
-      'SELECT id FROM foods WHERE id = $1 AND restaurant_id = $2',
-      [foodId, restaurantId]
+    const checkResult = await foodPool.query(
+      `SELECT f.food_id, f.restaurant_id, r.owner_id
+       FROM foods f
+       JOIN restaurants r ON f.restaurant_id = r.id
+       WHERE f.food_id = $1`,
+      [foodId]
     );
 
     if (checkResult.rows.length === 0) {
@@ -451,13 +552,20 @@ const updateFood = async (req, res) => {
       });
     }
 
+    if (checkResult.rows[0].owner_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền cập nhật món ăn này.'
+      });
+    }
+
     const updates = [];
     const params = [];
     let paramCount = 0;
 
     if (name !== undefined) {
       paramCount++;
-      updates.push(`name = $${paramCount}`);
+      updates.push(`food_name = $${paramCount}`);
       params.push(name);
     }
     if (description !== undefined) {
@@ -472,7 +580,7 @@ const updateFood = async (req, res) => {
     }
     if (category_id !== undefined) {
       paramCount++;
-      updates.push(`category_id = $${paramCount}`);
+      updates.push(`primary_category_id = $${paramCount}`);
       params.push(category_id);
     }
     if (image_url !== undefined) {
@@ -493,21 +601,16 @@ const updateFood = async (req, res) => {
       });
     }
 
-    paramCount++;
-    updates.push(`updated_at = NOW()`);
     params.push(foodId);
-    
-    paramCount++;
-    params.push(restaurantId);
 
     const query = `
       UPDATE foods 
       SET ${updates.join(', ')}
-      WHERE id = $${paramCount - 1} AND restaurant_id = $${paramCount}
+      WHERE food_id = $${params.length}
       RETURNING *
     `;
 
-    const result = await db.query(query, params);
+    const result = await foodPool.query(query, params);
 
     res.json({
       success: true,
@@ -529,12 +632,16 @@ const updateFood = async (req, res) => {
 const deleteFood = async (req, res) => {
   try {
     const { foodId } = req.params;
-    const restaurantId = req.restaurantId;
+    const userId = req.user.userId;
+    const { foodPool } = require('../config/db');
 
     // Verify food belongs to restaurant
-    const checkResult = await db.query(
-      'SELECT id FROM foods WHERE id = $1 AND restaurant_id = $2',
-      [foodId, restaurantId]
+    const checkResult = await foodPool.query(
+      `SELECT f.food_id, r.owner_id
+       FROM foods f
+       JOIN restaurants r ON f.restaurant_id = r.id
+       WHERE f.food_id = $1`,
+      [foodId]
     );
 
     if (checkResult.rows.length === 0) {
@@ -544,9 +651,16 @@ const deleteFood = async (req, res) => {
       });
     }
 
-    await db.query(
-      'DELETE FROM foods WHERE id = $1 AND restaurant_id = $2',
-      [foodId, restaurantId]
+    if (checkResult.rows[0].owner_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền xóa món ăn này.'
+      });
+    }
+
+    await foodPool.query(
+      'DELETE FROM foods WHERE food_id = $1',
+      [foodId]
     );
 
     res.json({
@@ -568,14 +682,38 @@ const deleteFood = async (req, res) => {
 const toggleFoodAvailability = async (req, res) => {
   try {
     const { foodId } = req.params;
-    const restaurantId = req.restaurantId;
+    const userId = req.user.userId;
+    const { foodPool } = require('../config/db');
 
-    const result = await db.query(
+    // Verify ownership
+    const ownershipResult = await foodPool.query(
+      `SELECT f.food_id, r.owner_id
+       FROM foods f
+       JOIN restaurants r ON f.restaurant_id = r.id
+       WHERE f.food_id = $1`,
+      [foodId]
+    );
+
+    if (ownershipResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy món ăn.'
+      });
+    }
+
+    if (ownershipResult.rows[0].owner_id !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền cập nhật món ăn này.'
+      });
+    }
+
+    const result = await foodPool.query(
       `UPDATE foods 
-       SET is_available = NOT is_available, updated_at = NOW()
-       WHERE id = $1 AND restaurant_id = $2
+       SET is_available = NOT is_available
+       WHERE food_id = $1
        RETURNING *`,
-      [foodId, restaurantId]
+      [foodId]
     );
 
     if (result.rows.length === 0) {
@@ -691,7 +829,7 @@ const updateRestaurant = async (req, res) => {
       RETURNING *
     `;
 
-    const result = await db.query(query, params);
+    const result = await foodPool.query(query, params);
 
     res.json({
       success: true,
@@ -717,19 +855,38 @@ const getReviews = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    const result = await db.query(
-      `SELECT r.*,
-        u.full_name as customer_name,
-        u.avatar_url as customer_avatar
+    // Get reviews from food DB
+    const result = await foodPool.query(
+      `SELECT r.*
        FROM reviews r
-       LEFT JOIN users u ON r.user_id = u.user_id
        WHERE r.restaurant_id = $1
        ORDER BY r.created_at DESC
        LIMIT $2 OFFSET $3`,
       [restaurantId, limit, offset]
     );
+    
+    // Get user info from shared DB
+    const userIds = [...new Set(result.rows.map(r => r.user_id).filter(id => id))];
+    let usersMap = new Map();
+    if (userIds.length > 0) {
+      const usersResult = await sharedPool.query(
+        'SELECT user_id, full_name, avatar_url FROM users WHERE user_id = ANY($1)',
+        [userIds]
+      );
+      usersResult.rows.forEach(u => usersMap.set(u.user_id, u));
+    }
+    
+    // Enrich reviews with user info
+    const enrichedReviews = result.rows.map(review => {
+      const user = usersMap.get(review.user_id) || {};
+      return {
+        ...review,
+        customer_name: user.full_name,
+        customer_avatar: user.avatar_url
+      };
+    });
 
-    const countResult = await db.query(
+    const countResult = await foodPool.query(
       'SELECT COUNT(*) FROM reviews WHERE restaurant_id = $1',
       [restaurantId]
     );
@@ -738,7 +895,7 @@ const getReviews = async (req, res) => {
 
     res.json({
       success: true,
-      data: result.rows,
+      data: enrichedReviews,
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalReviews / limit),

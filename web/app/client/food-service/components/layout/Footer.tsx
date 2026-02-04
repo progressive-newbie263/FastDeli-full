@@ -106,7 +106,7 @@ const Footer = () => {
 
         {/* Copyright */}
         <div className="mt-8 pt-4 border-t border-gray-700 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} GrabFood Clone. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} FoodDeli. All rights reserved.</p>
         </div>
       </div>
     </footer>
