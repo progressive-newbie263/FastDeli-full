@@ -116,7 +116,7 @@ class OrderController {
         return errorResponse(res, 'Thiếu trạng thái đơn hàng', null, 400);
       }
 
-      const validStatuses = ['pending', 'confirmed', 'processing', 'delivering', 'delivered', 'cancelled'];
+      const validStatuses = ['pending', 'processing', 'delivering', 'delivered', 'cancelled'];
       if (!validStatuses.includes(order_status)) {
         return errorResponse(res, 'Trạng thái đơn hàng không hợp lệ', null, 400);
       }

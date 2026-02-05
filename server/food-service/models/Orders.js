@@ -81,7 +81,8 @@ class Order {
         user_phone,
         delivery_address,
         notes,
-        delivery_fee = 0
+        delivery_fee = 0,
+        payment_method = 'cash' // ✅ Thêm payment_method
       } = orderData;
 
       // Tính tổng tiền từ items
@@ -97,11 +98,11 @@ class Order {
         INSERT INTO orders (
           user_id, restaurant_id, user_name, user_phone,
           delivery_address, notes, delivery_fee, total_amount,
-          order_status, payment_status, created_at, updated_at
+          order_status, payment_status, payment_method, created_at, updated_at
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8,
-          'pending', 'pending', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          'pending', 'pending', $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
         RETURNING *
       `;
@@ -114,7 +115,8 @@ class Order {
         delivery_address,
         notes || '',
         delivery_fee,
-        total_amount
+        total_amount,
+        payment_method // ✅ Thêm parameter
       ]);
 
       const order = orderResult.rows[0];
@@ -192,11 +194,23 @@ class Order {
   static async getOrderById(orderIdOrCode) {
     const client = await foodPool.connect();
     try {
-      // Cho phép tìm theo id hoặc order_code
-      const orderRes = await client.query(
-        `SELECT * FROM orders WHERE id = $1 OR order_code = $1 LIMIT 1`,
-        [orderIdOrCode]
-      );
+      // Kiểm tra xem orderIdOrCode là số hay string
+      const isNumeric = !isNaN(orderIdOrCode) && !isNaN(parseFloat(orderIdOrCode));
+      
+      let orderRes;
+      if (isNumeric) {
+        // Tìm theo id (integer)
+        orderRes = await client.query(
+          `SELECT * FROM orders WHERE id = $1 LIMIT 1`,
+          [parseInt(orderIdOrCode)]
+        );
+      } else {
+        // Tìm theo order_code (varchar)
+        orderRes = await client.query(
+          `SELECT * FROM orders WHERE order_code = $1 LIMIT 1`,
+          [orderIdOrCode]
+        );
+      }
 
       if (orderRes.rows.length === 0) return null;
       const order = orderRes.rows[0];

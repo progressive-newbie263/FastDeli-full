@@ -80,7 +80,6 @@ const getStatistics = async (req, res) => {
       `SELECT 
         COUNT(*) as total_orders,
         COUNT(CASE WHEN order_status = 'pending' THEN 1 END) as pending_orders,
-        COUNT(CASE WHEN order_status = 'confirmed' THEN 1 END) as confirmed_orders,
         COUNT(CASE WHEN order_status = 'processing' THEN 1 END) as processing_orders,
         COUNT(CASE WHEN order_status = 'delivering' THEN 1 END) as delivering_orders,
         COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_orders,
@@ -348,7 +347,7 @@ const updateOrderStatus = async (req, res) => {
     const { status } = req.body;
     const restaurantId = req.restaurantId;
 
-    const allowedStatuses = ['confirmed', 'processing', 'ready', 'cancelled'];
+    const allowedStatuses = ['processing', 'ready', 'cancelled'];
     
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({

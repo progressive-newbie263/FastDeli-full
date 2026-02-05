@@ -202,8 +202,11 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
     }));
     // bổ sung: Thông báo thành công thêm vào giỏ hàng
     toast.success('Đã thêm vào giỏ hàng!', {
-      position: 'bottom-right',
-      autoClose: 2000,
+      position: 'top-right',
+      autoClose: 1000,
+      style: {
+        marginTop: '60px',
+      }
     });
   };
 
@@ -231,8 +234,11 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
 
         toastTimeoutRef.current = setTimeout(() => {
           toast.error('Đã xóa khỏi giỏ hàng', {
-            position: 'bottom-right',
-            autoClose: 2000,
+            position: 'top-right',
+            autoClose: 1000,
+            style: {
+              marginTop: '60px'
+            }
           });
           toastTimeoutRef.current = null;
         }, 50);

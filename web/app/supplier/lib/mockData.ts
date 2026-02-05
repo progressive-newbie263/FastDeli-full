@@ -82,7 +82,7 @@ export const MOCK_ORDERS: Order[] = [
     customer_phone: '0987654321',
     delivery_address: '789 Hai Bà Trưng, Quận 3, TP.HCM',
     total_amount: 180000,
-    order_status: 'confirmed',
+    order_status: 'pending',
     payment_status: 'paid',
     payment_method: 'zalopay',
     created_at: '2026-01-08T08:15:00Z',

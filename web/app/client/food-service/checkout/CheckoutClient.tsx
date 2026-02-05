@@ -158,7 +158,7 @@ const CheckoutClient = () => {
   const deliveryFee = 20000;
   const totalAmount = subtotal + deliveryFee;
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!cartData || cartData.length === 0) {
       toast.error("Giỏ hàng trống");
       return;
@@ -185,6 +185,7 @@ const CheckoutClient = () => {
         notes: userInfos.note,
         delivery_fee: deliveryFee,
         total_amount: totalAmount,
+        payment_method: paymentMethod, // ✅ Thêm payment_method
       },
       items: group.items.map((item) => ({
         food_id: item.food_id,
@@ -194,9 +195,54 @@ const CheckoutClient = () => {
       })),
     };
 
-    sessionStorage.setItem("pendingOrderPayload", JSON.stringify(orderPayload));
+    // ✅ TÁCH LOGIC: COD vs Banking
+    if (paymentMethod === 'cash') {
+      // 💰 TIỀN MẶT - Tạo order ngay, skip payment page
+      try {
+        toast.info("Đang tạo đơn hàng...");
+        
+        const res = await fetch("http://localhost:5001/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload),
+        });
 
-    router.push(`/client/food-service/payment?restaurantId=${group.restaurant_id}`);
+        if (!res.ok) throw new Error("Tạo đơn hàng thất bại");
+
+        const data = await res.json();
+        const orderCode = data?.data?.order_code;
+
+        // ✅ Xóa cart ngay lập tức
+        try {
+          const cart = JSON.parse(localStorage.getItem("cart") || "{}");
+          const restaurantId = group.restaurant_id;
+          if (restaurantId && cart[restaurantId]) {
+            delete cart[restaurantId];
+            localStorage.setItem("cart", JSON.stringify(cart));
+            window.dispatchEvent(new Event("cart-updated"));
+          }
+        } catch (err) {
+          console.error("❌ Lỗi khi xóa cart:", err);
+        }
+
+        toast.success(`✅ Đặt hàng thành công! Mã đơn: ${orderCode}`);
+        
+        // ✅ Redirect về trang orders
+        setTimeout(() => {
+          router.push("/client/food-service/orders");
+        }, 1500);
+
+      } catch (err) {
+        console.error("❌ Lỗi tạo đơn COD:", err);
+        toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
+      }
+    } else if (paymentMethod === 'card') {
+      // 💳 BANKING - Redirect sang payment page
+      sessionStorage.setItem("pendingOrderPayload", JSON.stringify(orderPayload));
+      router.push(`/client/food-service/payment?restaurantId=${group.restaurant_id}`);
+    } else {
+      toast.error("Phương thức thanh toán không hợp lệ!");
+    }
   };
 
   if (isLoading) {

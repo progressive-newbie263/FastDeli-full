@@ -47,7 +47,7 @@ export interface Order {
   customer_phone: string;
   delivery_address: string;
   total_amount: number;
-  order_status: 'pending' | 'confirmed' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
+  order_status: 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   payment_method: string;
   created_at: string;

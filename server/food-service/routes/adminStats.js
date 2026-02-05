@@ -513,7 +513,7 @@ router.get('/analytics', async (req, res) => {
       if (status === 'delivered') statusCounts.delivered += c;
       else if (status === 'cancelled') statusCounts.cancelled += c;
       else if (status === 'pending') statusCounts.pending += c;
-      else if (['confirmed', 'preparing', 'ready', 'delivering', 'processing'].includes(status)) statusCounts.processing += c;
+      else if (['preparing', 'ready', 'delivering', 'processing'].includes(status)) statusCounts.processing += c;
       else statusCounts.other += c;
     }
     const totalStatus = Object.values(statusCounts).reduce((a, b) => a + b, 0);

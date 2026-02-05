@@ -19,7 +19,7 @@ export interface RecentOrder {
   order_id: number;
   order_code: string;
   total_amount: number;
-  order_status: 'pending' | 'confirmed' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
+  order_status: 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed';
   created_at: string;
   customer_name: string;
@@ -136,7 +136,7 @@ export interface Order {
   delivery_address: string;
   total_amount: number;
   delivery_fee?: number;
-  order_status: 'pending' | 'confirmed' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
+  order_status: 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'refunded'; // 'failed' cân nhắc thêm sau này
   payment_method?: string;
   notes?: string;
