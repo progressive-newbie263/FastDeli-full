@@ -82,7 +82,12 @@ class Order {
         delivery_address,
         notes,
         delivery_fee = 0,
-        payment_method = 'cash' // ✅ Thêm payment_method
+        payment_method = 'cash',
+        coupon_id = null,
+        coupon_code = null,
+        discount_amount = 0,
+        original_total = null,
+        total_amount: providedTotalAmount = null
       } = orderData;
 
       // Tính tổng tiền từ items
@@ -91,18 +96,57 @@ class Order {
         total_items_amount += Number(item.food_price) * Number(item.quantity);
       }
 
-      const total_amount = total_items_amount + Number(delivery_fee);
+      const calculatedOriginalTotal = total_items_amount + Number(delivery_fee);
+      const parsedOriginalTotal = Number(original_total);
+      const normalizedCouponCode =
+        typeof coupon_code === 'string' && coupon_code.trim().length > 0
+          ? coupon_code.trim().toUpperCase()
+          : null;
+
+      const parsedDiscountAmount = Number(discount_amount);
+      let safeDiscountAmount = Number.isFinite(parsedDiscountAmount) && parsedDiscountAmount > 0
+        ? parsedDiscountAmount
+        : 0;
+
+      const hasProvidedTotalAmount =
+        providedTotalAmount !== null &&
+        providedTotalAmount !== undefined &&
+        Number.isFinite(Number(providedTotalAmount));
+
+      const parsedProvidedTotalAmount = hasProvidedTotalAmount
+        ? Math.max(Number(providedTotalAmount), 0)
+        : null;
+
+      const safeOriginalTotal = Number.isFinite(parsedOriginalTotal) && parsedOriginalTotal > 0
+        ? parsedOriginalTotal
+        : hasProvidedTotalAmount
+          ? Math.max((parsedProvidedTotalAmount || 0) + safeDiscountAmount, calculatedOriginalTotal)
+          : calculatedOriginalTotal;
+
+      if (safeDiscountAmount <= 0 && hasProvidedTotalAmount && (parsedProvidedTotalAmount || 0) < safeOriginalTotal) {
+        safeDiscountAmount = Math.max(safeOriginalTotal - (parsedProvidedTotalAmount || 0), 0);
+      }
+
+      const total_amount = hasProvidedTotalAmount
+        ? (parsedProvidedTotalAmount || 0)
+        : Math.max(safeOriginalTotal - safeDiscountAmount, 0);
+
+      const normalizedTotalAmount = normalizedCouponCode && safeDiscountAmount > 0 && total_amount >= safeOriginalTotal
+        ? Math.max(safeOriginalTotal - safeDiscountAmount, 0)
+        : total_amount;
 
       // Thêm bản ghi order (id được tạo tự động)
       const orderInsertQuery = `
         INSERT INTO orders (
           user_id, restaurant_id, user_name, user_phone,
           delivery_address, notes, delivery_fee, total_amount,
+          coupon_id, coupon_code, discount_amount, original_total,
           order_status, payment_status, payment_method, created_at, updated_at
         )
         VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8,
-          'pending', 'pending', $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          $9, $10, $11, $12,
+          'pending', 'pending', $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
         RETURNING *
       `;
@@ -115,8 +159,12 @@ class Order {
         delivery_address,
         notes || '',
         delivery_fee,
-        total_amount,
-        payment_method // ✅ Thêm parameter
+        normalizedTotalAmount,
+        coupon_id,
+        normalizedCouponCode,
+        safeDiscountAmount,
+        safeOriginalTotal,
+        payment_method
       ]);
 
       const order = orderResult.rows[0];
@@ -163,11 +211,17 @@ class Order {
           o.restaurant_id,
           r.name AS restaurant_name,
           r.image_url AS restaurant_image,
+          first_item.image_url AS order_preview_image,
+          first_item.food_name AS order_preview_name,
           o.user_name,
           o.user_phone,
           o.delivery_address,
           o.total_amount,
           o.delivery_fee,
+          o.coupon_id,
+          o.coupon_code,
+          o.discount_amount,
+          o.original_total,
           o.order_status,
           o.payment_status,
           o.notes,
@@ -175,6 +229,14 @@ class Order {
           o.updated_at
         FROM orders o
         LEFT JOIN restaurants r ON o.restaurant_id = r.id
+        LEFT JOIN LATERAL (
+          SELECT oi.food_name, f.image_url
+          FROM order_items oi
+          LEFT JOIN foods f ON f.food_id = oi.food_id
+          WHERE oi.order_id = o.id
+          ORDER BY oi.order_item_id ASC
+          LIMIT 1
+        ) first_item ON TRUE
         WHERE o.user_id = $1
         ORDER BY o.created_at DESC
       `;

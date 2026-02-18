@@ -12,6 +12,24 @@ interface RestaurantListProps {
   restaurants: Restaurant[];
 }
 
+const formatDeliveryTime = (restaurant: Restaurant) => {
+  const minTime = restaurant.delivery_time_min;
+  const maxTime = restaurant.delivery_time_max;
+
+  if (typeof minTime === 'number' && typeof maxTime === 'number') {
+    if (minTime === maxTime) {
+      return `${minTime} phút`;
+    }
+    return `${minTime}-${maxTime} phút`;
+  }
+
+  if (typeof minTime === 'number') {
+    return `${minTime}+ phút`;
+  }
+
+  return 'Đang cập nhật';
+};
+
 const RestaurantList: React.FC<RestaurantListProps> = ({ restaurants }) => {
   return (
     <div className="grid 
@@ -65,7 +83,7 @@ const RestaurantList: React.FC<RestaurantListProps> = ({ restaurants }) => {
               <div className="flex items-center text-sm text-gray-700 mb-1 justify-between">
                 <span className="flex items-center gap-1">
                   <Clock className="text-gray-500 w-4 h-4 flex-shrink-0" />
-                  {restaurant.delivery_time}
+                  {formatDeliveryTime(restaurant)}
                 </span>
 
                 <span className="flex items-center gap-1 font-medium text-blue-600">

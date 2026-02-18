@@ -9,10 +9,15 @@ interface Order {
   order_code: string;
   restaurant_name: string;
   restaurant_image?: string;
+  order_preview_image?: string;
+  order_preview_name?: string;
   user_name: string;
   user_phone: string;
   delivery_address: string;
   total_amount: string;
+  original_total?: string;
+  discount_amount?: string;
+  coupon_code?: string | null;
   order_status: 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   notes?: string;
@@ -22,6 +27,7 @@ interface Order {
 
 export default function OrdersPageClient({initialOrders = []}: {initialOrders?: Order[]}) {
   const [orders, setOrders] = useState<Order[]>(initialOrders);
+  const [selectedOrderImage, setSelectedOrderImage] = useState<{ src: string; title: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [filteredStatus, setFilteredStatus] = useState<'all' | 'pending' | 'processing' | 'delivered' | 'cancelled'>('all');
   
@@ -272,8 +278,8 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
                   {/* Image */}
                   <div className="relative w-full max-h-56 md:w-40 md:h-40 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
                     <img
-                      src={order.restaurant_image || '/images/placeholder.png'}
-                      alt={order.restaurant_name}
+                      src={order.order_preview_image || order.restaurant_image || '/images/placeholder.png'}
+                      alt={order.order_preview_name || order.restaurant_name}
                       className="max-w-full max-h-full object-contain"
                     />
                   </div>
@@ -308,14 +314,38 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
                       {order.notes?.trim() ? order.notes : 'Không có'}
                     </p>
 
+                    <div className="mb-3">
+                      <button
+                        onClick={() => {
+                          const previewSrc = order.order_preview_image || order.restaurant_image || '/images/placeholder.png';
+                          const previewTitle = order.order_preview_name || `Đơn #${order.order_code}`;
+                          setSelectedOrderImage({ src: previewSrc, title: previewTitle });
+                        }}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        🖼 Xem ảnh đơn hàng
+                      </button>
+                    </div>
+
                     <p className="text-gray-500 text-sm mb-3">
                       <span className="font-semibold">⏰ Thời gian:</span>{' '}
                       {dayjs(order.created_at).format('DD/MM/YYYY, HH:mm:ss')}
                     </p>
 
+                    {order.coupon_code && Number(order.discount_amount || 0) > 0 && (
+                      <p className="text-sm text-green-700 mb-3">
+                        <span className="font-semibold">🎟 Coupon:</span> {order.coupon_code} (-{Number(order.discount_amount).toLocaleString()}₫)
+                      </p>
+                    )}
+
                     <div className="flex justify-between items-center mt-auto">
                       <div className="font-bold text-xl text-orange-600">
                         💰 {parseFloat(order.total_amount).toLocaleString()}₫
+                        {Number(order.discount_amount || 0) > 0 && Number(order.original_total || 0) > 0 && (
+                          <p className="text-xs text-gray-500 font-normal mt-1">
+                            Giá gốc: {Number(order.original_total).toLocaleString()}₫
+                          </p>
+                        )}
                       </div>
 
                       {/* ✅ Nút hủy đơn (chỉ trong 5 phút) */}
@@ -384,6 +414,27 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
             </div>
           )}
         </>
+      )}
+
+      {selectedOrderImage && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-800">{selectedOrderImage.title}</h3>
+              <button
+                onClick={() => setSelectedOrderImage(null)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+            <img
+              src={selectedOrderImage.src}
+              alt={selectedOrderImage.title}
+              className="w-full h-80 object-contain rounded-lg bg-gray-50"
+            />
+          </div>
+        </div>
       )}
     </div>
   );

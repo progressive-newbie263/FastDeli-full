@@ -76,6 +76,11 @@ const PaymentClient = () => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [showBankSelector, setShowBankSelector] = useState(false);
 
+  const originalTotal = Number(payload?.orderData?.original_total || payload?.orderData?.total_amount || 0);
+  const deliveryFee = Number(payload?.orderData?.delivery_fee || 0);
+  const discountAmount = Number(payload?.orderData?.discount_amount || 0);
+  const couponCode = payload?.orderData?.coupon_code || null;
+
   // Lấy dữ liệu order từ sessionStorage hoặc localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -84,38 +89,13 @@ const PaymentClient = () => {
       const saved = sessionStorage.getItem("pendingOrderPayload");
       if (saved) {
         setPayload(JSON.parse(saved));
-        return;
       }
-
-      const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-      const cart = JSON.parse(localStorage.getItem("cart") || "{}");
-      const restaurantId = restaurantIdFromQuery || Object.keys(cart)[0] || "0";
-      const cartItems = cart[restaurantId] || [];
-
-      const items = cartItems.map((item: any) => ({
-        food_id: item.food_id,
-        food_name: item.food_name || "",
-        food_price: item.food_price || 0,
-        quantity: item.quantity,
-        subtotal: (item.food_price || 0) * item.quantity,
-      }));
-
-      const orderPayload = {
-        orderData: {
-          user_id: userData.user_id,
-          restaurant_id: Number(restaurantId),
-          user_name: userData.name || "Khách hàng",
-          user_phone: userData.phone_number,
-          delivery_address: userData.address || "Chưa có địa chỉ",
-          notes: "",
-          delivery_fee: 15000,
-          total_amount: items.reduce((sum: number, i: { subtotal: number }) => sum + i.subtotal, 0) + 15000,
-        },
-        items,
-      };
-
-      setPayload(orderPayload);
-      sessionStorage.setItem("pendingOrderPayload", JSON.stringify(orderPayload));
+      
+      // Lấy bank đã chọn từ checkout
+      const savedBank = sessionStorage.getItem("selectedBank");
+      if (savedBank) {
+        setSelectedBank(JSON.parse(savedBank));
+      }
     } catch (err) {
       console.error("Lỗi đọc dữ liệu:", err);
     }
@@ -172,14 +152,15 @@ const PaymentClient = () => {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Bước 1: Tạo đơn hàng (chưa thanh toán)
-  const handleCreateOrder = async () => {
-    if (!payload) {
-      setToastMessage("❌ Không có dữ liệu đơn hàng");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-      return;
+  // Bước 1: Tạo đơn hàng (chưa thanh toán) - AUTO TRIGGER
+  useEffect(() => {
+    if (payload && !orderId && !isProcessing) {
+      handleCreateOrder();
     }
+  }, [payload]);
+
+  const handleCreateOrder = async () => {
+    if (!payload || orderId) return;
 
     try {
       setIsProcessing(true);
@@ -201,9 +182,8 @@ const PaymentClient = () => {
       setOrderCode(code || null);
       setOrderId(newOrderId || null);
 
-      setToastMessage(`✅ Tạo đơn ${code} thành công! Vui lòng chọn ngân hàng.`);
+      setToastMessage(`✅ Tạo đơn ${code} thành công!`);
       setShowToast(true);
-      setShowBankSelector(true); // Hiện danh sách ngân hàng
       
       setTimeout(() => setShowToast(false), 3000);
       setIsProcessing(false);
@@ -286,221 +266,213 @@ const PaymentClient = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 mb-20">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/20 to-gray-50 pb-20">
       {/* Header */}
-      <div className="flex items-center mb-6 mt-20">
-        <Link
-          href={`/client/food-service/checkout?restaurantId=${payload.orderData.restaurant_id || ""}`}
-          className="flex items-center text-gray-600 hover:text-gray-800"
-        >
-          <ChevronLeft className="text-gray-600 mr-2 cursor-pointer" />
-        </Link>
-        <h1 className="text-xl font-semibold">Thanh toán đơn hàng</h1>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* QR Code & Bank Selection */}
-        <div className="bg-white rounded-2xl p-6 shadow-md">
-          <div className="flex flex-col items-center">
-            {/* QR Display */}
-            {qrCodeUrl ? (
-              <div className="w-64 h-64 bg-white border-2 border-green-500 rounded-lg flex items-center justify-center overflow-hidden">
-                <img 
-                  src={qrCodeUrl} 
-                  alt="QR Payment" 
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            ) : (
-              <div className="w-64 h-64 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                <div className="text-center">
-                  <QrCode className="w-16 h-16 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500 font-medium">
-                    {!orderId ? "Tạo đơn hàng để hiển thị QR" : "Chọn ngân hàng để tạo QR"}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Bank Info */}
-            {selectedBank && (
-              <div className="mt-4 text-center bg-green-50 p-3 rounded-lg w-full">
-                <p className="text-sm text-gray-600">Ngân hàng</p>
-                <p className="font-semibold text-green-700">{selectedBank.name}</p>
-                <p className="text-xs text-gray-500">{selectedBank.fullName}</p>
-              </div>
-            )}
-
-            {/* Payment Instructions */}
-            {qrCodeUrl && (
-              <div className="mt-4 bg-blue-50 p-4 rounded-lg w-full">
-                <h3 className="font-semibold text-blue-900 mb-2 text-sm">Hướng dẫn thanh toán:</h3>
-                <ol className="text-xs text-blue-800 space-y-1 list-decimal list-inside">
-                  <li>Mở app ngân hàng của bạn</li>
-                  <li>Quét mã QR phía trên</li>
-                  <li>Kiểm tra thông tin và xác nhận</li>
-                  <li>Click "Thanh toán nhanh" bên dưới</li>
-                </ol>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="mt-6 w-full space-y-3">
-              {!orderId ? (
-                <button
-                  onClick={handleCreateOrder}
-                  disabled={isProcessing}
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      <Building2 className="w-5 h-5" />
-                      Tạo đơn hàng
-                    </>
-                  )}
-                </button>
-              ) : !qrCodeUrl ? (
-                <button
-                  onClick={() => setShowBankSelector(!showBankSelector)}
-                  className="w-full bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300"
-                >
-                  <Building2 className="w-5 h-5 inline mr-2" />
-                  Chọn ngân hàng
-                </button>
-              ) : (
-                <button
-                  onClick={handleSimulatePayment}
-                  disabled={paymentStatus !== "pending" || isProcessing}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                      Đang xử lý...
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-lg">⚡</span>
-                      Thanh toán nhanh
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Thông tin đơn */}
-        <div className="flex-1">
-          <div className="bg-white rounded-2xl p-6 shadow-md mb-6">
-            <h2 className="text-lg font-semibold mb-4">Thông tin đơn hàng</h2>
-
-            <div className="space-y-3 text-sm">
+      <div className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-5xl mx-auto px-4 py-4">
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/client/food-service/checkout?restaurantId=${payload?.orderData?.restaurant_id || ""}`}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5 text-gray-600" />
+            </Link>
+            <div className="flex-1">
+              <h1 className="text-xl font-bold text-gray-800">Thanh toán đơn hàng</h1>
               {orderCode && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600 font-medium">Mã đơn:</span>
-                  <span className="font-bold text-blue-600">#{orderCode}</span>
-                </div>
+                <p className="text-sm text-gray-600">Mã đơn: <span className="font-semibold text-blue-600">#{orderCode}</span></p>
               )}
-
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Số tiền:</span>
-                <span className="font-bold text-red-500 text-lg sm:text-right">
-                  {payload.orderData.total_amount?.toLocaleString() || 0} VND
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Trạng thái:</span>
-                <span
-                  className={`font-semibold px-2 py-1 rounded-full text-xs 
-                  ${
-                    paymentStatus === "pending"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : paymentStatus === "paid"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-700"
-                  }
-                  `}
-                >
-                  {paymentStatus === "pending"
-                    ? "Chờ thanh toán"
-                    : paymentStatus === "paid"
-                    ? "Thanh toán thành công"
-                    : "Thất bại"}
-                </span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-600 font-medium">Thời gian còn lại:</span>
-                <span
-                  className={`font-bold text-lg sm:text-right ${
-                    timeLeft <= 60 ? "text-red-500 animate-pulse" : "text-gray-800"
-                  }`}
-                >
-                  {timeLeft > 0 ? formatTime(timeLeft) : "Hết hạn"}
-                </span>
+            </div>
+            {/* Countdown Timer */}
+            <div className={`px-4 py-2 rounded-lg ${
+              timeLeft <= 60 ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+            }`}>
+              <div className="text-xs font-medium">Thời gian còn lại</div>
+              <div className={`text-lg font-bold ${timeLeft <= 60 ? 'animate-pulse' : ''}`}>
+                {timeLeft > 0 ? formatTime(timeLeft) : "Hết hạn"}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bank Selector Modal */}
-      {showBankSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Chọn ngân hàng</h2>
-              <button
-                onClick={() => setShowBankSelector(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {BANKS.map((bank) => (
-                <button
-                  key={bank.id}
-                  onClick={() => {
-                    setSelectedBank(bank);
-                    setShowBankSelector(false);
-                  }}
-                  className={`w-full p-4 border-2 rounded-lg text-left transition-all duration-200 hover:border-green-500 hover:bg-green-50 ${
-                    selectedBank?.id === bank.id
-                      ? "border-green-500 bg-green-50"
-                      : "border-gray-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">{bank.logo}</span>
-                      <div>
-                        <p className="font-semibold text-gray-900">{bank.name}</p>
-                        <p className="text-xs text-gray-500">{bank.fullName}</p>
-                      </div>
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-5 gap-6">
+          {/* QR Code Section - Left (3 cols) */}
+          <div className="lg:col-span-3 space-y-6">
+            <div className="bg-white rounded-2xl p-8 shadow-md border border-gray-100">
+              <div className="flex flex-col items-center">
+                {/* QR Display */}
+                {qrCodeUrl ? (
+                  <div className="w-full max-w-sm space-y-4">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-2xl border-2 border-green-200">
+                      <img 
+                        src={qrCodeUrl} 
+                        alt="QR Payment" 
+                        className="w-full aspect-square object-contain rounded-lg"
+                      />
                     </div>
-                    {selectedBank?.id === bank.id && (
-                      <Check className="w-6 h-6 text-green-600" />
+                    
+                    {/* Bank Info */}
+                    {selectedBank && (
+                      <div className="bg-white border-2 border-green-200 rounded-xl p-4 shadow-sm">
+                        <p className="text-xs text-gray-600 mb-1">Ngân hàng thanh toán</p>
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">{selectedBank.logo}</span>
+                          <div>
+                            <p className="font-bold text-gray-900">{selectedBank.name}</p>
+                            <p className="text-xs text-gray-600">{selectedBank.fullName}</p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
-                </button>
-              ))}
+                ) : (
+                  <div className="w-full max-w-sm">
+                    <div className="aspect-square bg-gradient-to-br from-gray-100 to-gray-50 border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center">
+                      <div className="text-center p-6">
+                        <QrCode className="w-20 h-20 text-gray-400 mx-auto mb-3" />
+                        <p className="text-sm text-gray-600 font-medium">
+                          {!orderId ? "Đang tạo đơn hàng..." : "Đang tạo mã QR thanh toán..."}
+                        </p>
+                        <div className="mt-4 flex justify-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment Instructions */}
+                {qrCodeUrl && (
+                  <div className="mt-6 w-full max-w-sm space-y-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 p-6 rounded-xl">
+                      <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                        <span className="text-lg">📱</span>
+                        Hướng dẫn thanh toán
+                      </h3>
+                      <ol className="text-sm text-blue-800 space-y-2 list-decimal list-inside">
+                        <li>Mở app ngân hàng {selectedBank?.name}</li>
+                        <li>Chọn <strong>Quét mã QR</strong></li>
+                        <li>Quét mã QR bên trên</li>
+                        <li>Kiểm tra thông tin và <strong>Xác nhận</strong></li>
+                        <li>Bấm <strong>"Thanh toán nhanh"</strong> bên dưới</li>
+                      </ol>
+                    </div>
+
+                    {/* Payment Button */}
+                    <button
+                      onClick={handleSimulatePayment}
+                      disabled={paymentStatus !== "pending" || isProcessing}
+                      className="w-full bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 hover:from-purple-700 hover:via-pink-700 hover:to-rose-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                          Đang xử lý...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-xl">⚡</span>
+                          Tôi đã thanh toán
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Order Info - Right (2 cols) */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Payment Status */}
+            <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+              <h3 className="font-semibold text-gray-800 mb-4">Trạng thái</h3>
+              <div className={`p-4 rounded-xl text-center font-bold text-lg ${
+                paymentStatus === "pending"
+                  ? "bg-yellow-50 text-yellow-700 border-2 border-yellow-200"
+                  : paymentStatus === "paid"
+                  ? "bg-green-50 text-green-700 border-2 border-green-200"
+                  : "bg-red-50 text-red-700 border-2 border-red-200"
+              }`}>
+                {paymentStatus === "pending" && "⏳ Chờ thanh toán"}
+                {paymentStatus === "paid" && "✅ Thanh toán thành công"}
+                {paymentStatus === "failed" && "❌ Thất bại"}
+              </div>
             </div>
 
-            <p className="mt-4 text-xs text-gray-500 text-center">
-              Chọn ngân hàng để tạo mã QR thanh toán
-            </p>
+            {/* Order Details */}
+            <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+              <h3 className="font-semibold text-gray-800 mb-4">Chi tiết đơn hàng</h3>
+              
+              <div className="space-y-3">
+                {/* Items */}
+                {payload?.items?.map((item: any, idx: number) => (
+                  <div key={idx} className="flex justify-between text-sm pb-2 border-b border-gray-100 last:border-0">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-800">{item.food_name}</p>
+                      <p className="text-xs text-gray-500">x{item.quantity} • {item.food_price.toLocaleString()}đ</p>
+                    </div>
+                    <span className="font-semibold text-gray-800">
+                      {(item.food_price * item.quantity).toLocaleString()}đ
+                    </span>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Total */}
+              <div className="mt-4 pt-4 border-t-2 border-gray-200 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Tạm tính</span>
+                  <span className="font-medium">
+                    {(originalTotal - deliveryFee).toLocaleString()}đ
+                  </span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Phí giao hàng</span>
+                    <span className="font-medium">{deliveryFee.toLocaleString()}đ</span>
+                </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="text-gray-600">Giảm giá {couponCode ? `(${couponCode})` : ''}</span>
+                      <span className="font-medium">-{discountAmount.toLocaleString()}đ</span>
+                    </div>
+                  )}
+                <div className="flex justify-between text-lg font-bold text-green-600 pt-2 border-t border-gray-200">
+                  <span>Tổng cộng</span>
+                  <span>{payload?.orderData?.total_amount?.toLocaleString() || 0}đ</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Delivery Info */}
+            <div className="bg-white rounded-2xl p-6 shadow-md border border-gray-100">
+              <h3 className="font-semibold text-gray-800 mb-4">Thông tin giao hàng</h3>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <p className="text-gray-600">Người nhận</p>
+                  <p className="font-medium text-gray-800">{payload?.orderData?.user_name}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Số điện thoại</p>
+                  <p className="font-medium text-gray-800">{payload?.orderData?.user_phone}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Địa chỉ</p>
+                  <p className="font-medium text-gray-800">{payload?.orderData?.delivery_address}</p>
+                </div>
+                {payload?.orderData?.notes && (
+                  <div>
+                    <p className="text-gray-600">Ghi chú</p>
+                    <p className="font-medium text-gray-800">{payload?.orderData?.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Toast notifications */}
       {showToast && (

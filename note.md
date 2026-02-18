@@ -244,3 +244,9 @@ Danh sach cac api endpoint dang co (dan vao terminal):
 - Hệ thống đăng ký đối tác (Partner Registration) & Upload giấy phép kinh doanh.
 - Real-time thông báo đơn hàng mới qua Socket.io.
 - Email verification cho restaurant owners mới.
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 09-02-2025-----------------------------
+
+1.  đã làm lại giao diện và chuẩn bị implement tính năng coupon code giảm giá vào hệ thống. Trước hết, việc đầu tiên cần làm sẽ là "thay đổi code trang PaymentClient.tsx" để nó cập nhật "coupon" vào đó. Hiện tại order truyền đúng rồi, tuy nhiên nó tự động trừ tiền từ coupon, bởi lẽ hệ thống + database còn đang chắp vá chưa vào đâu. Ưu tiên hàng đầu sẽ là, ngay lập tức update database, mục đơn hàng, thêm 1 cột "coupon" hay gì gì đó cùng nghĩa vào database. Sau đó, update code trang PaymentClient, để thành công thêm tính năng coupon trong hệ thống. Ưu tiên là để mặc định/default các order đã có hiện tại là ko sử dụng coupon, cũng như đảm bảo có trường "ko sử dụng" lưu vào db.

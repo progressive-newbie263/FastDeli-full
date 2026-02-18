@@ -3,7 +3,6 @@ export interface Restaurant {
   name: string;
   address: string;
   image_url: string | null;
-  delivery_time: string;
   delivery_fee: string;
   rating: string;
   total_reviews: number;
@@ -11,6 +10,13 @@ export interface Restaurant {
   created_at: string; // cứ set string, mặc đù bên postgre để "timestamp without time zone"
   status: string; // xóa bỏ cột is_active boolean đi. status string bao rộng hơn.
   
+  // tạm thời xóa bỏ cái này.
+  //delivery_time: string;
+  
+  // bổ sung
+  delivery_time_min?: number | null;
+  delivery_time_max?: number | null;
+
   // Các field riêng cho trang chi tiết:
   phone?: string;
   description?: string;
