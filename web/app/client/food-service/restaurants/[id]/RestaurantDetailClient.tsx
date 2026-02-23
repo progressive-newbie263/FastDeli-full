@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Restaurant, Food } from '../../interfaces';
 import { useAuth } from '@food/context/AuthContext';
@@ -200,17 +200,10 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
       ...prev,
       [foodId]: 1,
     }));
-    // bổ sung: Thông báo thành công thêm vào giỏ hàng
-    toast.success('Đã thêm vào giỏ hàng!', {
-      position: 'top-right',
-      autoClose: 1000,
-      style: {
-        marginTop: '60px',
-      }
-    });
+    // Bỏ toast notification - UI đã có feedback qua số lượng
   };
 
-  // hàm thêm bớt
+  // hàm tăng số lượng
   const increaseQuantity = (foodId: number) => {
     setQuantities((prev) => ({
       ...prev,
@@ -218,31 +211,13 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
     }));
   };
 
-  // debounce toast khi giảm số lượng xuống 0 (để toast ko bị lặp lại 2 lần)
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  // hàm giảm số lượng - bỏ toast để tránh spam và đè lên cart
   const decreaseQuantity = (foodId: number) => {
     setQuantities((prev) => {
       const current = prev[foodId] || 0;
       if (current <= 1) {
         const updated = { ...prev };
         delete updated[foodId];
-        
-        if (toastTimeoutRef.current) {
-          clearTimeout(toastTimeoutRef.current);
-        }
-
-        toastTimeoutRef.current = setTimeout(() => {
-          toast.error('Đã xóa khỏi giỏ hàng', {
-            position: 'top-right',
-            autoClose: 1000,
-            style: {
-              marginTop: '60px'
-            }
-          });
-          toastTimeoutRef.current = null;
-        }, 50);
-
         return updated;
       }
       return {
@@ -251,15 +226,6 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
       };
     });
   };
-
-  // clear thời gian timeout
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) {
-        clearTimeout(toastTimeoutRef.current);
-      }
-    };
-  }, []);
 
   /* 
     ===============================
