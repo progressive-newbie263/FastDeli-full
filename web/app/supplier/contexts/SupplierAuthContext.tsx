@@ -15,6 +15,7 @@ interface SupplierAuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   refreshRestaurantData: () => Promise<void>;
+  refreshRestaurant: () => Promise<void>; // Alias for backward compatibility
 }
 
 const SupplierAuthContext = createContext<SupplierAuthContextType | undefined>(undefined);
@@ -164,6 +165,7 @@ export function SupplierAuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         refreshRestaurantData,
+        refreshRestaurant: refreshRestaurantData, // Alias
       }}
     >
       {children}

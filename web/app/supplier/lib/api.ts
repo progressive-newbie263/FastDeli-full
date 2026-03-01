@@ -22,7 +22,7 @@ import { MOCK_RESTAURANT, MOCK_FOODS, MOCK_ORDERS, MOCK_STATS, MOCK_CATEGORIES }
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5000';
 const FOOD_API_URL = process.env.NEXT_PUBLIC_FOOD_API_URL || 'http://localhost:5001';
 
-// Flag để bật/tắt mock mode - ĐỔI THÀNH FALSE ĐỂ DÙNG API THẬT
+// Flag để bật/tắt mock mode - ĐỂ FALSE ĐỂ DÙNG API THẬT
 const USE_MOCK_DATA = false;
 
 class SupplierAPI {
@@ -31,9 +31,6 @@ class SupplierAPI {
    */
   private static getAuthHeaders(): HeadersInit {
     const token = typeof window !== 'undefined' ? localStorage.getItem('supplier_token') : null;
-    if (typeof window !== 'undefined') {
-      console.log('SupplierAPI: Getting auth token:', token ? token.substring(0, 10) + '...' : 'null');
-    }
     return {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),

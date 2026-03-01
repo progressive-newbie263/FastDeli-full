@@ -1,1 +1,314 @@
-"use client";  import React, { useState, useEffect } from "react"; import {   MapPin,   Clock,   CreditCard,   Wallet,   Phone,   User,   Pencil,   ChevronLeft,   ShoppingBag,   Utensils,   Building2,   Check,   Tag,   Gift,   X, } from "lucide-react"; import { RestaurantGroup, CartItem, FullCart } from "../utils/cartHandler"; import { Food } from "../interfaces"; import { useRouter, useSearchParams } from "next/navigation"; import { toast } from "react-toastify";  // Bank interface interface Bank {   id: string;   name: string;   fullName: string;   bin: string;   logo: string; }  // Danh sách ngân hàng VietQR const BANKS: Bank[] = [   { id: 'VCB', name: 'Vietcombank', fullName: 'Ngân hàng TMCP Ngoại Thương Việt Nam', bin: '970436', logo: '🏦' },   { id: 'TCB', name: 'Techcombank', fullName: 'Ngân hàng TMCP Kỹ Thương Việt Nam', bin: '970407', logo: '🏦' },   { id: 'BIDV', name: 'BIDV', fullName: 'Ngân hàng TMCP Đầu tư và Phát triển Việt Nam', bin: '970418', logo: '🏦' },   { id: 'MB', name: 'MB Bank', fullName: 'Ngân hàng TMCP Quân Đội', bin: '970422', logo: '🏦' },   { id: 'ACB', name: 'ACB', fullName: 'Ngân hàng TMCP Á Châu', bin: '970416', logo: '🏦' },   { id: 'VPB', name: 'VPBank', fullName: 'Ngân hàng TMCP Việt Nam Thịnh Vượng', bin: '970432', logo: '🏦' }, ];  // Coupon ảo (data cứng) const MOCK_COUPONS = [   { code: 'FREESHIP', discount: 20000, type: 'shipping', desc: 'Miễn phí ship 20K' },   { code: 'SAVE10', discount: 10, type: 'percent', desc: 'Giảm 10% tổng đơn' },   { code: 'NEW50K', discount: 50000, type: 'fixed', desc: 'Giảm 50K đơn từ 200K' }, ];  const CheckoutClient = () => {   const [paymentMethod, setPaymentMethod] = useState("card");   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);   const [showBankSelector, setShowBankSelector] = useState(false);      const [couponCode, setCouponCode] = useState("");   const [appliedCoupon, setAppliedCoupon] = useState<typeof MOCK_COUPONS[0] | null>(null);   const [showCouponList, setShowCouponList] = useState(false);      const [userInfos, setUserInfos] = useState({     id: "",     name: "",     phone: "",     note: "",   });   const [userLocation, setUserLocation] = useState({ location: "" });   const [cartData, setCartData] = useState<RestaurantGroup[]>([]);   const [isLoading, setIsLoading] = useState(true);    const searchParams = useSearchParams();   const selectedRestaurantId = searchParams.get("restaurantId");   const router = useRouter();    useEffect(() => {     const fetchCartData = async () => {       try {         const savedCart = localStorage.getItem("cart");         if (!savedCart) {           setIsLoading(false);           return;         }          const parsedCart: FullCart = JSON.parse(savedCart);         const restaurantIds = Object.keys(parsedCart);         const groups: RestaurantGroup[] = [];          for (const restaurantId of restaurantIds) {           const [resFoods, resInfo] = await Promise.all([             fetch(http://localhost:5001/api/restaurants/${restaurantId}/foods).then((res) => res.json()),             fetch(http://localhost:5001/api/restaurants/${restaurantId}).then((res) => res.json()),           ]);            if (!resFoods.success || !resInfo.success) continue;            const foods: Food[] = Array.isArray(resFoods?.data) ? (resFoods.data as Food[]) : [];           const restaurantName = resInfo.data.name;           const restaurantImage = resInfo.data.image_url || "https://via.placeholder.com/64";           const storedItems = parsedCart[restaurantId];           const items: CartItem[] = [];            storedItems.forEach(({ food_id, quantity }) => {             const food = foods.find((f) => f.food_id === food_id);             if (!food) return;              items.push({               restaurant_id: restaurantId,               food_id: food.food_id,               food_name: food.food_name,               price: typeof food.price === 'number' ? food.price : parseFloat(String(food.price ?? 0)),               image_url: food.image_url,               description: food.description,               quantity,             });           });            if (items.length > 0) {             groups.push({               restaurant_id: restaurantId,               restaurant_name: restaurantName,               restaurant_image: restaurantImage,               items,             });           }         }          const filteredGroups = selectedRestaurantId           ? groups.filter((group) => group.restaurant_id === selectedRestaurantId)           : groups;          if (selectedRestaurantId && filteredGroups.length === 0) {           toast.error("Không tìm thấy đơn hàng. Quý khách vui lòng thử lại sau.");           router.push("/client/food-service/cart");           return;         }          setCartData(filteredGroups);       } catch (error) {         console.error("Error loading cart data:", error);       } finally {         setIsLoading(false);       }     };      fetchCartData();   }, []);    useEffect(() => {     const storedUserData = localStorage.getItem("userData");     if (storedUserData) {       try {         const parsed = JSON.parse(storedUserData);         const user = parsed.user ?? parsed;         setUserInfos({           id: user.user_id || "",           name: user.full_name || "",           phone: user.phone_number || "",           note: user.note || "",         });       } catch (err) {         console.error("Lỗi khi parse userData:", err);       }     }   }, []);    useEffect(() => {     const storedLocation = localStorage.getItem("userLocation");     if (storedLocation) {       try {         const parsedLocation = JSON.parse(storedLocation);         setUserLocation({ location: parsedLocation.address });       } catch (error) {         console.error("Error parsing user location:", error);       }     }   }, []);    const calculateGrandTotal = () => {     return cartData.reduce(       (total, restaurant) =>         total + restaurant.items.reduce((sum, item) => sum + item.price * item.quantity, 0),       0     );   };    const getTotalItems = () => {     return cartData.reduce(       (total, restaurant) => total + restaurant.items.reduce((sum, item) => sum + item.quantity, 0),       0     );   };    const subtotal = calculateGrandTotal();   const deliveryFee = 20000;      // Tính discount   const calculateDiscount = () => {     if (!appliedCoupon) return 0;     if (appliedCoupon.type === 'shipping') return Math.min(appliedCoupon.discount, deliveryFee);     if (appliedCoupon.type === 'percent') return Math.floor(subtotal * appliedCoupon.discount / 100);     if (appliedCoupon.type === 'fixed') return subtotal >= 200000 ? appliedCoupon.discount : 0;     return 0;   };      const discount = calculateDiscount();   const totalAmount = subtotal + deliveryFee - discount;      // Apply coupon   const handleApplyCoupon = () => {     const found = MOCK_COUPONS.find(c => c.code.toLowerCase() === couponCode.toLowerCase());     if (found) {       setAppliedCoupon(found);       toast.success(✅ Áp dụng mã ${found.code} thành công!);       setShowCouponList(false);     } else {       toast.error('❌ Mã giảm giá không hợp lệ!');     }   };      const handleRemoveCoupon = () => {     setAppliedCoupon(null);     setCouponCode('');     toast.info('Đã xóa mã giảm giá');   };    const handlePlaceOrder = async () => {     if (!cartData || cartData.length === 0) {       toast.error("Giỏ hàng trống");       return;     }      const targetGroups = selectedRestaurantId       ? cartData.filter((g) => g.restaurant_id === selectedRestaurantId)       : cartData;      if (targetGroups.length === 0) {       toast.error("Không tìm thấy dữ liệu đặt hàng.");       return;     }      const group = targetGroups[0];     const orderPayload = {       orderData: {         user_id: Number(userInfos.id) || null,         restaurant_id: Number(group.restaurant_id),         user_name: userInfos.name,         user_phone: userInfos.phone,         delivery_address: userLocation.location,         notes: userInfos.note,         delivery_fee: deliveryFee,         total_amount: totalAmount,         payment_method: paymentMethod,       },       items: group.items.map((item) => ({         food_id: item.food_id,         food_name: item.food_name,         food_price: item.price,         quantity: item.quantity,       })),     };      if (paymentMethod === 'cash') {       try {         toast.info("Đang tạo đơn hàng...");                  const res = await fetch("http://localhost:5001/api/orders", {           method: "POST",           headers: { "Content-Type": "application/json" },           body: JSON.stringify(orderPayload),         });          if (!res.ok) throw new Error("Tạo đơn hàng thất bại");          const data = await res.json();         const orderCode = data?.data?.order_code;          try {           const cart = JSON.parse(localStorage.getItem("cart") || "{}");           const restaurantId = group.restaurant_id;           if (restaurantId && cart[restaurantId]) {             delete cart[restaurantId];             localStorage.setItem("cart", JSON.stringify(cart));             window.dispatchEvent(new Event("cart-updated"));           }         } catch (err) {           console.error("❌ Lỗi khi xóa cart:", err);         }          toast.success(✅ Đặt hàng thành công! Mã đơn: ${orderCode});                  setTimeout(() => {           router.push("/client/food-service/orders");         }, 1500);        } catch (err) {         console.error("❌ Lỗi tạo đơn COD:", err);         toast.error("Đặt hàng thất bại. Vui lòng thử lại!");       }     } else if (paymentMethod === 'card') {       if (!selectedBank) {         toast.error('Vui lòng chọn ngân hàng!');         setShowBankSelector(true);         return;       }              sessionStorage.setItem("pendingOrderPayload", JSON.stringify(orderPayload));       sessionStorage.setItem("selectedBank", JSON.stringify(selectedBank));              router.push(/client/food-service/payment?restaurantId=${group.restaurant_id});     } else {       toast.error("Phương thức thanh toán không hợp lệ!");     }   };    if (isLoading) {     return <div className="flex justify-center items-center h-screen">Đang tải...</div>;   }    if (cartData.length === 0) {     return <div className="flex justify-center items-center h-screen">Giỏ hàng trống</div>;   }    return (     <div className="min-h-screen bg-gray-50">       {/* Header */}       <div className="bg-white shadow-sm sticky top-0 z-10">         <div className="max-w-6xl mx-auto px-4 py-4">           <div className="flex items-center gap-4">             <button                onClick={() => window.history.back()}               className="p-2 hover:bg-gray-100 rounded-full transition-colors"             >               <ChevronLeft className="w-5 h-5" />             </button>             <h1 className="text-xl font-bold text-gray-800">Thanh toán</h1>           </div>         </div>       </div>        <div className="max-w-6xl mx-auto px-4 py-6">         <div className="grid lg:grid-cols-3 gap-6">           {/* ===== CỘT TRÁI - MAIN CONTENT ===== */}           <div className="lg:col-span-2 space-y-4">                          {/* ✅ Địa chỉ giao hàng - ĐÃ CẬP NHẬT TỪ CODE THỨ NHẤT */}             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">               <div className="flex items-center justify-between mb-4">                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">                   <MapPin className="w-5 h-5 text-green-600" />                   Địa chỉ giao hàng                 </h3>                  <button className="text-green-600 hover:text-green-700 p-2 hover:bg-green-50 rounded-lg transition-colors">                   <Pencil className="w-4 h-4" />                 </button>               </div>                              <div className="space-y-3">                 <div className="flex items-center gap-3">                   <User className="w-4 h-4 text-gray-500" />                   <span className="font-medium">{userInfos.name}</span>                 </div>                  <div className="flex items-center gap-3">                   <Phone className="w-4 h-4 text-gray-500" />                   <span>{userInfos.phone}</span>                 </div>                                  <div className="flex items-start gap-3">                   <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />                    <div className='w-full'>                     <p className="text-gray-800 mb-3">                       {userLocation.location}                     </p>                      <textarea                       maxLength={100}                       className="text-sm text-gray-600 mt-1 placeholder:text-gray-400 w-full sm:w-[375px] p-2 rounded border border-gray-300"                       placeholder="Ghi chú cho người giao hàng (Tối đa 100 ký tự)"                       value={userInfos.note}                       onChange={(e) => setUserInfos({ ...userInfos, note: e.target.value })}                     />                   </div>                 </div>               </div>             </div>              {/* 2️⃣ PAYMENT METHOD - ƯU TIÊN CAO */}             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">               <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">                 <CreditCard className="w-5 h-5 text-green-600" />                 Phương thức thanh toán               </h3>                              <div className="space-y-3">                 {/* CHUYỂN KHOẢN */}                 <label className={                   group relative overflow-hidden cursor-pointer block                   ${paymentMethod === 'card'                      ? 'ring-2 ring-green-500 shadow-md'                      : 'border border-gray-200 hover:border-green-300'                   }                   rounded-xl transition-all duration-200                 }>                   {paymentMethod === 'card' && (                     <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 opacity-50" />                   )}                                      <div className="relative p-4">                     <div className="flex items-start gap-3">                       <input                         type="radio"                         name="payment"                         value="card"                         checked={paymentMethod === 'card'}                         onChange={(e) => setPaymentMethod(e.target.value)}                         className="mt-0.5 w-4 h-4 text-green-600 cursor-pointer accent-green-600"                       />                        <div className="flex-1 space-y-3">                         <div className="flex items-center justify-between">                           <div className="flex items-center gap-2">                             <div className={p-1.5 rounded-lg transition-all ${                               paymentMethod === 'card'                                 ? 'bg-green-100 text-green-600'                                 : 'bg-gray-100 text-gray-600'                             }}>                               <CreditCard className="w-4 h-4" />                             </div>                                                          <div>                               <span className="font-semibold text-gray-800 text-sm">Chuyển khoản ngân hàng</span>                               {paymentMethod === 'card' && (                                 <span className="ml-2 px-1.5 py-0.5 bg-green-600 text-white text-xs rounded-full">                                   Đang chọn                                 </span>                               )}                             </div>                           </div>                         </div>                          {/* Bank Selector */}                         {paymentMethod === 'card' && (                           <div className="space-y-2 animate-fadeIn">                             {selectedBank ? (                               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-3 border border-green-200">                                 <div className="flex items-center justify-between">                                   <div className="flex items-center gap-2">                                     <span className="text-xl">{selectedBank.logo}</span>                                     <div>                                       <p className="font-semibold text-sm text-gray-800">{selectedBank.name}</p>                                       <p className="text-xs text-gray-600">{selectedBank.fullName}</p>                                     </div>                                   </div>                                   <button                                     onClick={() => setShowBankSelector(true)}                                     className="px-2 py-1 bg-white hover:bg-green-50 border border-green-300 rounded text-xs font-medium text-green-700"                                   >                                     Đổi                                   </button>                                 </div>                               </div>                             ) : (                               <button                                 onClick={() => setShowBankSelector(true)}                                 className="w-full p-3 border-2 border-dashed border-green-300 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all"                               >                                 <div className="flex items-center justify-center gap-2 text-green-700 text-sm font-medium">                                   <Building2 className="w-4 h-4" />                                   <span>Chọn ngân hàng</span>                                 </div>                               </button>                             )}                           </div>                         )}                       </div>                     </div>                   </div>                 </label>                  {/* TIỀN MẶT */}                 <label className={                   group relative overflow-hidden cursor-pointer block                   ${paymentMethod === 'cash'                      ? 'ring-2 ring-green-500 shadow-md'                      : 'border border-gray-200 hover:border-green-300'                   }                   rounded-xl transition-all duration-200                 }>                   {paymentMethod === 'cash' && (                     <div className="absolute inset-0 bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 opacity-50" />                   )}                                      <div className="relative p-4">                     <div className="flex items-center gap-3">                       <input                         type="radio"                         name="payment"                         value="cash"                         checked={paymentMethod === 'cash'}                         onChange={(e) => setPaymentMethod(e.target.value)}                         className="w-4 h-4 text-green-600 cursor-pointer accent-green-600"                       />                        <div className={p-1.5 rounded-lg transition-all ${                         paymentMethod === 'cash'                           ? 'bg-green-100 text-green-600'                           : 'bg-gray-100 text-gray-600'                       }}>                         <Wallet className="w-4 h-4" />                       </div>                                              <div className="flex-1 flex items-center justify-between">                         <div>                           <span className="font-semibold text-gray-800 text-sm">Tiền mặt (COD)</span>                           {paymentMethod === 'cash' && (                             <span className="ml-2 px-1.5 py-0.5 bg-green-600 text-white text-xs rounded-full">                               Đang chọn                             </span>                           )}                           <p className="text-xs text-gray-600 mt-0.5">Thanh toán khi nhận hàng</p>                         </div>                       </div>                     </div>                   </div>                 </label>               </div>             </div>           </div>            {/* ===== CỘT PHẢI - ĐƠN HÀNG CỦA BẠN (Gộp chi tiết + tóm tắt) ===== */}           <div className="lg:col-span-1">             <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 sticky top-24 space-y-4">               <h3 className="font-semibold text-gray-800 flex items-center gap-2 pb-3 border-b border-gray-100">                 <ShoppingBag className="w-5 h-5 text-green-600" />                 Đơn hàng của bạn               </h3>                              {/* Chi tiết món ăn */}               <div className="space-y-3 max-h-64 overflow-y-auto pr-2">                 {cartData.map((restaurant) => (                   <div key={restaurant.restaurant_id} className="space-y-2">                     <div className="flex items-center gap-2 pb-2 border-b border-gray-100">                       <img                         src={restaurant.restaurant_image}                         alt={restaurant.restaurant_name}                         className="w-8 h-8 rounded-lg object-cover border border-gray-200"                       />                       <div className="flex-1">                         <h4 className="font-semibold text-xs text-gray-800">{restaurant.restaurant_name}</h4>                         <p className="text-xs text-gray-500">{restaurant.items.length} món</p>                       </div>                     </div>                      <div className="space-y-2">                       {restaurant.items.map((item) => (                         <div key={${item.restaurant_id}-${item.food_id}} className="flex items-start justify-between gap-2">                           <div className="flex items-center gap-2 flex-1 min-w-0">                             <img                               src={item.image_url || ''}                               alt={item.food_name}                               className="w-10 h-10 rounded object-cover flex-shrink-0 border border-gray-100"                             />                             <div className="flex-1 min-w-0">                               <p className="text-sm text-gray-800 truncate">{item.food_name}</p>                               <p className="text-xs text-gray-500">x{item.quantity}</p>                             </div>                           </div>                           <span className="text-sm font-semibold text-green-600 flex-shrink-0">                             {(item.price * item.quantity).toLocaleString()}đ                           </span>                         </div>                       ))}                     </div>                   </div>                 ))}               </div>                              {/* Mã giảm giá */}               <div className="border-t border-gray-100 pt-4">                 <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">                   <Tag className="w-4 h-4 text-orange-600" />                   Mã giảm giá                 </h4>                                  {appliedCoupon ? (                   <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-300 rounded-lg p-3">                     <div className="flex items-center justify-between">                       <div className="flex items-center gap-2">                         <Gift className="w-4 h-4 text-orange-600" />                         <div>                           <p className="text-sm font-bold text-orange-900">{appliedCoupon.code}</p>                           <p className="text-xs text-orange-700">{appliedCoupon.desc}</p>                         </div>                       </div>                       <button                         onClick={handleRemoveCoupon}                         className="p-1 hover:bg-orange-100 rounded transition-colors"                       >                         <X className="w-4 h-4 text-orange-600" />                       </button>                     </div>                   </div>                 ) : (                   <div className="space-y-2">                     <div className="flex gap-2">                       <input                         type="text"                         placeholder="Nhập mã"                         value={couponCode}                         onChange={(e) => setCouponCode(e.target.value.toUpperCase())}                         className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"                       />                       <button                         onClick={handleApplyCoupon}                         className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors"                       >                         Áp dụng                       </button>                     </div>                                          <button                       onClick={() => setShowCouponList(!showCouponList)}                       className="text-xs text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"                     >                       <Gift className="w-3 h-3" />                       Xem mã khả dụng                     </button>                      {showCouponList && (                       <div className="space-y-1.5 animate-fadeIn">                         {MOCK_COUPONS.map(coupon => (                           <button                             key={coupon.code}                             onClick={() => {                               setCouponCode(coupon.code);                               handleApplyCoupon();                             }}                             className="w-full p-2 border border-orange-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-all text-left text-xs"                           >                             <p className="font-semibold text-gray-800">{coupon.code}</p>                             <p className="text-xs text-gray-600">{coupon.desc}</p>                           </button>                         ))}                       </div>                     )}                   </div>                 )}               </div>                {/* Tổng tiền */}               <div className="border-t border-gray-100 pt-4 space-y-2 text-sm">                 <div className="flex justify-between">                   <span className="text-gray-600">Tạm tính ({getTotalItems()} món)</span>                   <span className="font-medium">{subtotal.toLocaleString()}đ</span>                 </div>                                  <div className="flex justify-between">                   <span className="text-gray-600">Phí giao hàng</span>                   <span className="font-medium">{deliveryFee.toLocaleString()}đ</span>                 </div>                                  {discount > 0 && (                   <div className="flex justify-between text-orange-600">                     <span className="flex items-center gap-1">                       <Tag className="w-3 h-3" />                       Giảm giá                     </span>                     <span className="font-semibold">-{discount.toLocaleString()}đ</span>                   </div>                 )}                                  <div className="border-t border-gray-200 pt-3 flex justify-between items-center">                   <span className="font-semibold text-gray-800">Tổng cộng</span>                   <span className="font-bold text-2xl text-green-600">                     {totalAmount.toLocaleString()}đ                   </span>                 </div>               </div>                {/* Nút đặt hàng */}               <button                 onClick={handlePlaceOrder}                 className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-semibold text-lg transition-colors shadow-lg hover:shadow-xl"               >                 Đặt hàng • {totalAmount.toLocaleString()}đ               </button>                              <p className="text-xs text-gray-500 text-center">                 Bằng việc đặt hàng, bạn đồng ý với Điều khoản sử dụng               </p>             </div>           </div>         </div>       </div>              {/* Bank Selector Modal */}       {showBankSelector && (         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">           <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">             <div className="flex justify-between items-center mb-4">               <h2 className="text-xl font-semibold">Chọn ngân hàng</h2>               <button                 onClick={() => setShowBankSelector(false)}                 className="text-gray-500 hover:text-gray-700 text-2xl"               >                 ×               </button>             </div>              <div className="space-y-3">               {BANKS.map((bank) => (                 <button                   key={bank.id}                   onClick={() => {                     setSelectedBank(bank);                     setShowBankSelector(false);                   }}                   className={w-full p-4 border-2 rounded-lg text-left transition-all hover:border-green-500 hover:bg-green-50 ${                     selectedBank?.id === bank.id                       ? "border-green-500 bg-green-50"                       : "border-gray-200"                   }}                 >                   <div className="flex items-center justify-between">                     <div className="flex items-center gap-3">                       <span className="text-3xl">{bank.logo}</span>                       <div>                         <p className="font-semibold text-gray-900">{bank.name}</p>                         <p className="text-xs text-gray-500">{bank.fullName}</p>                       </div>                     </div>                     {selectedBank?.id === bank.id && (                       <Check className="w-6 h-6 text-green-600" />                     )}                   </div>                 </button>               ))}             </div>           </div>         </div>       )}     </div>   ); };
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import SupplierLayout from '../components/SupplierLayout';
+import { useSupplierAuth } from '../contexts/SupplierAuthContext';
+import SupplierAPI from '../lib/api';
+import type { SupplierStats, Order } from '../types';
+import {
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  ShoppingBag,
+  UtensilsCrossed,
+  Star,
+  Clock,
+  CheckCircle,
+} from 'lucide-react';
+
+export default function SupplierDashboard() {
+  const { restaurant, isLoading: authLoading } = useSupplierAuth();
+  const [stats, setStats] = useState<SupplierStats | null>(null);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Chờ auth loading xong trước
+    if (authLoading) {
+      return;
+    }
+
+    if (restaurant?.id) {
+      loadDashboardData();
+    } else {
+      // Restaurant chưa load hoặc không tồn tại
+      setLoading(false);
+    }
+  }, [restaurant, authLoading]);
+
+  const loadDashboardData = async () => {
+    if (!restaurant?.id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch statistics
+      const statsResponse = await SupplierAPI.getStatistics(restaurant.id);
+      if (statsResponse.success && statsResponse.data) {
+        setStats(statsResponse.data);
+      }
+
+      // Fetch recent orders
+      const ordersResponse = await SupplierAPI.getMyOrders(restaurant.id, 1, 5);
+      if (ordersResponse.success && ordersResponse.data) {
+        setRecentOrders(ordersResponse.data.orders || []);
+      }
+    } catch (err) {
+      setError('Không thể tải dữ liệu dashboard');
+      console.error('Dashboard load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(amount);
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getOrderStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; className: string }> = {
+      pending: { label: 'Chờ xác nhận', className: 'bg-yellow-100 text-yellow-800' },
+      confirmed: { label: 'Đã xác nhận', className: 'bg-blue-100 text-blue-800' },
+      processing: { label: 'Đang chuẩn bị', className: 'bg-purple-100 text-purple-800' },
+      delivering: { label: 'Đang giao', className: 'bg-indigo-100 text-indigo-800' },
+      delivered: { label: 'Đã giao', className: 'bg-green-100 text-green-800' },
+      cancelled: { label: 'Đã hủy', className: 'bg-red-100 text-red-800' },
+    };
+
+    const config = statusConfig[status] || { label: status, className: 'bg-gray-100 text-gray-800' };
+
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-medium ${config.className}`}>
+        {config.label}
+      </span>
+    );
+  };
+
+  if (loading) {
+    return (
+      <SupplierLayout title="Dashboard" subtitle="Tổng quan hoạt động nhà hàng">
+        <div className="flex flex-col items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </SupplierLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <SupplierLayout title="Dashboard" subtitle="Tổng quan hoạt động nhà hàng">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+          <div className="text-red-400 mb-4">⚠️</div>
+          <h3 className="text-lg font-semibold text-red-900 mb-2">Không thể tải dữ liệu</h3>
+          <p className="text-red-700 mb-4">{error}</p>
+          <button
+            onClick={loadDashboardData}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
+      </SupplierLayout>
+    );
+  }
+
+  return (
+    <SupplierLayout title="Dashboard" subtitle="Tổng quan hoạt động nhà hàng">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Total Revenue */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <DollarSign className="text-green-600" size={24} />
+            </div>
+          </div>
+          <h3 className="text-gray-600 text-sm mb-1">Tổng doanh thu</h3>
+          <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.revenue?.total || 0)}</p>
+          <p className="text-xs text-gray-500 mt-2">Hôm nay: {formatCurrency(stats?.revenue?.today || 0)}</p>
+        </div>
+
+        {/* Total Orders */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <ShoppingBag className="text-blue-600" size={24} />
+            </div>
+          </div>
+          <h3 className="text-gray-600 text-sm mb-1">Tổng đơn hàng</h3>
+          <p className="text-2xl font-bold text-gray-900">{stats?.orders?.total_orders || 0}</p>
+          <p className="text-xs text-gray-500 mt-2">Hôm nay: {stats?.orders?.today_orders || 0} đơn</p>
+        </div>
+
+        {/* Total Foods */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <UtensilsCrossed className="text-purple-600" size={24} />
+            </div>
+          </div>
+          <h3 className="text-gray-600 text-sm mb-1">Món ăn</h3>
+          <p className="text-2xl font-bold text-gray-900">{stats?.foods?.total_foods || 0}</p>
+          <p className="text-xs text-gray-500 mt-2">Đang bán: {stats?.foods?.available_foods || 0}</p>
+        </div>
+
+        {/* Average Rating */}
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-yellow-100 rounded-lg">
+              <Star className="text-yellow-600" size={24} />
+            </div>
+          </div>
+          <h3 className="text-gray-600 text-sm mb-1">Đánh giá trung bình</h3>
+          <p className="text-2xl font-bold text-gray-900">{Number(stats?.rating?.average || 0).toFixed(1)}</p>
+          <div className="flex gap-1 mt-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={`rating-star-${star}`}
+                size={12}
+                className={star <= (stats?.rating?.average || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Pending Orders Alert */}
+      {stats && stats.orders?.pending_orders > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-8 flex items-center gap-3">
+          <Clock className="text-orange-600" size={24} />
+          <div className="flex-1">
+            <h3 className="font-semibold text-orange-900">Có {stats.orders.pending_orders} đơn hàng chờ xác nhận</h3>
+            <p className="text-sm text-orange-700">Vui lòng xác nhận đơn hàng để khách hàng không phải chờ lâu</p>
+          </div>
+          <a
+            href="/supplier/orders?status=pending"
+            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+          >
+            Xem ngay
+          </a>
+        </div>
+      )}
+
+      {/* Recent Orders */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">Đơn hàng gần đây</h2>
+            <a
+              href="/supplier/orders"
+              className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+            >
+              Xem tất cả →
+            </a>
+          </div>
+        </div>
+
+        <div className="divide-y divide-gray-200">
+          {recentOrders.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <ShoppingBag className="mx-auto mb-3 text-gray-400" size={48} />
+              <p>Chưa có đơn hàng nào</p>
+            </div>
+          ) : (
+            recentOrders.map((order) => (
+              <div 
+                key={order.id || order.order_code} 
+                className="p-6 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 mb-1">
+                      #{order.order_code || 'N/A'}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {order.customer_name || 'Khách hàng'} • {order.customer_phone || 'N/A'}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {order.created_at ? formatDateTime(order.created_at) : 'N/A'}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-900 mb-2">
+                      {formatCurrency(order.total_amount || 0)}
+                    </p>
+                    {getOrderStatusBadge(order.order_status)}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <UtensilsCrossed size={16} />
+                  <span>{order.items?.length || 0} món</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <a
+          href="/supplier/orders?status=pending"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-yellow-100 rounded-lg">
+              <Clock className="text-yellow-600" size={24} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Đơn chờ xác nhận</h3>
+              <p className="text-sm text-gray-600">Xem và xác nhận đơn hàng mới</p>
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="/supplier/menu"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <UtensilsCrossed className="text-purple-600" size={24} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Quản lý thực đơn</h3>
+              <p className="text-sm text-gray-600">Thêm, sửa món ăn</p>
+            </div>
+          </div>
+        </a>
+
+        <a
+          href="/supplier/settings"
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <CheckCircle className="text-blue-600" size={24} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Cài đặt nhà hàng</h3>
+              <p className="text-sm text-gray-600">Cập nhật thông tin</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </SupplierLayout>
+  );
+}

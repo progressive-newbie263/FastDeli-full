@@ -86,7 +86,7 @@ export default function OrdersPage() {
   const getStatusBadge = (status: string) => {
     const config: Record<string, { label: string; className: string }> = {
       pending: { label: 'Chờ xác nhận', className: 'bg-yellow-100 text-yellow-800' },
-      confirmed: { label: 'Đã xác nhận', className: 'bg-blue-100 text-blue-800' },
+      // confirmed: { label: 'Đã xác nhận', className: 'bg-blue-100 text-blue-800' },
       processing: { label: 'Đang chuẩn bị', className: 'bg-purple-100 text-purple-800' },
       delivering: { label: 'Đang giao', className: 'bg-indigo-100 text-indigo-800' },
       delivered: { label: 'Đã giao', className: 'bg-green-100 text-green-800' },
@@ -119,7 +119,9 @@ export default function OrdersPage() {
               placeholder="Tìm mã đơn, tên khách hàng, SĐT..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 
+                rounded-lg focus:border-transparent text-black
+              "
             />
           </div>
 
@@ -129,11 +131,13 @@ export default function OrdersPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent appearance-none"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg
+               focus:border-transparent appearance-none text-black
+              "
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="pending">Chờ xác nhận</option>
-              <option value="processing">Đang chuẩn bị</option>
+              {/* <option value="processing">Đang chuẩn bị</option> */}
               <option value="delivering">Đang giao</option>
               <option value="delivered">Đã giao</option>
               <option value="cancelled">Đã hủy</option>
@@ -156,24 +160,36 @@ export default function OrdersPage() {
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredOrders.map((order) => (
-              <div key={order.order_id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div 
+                key={order.order_id || order.order_code} 
+                className="p-6 hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-bold text-gray-900">#{order.order_code}</h3>
+                      <h3 className="text-lg font-bold text-gray-900">#{order.order_code || 'N/A'}</h3>
                       {getStatusBadge(order.order_status)}
                     </div>
+
                     <p className="text-sm text-gray-600 mb-1">
-                      <strong>Khách hàng:</strong> {order.customer_name} • {order.customer_phone}
+                      <strong>Khách hàng:</strong> 
+                      {order.customer_name || 'Tên KH'} • {order.customer_phone || 'SĐT'}
                     </p>
+                    
                     <p className="text-sm text-gray-600 mb-1">
-                      <strong>Địa chỉ:</strong> {order.delivery_address}
+                      <strong>Địa chỉ:</strong> {order.delivery_address || 'Địa chỉ'}
                     </p>
-                    <p className="text-xs text-gray-500">{formatDateTime(order.created_at)}</p>
+
+                    <p className="text-xs text-gray-500">
+                      {order.created_at ? formatDateTime(order.created_at) : 'N/A'}
+                    </p>
                   </div>
 
                   <div className="text-right">
-                    <p className="text-xl font-bold text-gray-900 mb-2">{formatCurrency(order.total_amount)}</p>
+                    <p className="text-xl font-bold text-gray-900 mb-2">
+                      {formatCurrency(order.total_amount)}
+                    </p>
+                    
                     <button
                       onClick={() => setSelectedOrder(order)}
                       className="text-orange-600 hover:text-orange-700 text-sm font-medium flex items-center gap-1"
@@ -194,8 +210,8 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Quick actions */}
-                {order.order_status === 'pending' && (
-                  <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  {order.order_status === 'pending' && (
                     <button
                       onClick={() => handleStatusChange(order.order_id, 'confirmed')}
                       className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -203,6 +219,9 @@ export default function OrdersPage() {
                       <CheckCircle size={18} />
                       Xác nhận
                     </button>
+                  )}
+                  
+                  {order.order_status === 'pending' && (
                     <button
                       onClick={() => handleStatusChange(order.order_id, 'cancelled')}
                       className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -210,28 +229,29 @@ export default function OrdersPage() {
                       <XCircle size={18} />
                       Từ chối
                     </button>
-                  </div>
-                )}
+                  )}
 
-                {order.order_status === 'confirmed' && (
-                  <button
-                    onClick={() => handleStatusChange(order.order_id, 'processing')}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    <Clock size={18} />
-                    Bắt đầu chuẩn bị
-                  </button>
-                )}
+                  {order.order_status === 'processing' && (
+                    <button
+                      onClick={() => handleStatusChange(order.order_id, 'processing')}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      <Clock size={18} />
+                      Bắt đầu chuẩn bị
+                    </button>
+                  )}
 
-                {order.order_status === 'processing' && (
-                  <button
-                    onClick={() => handleStatusChange(order.order_id, 'delivering')}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <Truck size={18} />
-                    Bàn giao shipper
-                  </button>
-                )}
+                  {/* {order.order_status === 'confirmed' && (
+                    <button
+                      key="processing-action"
+                      onClick={() => handleStatusChange(order.order_id, 'delivering')}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      <Truck size={18} />
+                      Bàn giao shipper
+                    </button>
+                  )} */}
+                </div>
               </div>
             ))}
           </div>
@@ -256,14 +276,14 @@ export default function OrdersPage() {
 
             <div className="p-6">
               <div className="space-y-4">
-                <div>
+                <div key="customer-info">
                   <h3 className="font-semibold text-gray-900 mb-2">Thông tin khách hàng</h3>
                   <p className="text-sm text-gray-600">Tên: {selectedOrder.customer_name}</p>
                   <p className="text-sm text-gray-600">SĐT: {selectedOrder.customer_phone}</p>
                   <p className="text-sm text-gray-600">Địa chỉ: {selectedOrder.delivery_address}</p>
                 </div>
 
-                <div>
+                <div key="order-items">
                   <h3 className="font-semibold text-gray-900 mb-2">Món ăn</h3>
                   {selectedOrder.items?.map((item) => (
                     <div key={item.order_item_id} className="flex justify-between text-sm mb-2">
@@ -275,7 +295,7 @@ export default function OrdersPage() {
                   ))}
                 </div>
 
-                <div className="border-t pt-4">
+                <div key="order-total" className="border-t pt-4">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Tổng cộng:</span>
                     <span className="text-orange-600">{formatCurrency(selectedOrder.total_amount)}</span>
@@ -283,7 +303,7 @@ export default function OrdersPage() {
                 </div>
 
                 {selectedOrder.notes && (
-                  <div>
+                  <div key="order-notes">
                     <h3 className="font-semibold text-gray-900 mb-2">Ghi chú</h3>
                     <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
                   </div>

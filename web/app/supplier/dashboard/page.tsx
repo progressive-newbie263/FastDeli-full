@@ -83,7 +83,7 @@ export default function SupplierDashboard() {
   const getOrderStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
       pending: { label: 'Chờ xác nhận', className: 'bg-yellow-100 text-yellow-800' },
-      confirmed: { label: 'Đã xác nhận', className: 'bg-blue-100 text-blue-800' },
+      //confirmed: { label: 'Đã xác nhận', className: 'bg-blue-100 text-blue-800' },
       processing: { label: 'Đang chuẩn bị', className: 'bg-purple-100 text-purple-800' },
       delivering: { label: 'Đang giao', className: 'bg-indigo-100 text-indigo-800' },
       delivered: { label: 'Đã giao', className: 'bg-green-100 text-green-800' },
@@ -180,7 +180,7 @@ export default function SupplierDashboard() {
           <div className="flex gap-1 mt-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <Star
-                key={star}
+                key={`rating-star-${star}`}
                 size={12}
                 className={star <= (stats?.rating?.average || 0) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}
               />
@@ -228,18 +228,26 @@ export default function SupplierDashboard() {
             </div>
           ) : (
             recentOrders.map((order) => (
-              <div key={order.order_id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div 
+                key={order.order_id || order.order_code} 
+                className="p-6 hover:bg-gray-50 transition-colors"
+              >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">#{order.order_code}</h3>
+                    <h3 className="font-semibold text-gray-900 mb-1">#{order.order_code || ''}</h3>
+                    
                     <p className="text-sm text-gray-600">
-                      {order.customer_name} • {order.customer_phone}
+                      {order.customer_name || 'Tên khách hàng'} • {order.customer_phone || 'SĐT'}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">{formatDateTime(order.created_at)}</p>
+                    
+                    <p className="text-xs text-gray-500 mt-1">
+                      {order.created_at ? formatDateTime(order.created_at) : 'N/A'}
+                    </p>
                   </div>
+
                   <div className="text-right">
                     <p className="text-lg font-bold text-gray-900 mb-2">
-                      {formatCurrency(order.total_amount)}
+                      {formatCurrency(order.total_amount || 0)}
                     </p>
                     {getOrderStatusBadge(order.order_status)}
                   </div>

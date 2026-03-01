@@ -35,7 +35,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
-  // ✅ Fetch orders từ API
+  // Fetch orders từ API
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -60,7 +60,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         if (data?.success && Array.isArray(data.data)) {
           const now = dayjs();
           
-          // ✅ Auto-update trạng thái order theo logic:
+          // Auto-update trạng thái order:
           // 1. pending + payment_status='paid' → processing (sau khi thanh toán)
           // 2. processing → delivered (sau 30 phút)
           const processedData = data.data.map((order: Order) => {
@@ -71,12 +71,10 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
             if (order.order_status === 'pending' && order.payment_status === 'paid') {
               return { ...order, order_status: 'processing' };
             }
-
             // Nếu đơn processing > 30 phút → delivered
             if (order.order_status === 'processing' && minutesPassed >= 30) {
               return { ...order, order_status: 'delivered' };
             }
-
             return order;
           });
 
@@ -94,7 +92,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
     fetchOrders();
   }, []);
 
-  // ✅ Auto-refresh mỗi 5 phút để update trạng thái
+  // Auto-refresh mỗi 5 phút để update trạng thái
   useEffect(() => {
     const interval = setInterval(() => {
       const now = dayjs();
@@ -119,7 +117,8 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
     return () => clearInterval(interval);
   }, []);
 
-  // ✅ Hủy đơn hàng (chỉ trong 5 phút đầu)
+  // Hủy đơn hàng (trong 5 phút đầu)
+  // sau 5p hệ thống sẽ tự lưu đơn hàng vào hệ thống, không cho phép hủy nữa
   const cancelOrder = async (orderId: number) => {
     try {
       const res = await fetch(`http://localhost:5001/api/orders/${orderId}/cancel`, {
@@ -130,7 +129,6 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
 
       if (!res.ok) throw new Error('Không hủy được đơn hàng');
 
-      // ✅ Cập nhật UI ngay lập tức
       setOrders(prev =>
         prev.map(o => (o.id === orderId ? { ...o, order_status: 'cancelled' } : o))
       );
@@ -139,22 +137,18 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
     }
   };
 
-  // ✅ Filter orders theo status
-  const filteredOrders = filteredStatus === 'all' 
-    ? orders 
+  const filteredOrders = filteredStatus === 'all' ? orders 
     : orders.filter(order => order.order_status === filteredStatus);
 
-  // ✅ Pagination logic
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
 
-  // ✅ Reset page khi đổi filter
+  // set phân trang, mặc định là trang 1.
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredStatus]);
 
-  // ✅ UI Helper functions
   const getOrderStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -227,7 +221,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
     <div className="container mx-auto px-4 md:px-16 py-6 mt-20">
       <h1 className="text-3xl font-extrabold mb-6 text-gray-800">Lịch sử đặt hàng</h1>
 
-      {/* ✅ Bộ lọc trạng thái */}
+      {/* Bộ lọc trạng thái */}
       <div className="flex flex-wrap items-center justify-center gap-6 my-10 text-gray-600">
         {[
           { label: 'Tất cả', value: 'all' },
@@ -250,7 +244,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         ))}
       </div>
 
-      {/* ✅ Hiển thị tổng số đơn */}
+      {/* Hiển thị tổng số đơn */}
       <div className="text-center text-gray-600 mb-4">
         Tìm thấy <span className="font-bold text-blue-600">{filteredOrders.length}</span> đơn hàng
       </div>
@@ -261,7 +255,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         </p>
       ) : (
         <>
-          {/* ✅ Danh sách đơn hàng */}
+          {/* Danh sách đơn hàng */}
           <div className="grid gap-6 mb-10 justify-center">
             {paginatedOrders.map((order) => {
               const minutesPassed = dayjs().diff(dayjs(order.created_at), 'minute');
@@ -323,7 +317,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
                         }}
                         className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        🖼 Xem ảnh đơn hàng
+                        Xem ảnh đơn hàng
                       </button>
                     </div>
 
@@ -348,7 +342,6 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
                         )}
                       </div>
 
-                      {/* ✅ Nút hủy đơn (chỉ trong 5 phút) */}
                       {(order.order_status === 'pending' || order.order_status === 'processing') && (
                         <div className="flex flex-col items-end">
                           <button 
@@ -377,7 +370,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
             })}
           </div>
 
-          {/* ✅ Pagination */}
+          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center items-center gap-4 mb-20">
               <button

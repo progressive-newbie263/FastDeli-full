@@ -199,14 +199,13 @@ router.get('/recent-orders', async (req, res) => {
       `SELECT
          o.id as order_id,
          o.order_code,
-         (COALESCE(SUM(oi.quantity * oi.food_price), 0) + COALESCE(MAX(o.delivery_fee), 0))::float AS total_amount,
+         o.total_amount,
          o.order_status,
          o.payment_status,
          o.created_at,
          o.user_name as customer_name,
          r.name as restaurant_name
        FROM orders o
-       LEFT JOIN order_items oi ON oi.order_id = o.id
        LEFT JOIN restaurants r ON o.restaurant_id = r.id
        GROUP BY o.id, r.name
        ORDER BY o.created_at DESC

@@ -83,6 +83,11 @@ export interface SupplierStats {
     average: number;
     count: number;
   };
+  revenueChart?: Array<{
+    date: string;
+    revenue: number;
+    orders_count: number;
+  }>;
 }
 
 export interface FoodCategory {
@@ -103,6 +108,7 @@ export interface Promotion {
 export interface Review {
   review_id: number;
   customer_name: string;
+  customer_avatar?: string;
   rating: number;
   comment: string;
   created_at: string;

@@ -109,7 +109,7 @@ export default function MenuPage() {
             placeholder="Tìm kiếm món ăn..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-black"
           />
         </div>
 
@@ -306,7 +306,7 @@ function FoodFormModal({
               required
               value={formData.food_name}
               onChange={(e) => setFormData({ ...formData, food_name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
             />
           </div>
 
@@ -316,7 +316,7 @@ function FoodFormModal({
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
             />
           </div>
 
@@ -329,7 +329,7 @@ function FoodFormModal({
                 min="0"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
 
@@ -338,7 +338,7 @@ function FoodFormModal({
               <select
                 value={formData.category_id || ''}
                 onChange={(e) => setFormData({ ...formData, category_id: e.target.value ? Number(e.target.value) : undefined })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               >
                 <option value="">Chọn danh mục</option>
                 {categories.map((cat) => (
@@ -356,7 +356,7 @@ function FoodFormModal({
               type="url"
               value={formData.image_url}
               onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               placeholder="https://example.com/image.jpg"
             />
           </div>

@@ -283,7 +283,7 @@ export default function DashboardAdmin() {
                         {/* kiểm tra kĩ status đoạn này ? */}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           order.order_status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
-                          order.order_status === 'confirmed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                          // order.order_status === 'confirmed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
                           order.order_status === 'processing' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
                           order.order_status === 'delivering' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' :
                           order.order_status === 'delivered' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
@@ -292,7 +292,7 @@ export default function DashboardAdmin() {
                         }`}>
                           {
                             order.order_status === 'pending' ? 'Chờ xác nhận' :
-                            order.order_status === 'confirmed' ? 'Đã xác nhận' :
+                            // order.order_status === 'confirmed' ? 'Đã xác nhận' :
                             order.order_status === 'processing' ? 'Đang chuẩn bị' :
                             order.order_status === 'delivering' ? 'Đang giao' :
                             order.order_status === 'delivered' ? 'Đã giao' :

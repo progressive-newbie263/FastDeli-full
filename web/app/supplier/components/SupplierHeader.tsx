@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSupplierAuth } from '../contexts/SupplierAuthContext';
+import SupplierAPI from '../lib/api';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -14,6 +15,9 @@ import {
   Menu,
   X,
   Bell,
+  BarChart3,
+  Star,
+  User,
 } from 'lucide-react';
 
 export default function SupplierHeader() {
@@ -21,21 +25,38 @@ export default function SupplierHeader() {
   const router = useRouter();
   const { user, restaurant, logout } = useSupplierAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-  const [pendingOrders, setPendingOrders] = React.useState(8); // Mock pending orders
+  const [pendingOrders, setPendingOrders] = React.useState(0);
 
+  // Fetch real pending orders count from API
   React.useEffect(() => {
-    // Simulate real-time order updates
-    const interval = setInterval(() => {
-      setPendingOrders(prev => Math.max(0, prev + Math.floor(Math.random() * 3) - 1));
-    }, 30000);
+    const fetchPendingOrders = async () => {
+      if (!restaurant?.id) return;
+      
+      try {
+        const response = await SupplierAPI.getStatistics(restaurant.id);
+        if (response.success && response.data) {
+          setPendingOrders(response.data.orders.pending_orders || 0);
+        }
+      } catch (error) {
+        console.error('Failed to fetch pending orders:', error);
+      }
+    };
+
+    fetchPendingOrders();
+    
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchPendingOrders, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [restaurant?.id]);
 
   const navItems = [
-    { href: '/supplier/dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
-    { href: '/supplier/orders', icon: ShoppingBag, label: 'Đơn hàng', badge: pendingOrders },
-    { href: '/supplier/menu', icon: UtensilsCrossed, label: 'Thực đơn' },
-    { href: '/supplier/settings', icon: Settings, label: 'Cài đặt' },
+    { id: 'dashboard', href: '/supplier/dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
+    { id: 'orders', href: '/supplier/orders', icon: ShoppingBag, label: 'Đơn hàng', badge: pendingOrders },
+    { id: 'menu', href: '/supplier/menu', icon: UtensilsCrossed, label: 'Thực đơn' },
+    { id: 'analytics', href: '/supplier/analytics', icon: BarChart3, label: 'Phân tích' },
+    { id: 'reviews', href: '/supplier/reviews', icon: Star, label: 'Đánh giá' },
+    { id: 'profile', href: '/supplier/profile', icon: User, label: 'Hồ sơ' },
+    { id: 'settings', href: '/supplier/settings', icon: Settings, label: 'Cài đặt' },
   ];
 
   const isActive = (href: string) => pathname === href;
@@ -47,22 +68,22 @@ export default function SupplierHeader() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo & Restaurant name */}
-          <Link href="/supplier/dashboard" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+          <Link href="/supplier/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity flex-shrink-0">
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-2 rounded-xl shadow-sm">
-              <Store className="text-white" size={24} />
+              <Store className="text-white" size={20} />
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">FastDeli</h1>
-              <p className="text-xs text-gray-500 -mt-0.5">Supplier Portal</p>
+            <div className="hidden sm:block">
+              <h1 className="text-base font-bold text-gray-900 leading-tight">FastDeli</h1>
+              <p className="text-[10px] text-gray-500 -mt-0.5">Supplier</p>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center overflow-x-auto px-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -70,18 +91,18 @@ export default function SupplierHeader() {
               
               return (
                 <Link
-                  key={item.href}
+                  key={item.id}
                   href={item.href}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 ${
+                  className={`relative flex items-center gap-1.5 px-3 py-4 rounded-lg transition-all duration-200 whitespace-nowrap ${
                     active
                       ? 'bg-orange-50 text-orange-600 shadow-sm font-semibold'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                 >
-                  <Icon size={20} />
-                  <span className="text-sm">{item.label}</span>
+                  <Icon size={18} />
+                  <span className="text-sm hidden xl:inline">{item.label}</span>
                   {hasBadge && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center animate-pulse">
+                    <span className="absolute top-0 -right-1 h-5 w-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
                       {item.badge}
                     </span>
                   )}
@@ -91,7 +112,7 @@ export default function SupplierHeader() {
           </nav>
 
           {/* Right Section */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
             {/* Notifications */}
             <button className="relative p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors">
               <Bell size={20} />
@@ -102,23 +123,25 @@ export default function SupplierHeader() {
 
             {/* User info */}
             {user && (
-              <div className="flex items-center gap-3 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
                     alt={user.full_name}
-                    className="w-9 h-9 rounded-full object-cover border-2 border-orange-200"
+                    className="w-8 h-8 rounded-full object-cover border-2 border-orange-200"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-semibold shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white font-semibold shadow-sm text-sm">
                     {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'R'}
                   </div>
                 )}
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-900 max-w-[120px] truncate">
-                    {restaurant?.name || user.full_name}
-                  </span>
-                  <span className="text-xs text-gray-500">Chủ nhà hàng</span>
+                <div className="hidden xl:block">
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-gray-900 max-w-[100px] truncate">
+                      {restaurant?.name || user.full_name}
+                    </span>
+                    <span className="text-[10px] text-gray-500">Chủ nhà hàng</span>
+                  </div>
                 </div>
               </div>
             )}
@@ -126,17 +149,17 @@ export default function SupplierHeader() {
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               title="Đăng xuất"
             >
-              <LogOut size={20} />
+              <LogOut size={18} />
             </button>
           </div>
 
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors flex-shrink-0"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -144,7 +167,7 @@ export default function SupplierHeader() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-3 border-t border-gray-200 shadow-lg bg-white">
+          <div className="lg:hidden py-3 border-t border-gray-200 shadow-lg bg-white">
             {/* User Info Mobile */}
             {user && (
               <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg mb-3">
@@ -175,7 +198,7 @@ export default function SupplierHeader() {
                 
                 return (
                   <Link
-                    key={item.href}
+                    key={item.id}
                     href={item.href}
                     onClick={() => setMobileMenuOpen(false)}
                     className={`relative flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${

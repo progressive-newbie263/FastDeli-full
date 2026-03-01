@@ -73,7 +73,7 @@ export default function SettingsPage() {
                 required
                 value={formData.name || ''}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
 
@@ -83,7 +83,7 @@ export default function SettingsPage() {
                 rows={4}
                 value={formData.description || ''}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
                 placeholder="Giới thiệu về nhà hàng của bạn..."
               />
             </div>
@@ -94,7 +94,7 @@ export default function SettingsPage() {
                 type="url"
                 value={formData.image_url || ''}
                 onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
                 placeholder="https://example.com/restaurant.jpg"
               />
               {formData.image_url && (
@@ -125,7 +125,7 @@ export default function SettingsPage() {
                 required
                 value={formData.phone || ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
 
@@ -135,7 +135,7 @@ export default function SettingsPage() {
                 type="email"
                 value={formData.email || ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
           </div>
@@ -150,7 +150,7 @@ export default function SettingsPage() {
               required
               value={formData.address || ''}
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
             />
           </div>
         </div>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
                 type="time"
                 value={formData.opening_time || ''}
                 onChange={(e) => setFormData({ ...formData, opening_time: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
 
@@ -179,7 +179,7 @@ export default function SettingsPage() {
                 type="time"
                 value={formData.closing_time || ''}
                 onChange={(e) => setFormData({ ...formData, closing_time: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
           </div>
@@ -201,7 +201,7 @@ export default function SettingsPage() {
                 step="1000"
                 value={formData.delivery_fee || 0}
                 onChange={(e) => setFormData({ ...formData, delivery_fee: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
                 placeholder="15000"
               />
               <p className="text-xs text-gray-500 mt-1">Phí ship mặc định cho khách hàng</p>
@@ -214,7 +214,7 @@ export default function SettingsPage() {
                 value={formData.delivery_time || ''}
                 onChange={(e) => setFormData({ ...formData, delivery_time: e.target.value })}
                 placeholder="30-45 phút"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
 
@@ -225,7 +225,7 @@ export default function SettingsPage() {
                 min="0"
                 value={formData.min_order_value || 0}
                 onChange={(e) => setFormData({ ...formData, min_order_value: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
           </div>
@@ -246,7 +246,7 @@ export default function SettingsPage() {
                 step="0.000001"
                 value={formData.latitude || ''}
                 onChange={(e) => setFormData({ ...formData, latitude: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
                 placeholder="10.762622"
               />
             </div>
@@ -258,7 +258,7 @@ export default function SettingsPage() {
                 step="0.000001"
                 value={formData.longitude || ''}
                 onChange={(e) => setFormData({ ...formData, longitude: Number(e.target.value) })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
                 placeholder="106.660172"
               />
             </div>
