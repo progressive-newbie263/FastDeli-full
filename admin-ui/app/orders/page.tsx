@@ -1,4 +1,3 @@
-// admin-ui/app/orders/page.tsx - Cập nhật
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,12 +7,16 @@ import ApiService from '@/lib/api';
 import { formatCurrency, getRelativeTime } from '@/lib/utils';
 import type { Order } from '@/app/types/admin';
 
+// Define valid order status type
+type OrderStatus = 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | number | null>(null);
 
-  // Pagination state (client-side, giống /restaurants)
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -37,7 +40,10 @@ export default function OrdersPage() {
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
-      const filters = filter !== 'all' ? { order_status: filter } : {};
+      // Fix TypeScript error: Return undefined instead of empty object
+      const filters: Record<string, string> | undefined = 
+        filter !== 'all' ? { order_status: filter } : undefined;
+      
       const response = await ApiService.getOrders(filters);
       if (response.success) {
         const list: Order[] = Array.isArray(response.data) ? response.data : [];
@@ -60,21 +66,40 @@ export default function OrdersPage() {
     setCurrentPage(1);
   };
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  // Keep original field name from database
+  const handleStatusChange = async (id: string | number, newStatus: OrderStatus) => {
+    if (!id) {
+      console.error('Order ID is missing');
+      return;
+    }
+
     try {
-      const response = await ApiService.updateOrderStatus(id, newStatus);
+      setUpdatingOrderId(id);
+      const response = await ApiService.updateOrderStatus(String(id), newStatus);
+      
       if (response.success) {
-        fetchOrders(); // Refresh data
+        // Optimistic update - use correct field name
+        setOrders(prevOrders =>
+          prevOrders.map(order =>
+            order.id === id ? { ...order, order_status: newStatus } : order
+          )
+        );
+      } else {
+        alert(`Không thể cập nhật: ${response.message || 'Lỗi không xác định'}`);
+        fetchOrders();
       }
     } catch (error) {
       console.error('Error updating status:', error);
+      alert('Có lỗi xảy ra khi cập nhật trạng thái');
+      fetchOrders();
+    } finally {
+      setUpdatingOrderId(null);
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'yellow';
-      case 'confirmed': return 'blue';
       case 'processing': return 'blue';
       case 'delivering': return 'purple';
       case 'delivered': return 'green';
@@ -86,7 +111,6 @@ export default function OrdersPage() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending': return 'Chờ xử lý';
-      case 'confirmed': return 'Đã xác nhận';
       case 'processing': return 'Đang chuẩn bị';
       case 'delivering': return 'Đang giao';
       case 'delivered': return 'Hoàn thành';
@@ -97,6 +121,15 @@ export default function OrdersPage() {
 
   const pagedOrders = orders.slice((currentPage - 1) * perPage, currentPage * perPage);
 
+  const statusFilters: Array<{ value: OrderStatus | 'all'; label: string }> = [
+    { value: 'all', label: 'Tất cả' },
+    { value: 'pending', label: 'Chờ xử lý' },
+    { value: 'processing', label: 'Đang chuẩn bị' },
+    { value: 'delivering', label: 'Đang giao' },
+    { value: 'delivered', label: 'Hoàn thành' },
+    { value: 'cancelled', label: 'Đã hủy' },
+  ];
+
   return (
     <AdminLayout 
       title="Quản lý đơn hàng" 
@@ -105,25 +138,24 @@ export default function OrdersPage() {
       {/* Filters */}
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex gap-2 flex-wrap">
-          {['all', 'pending', 'confirmed', 'processing', 'delivering', 'delivered', 'cancelled'].map((status) => (
+          {statusFilters.map((statusFilter) => (
             <button
-              key={status}
+              key={statusFilter.value}
               onClick={() => {
-                setFilter(status);
+                setFilter(statusFilter.value);
                 setCurrentPage(1);
               }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === status
+                filter === statusFilter.value
                   ? 'bg-primary-600 text-white'
                   : 'bg-white dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/15 border border-gray-200 dark:border-white/10'
               }`}
             >
-              {status === 'all' ? 'Tất cả' : getStatusText(status)}
+              {statusFilter.label}
             </button>
           ))}
         </div>
 
-        {/* Items per page selector */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-300">Hiển thị:</span>
           <select
@@ -182,80 +214,87 @@ export default function OrdersPage() {
                   </td>
                 </tr>
               ) : (
-                pagedOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        #{order.order_code}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 dark:text-gray-100">{order.user_name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{order.user_phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {formatCurrency(order.total_amount)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusBadge 
-                        status={order.order_status}
-                        color={getStatusColor(order.order_status)}
-                      >
-                        {getStatusText(order.order_status)}
-                      </StatusBadge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusBadge 
-                        status={order.payment_status}
-                        color={
-                          order.payment_status === 'paid' ? 'green' : 
-                          order.payment_status === 'refunded' ? 'gray' : 'yellow'
-                        }
-                      >
-                        {
-                          order.payment_status === 'pending' ? 'Chờ thanh toán' :
-                          order.payment_status === 'paid' ? 'Đã thanh toán' : 'Đã hoàn tiền'
-                        }
-                      </StatusBadge>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {getRelativeTime(order.created_at)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
-                        {order.order_status === 'pending' && (
-                          <button
-                            onClick={() => handleStatusChange(order.id, 'confirmed')}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                pagedOrders.map((order) => {
+                  const isUpdating = updatingOrderId === order.id;
+                  
+                  return (
+                    <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          #{order.order_code}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-gray-100">{order.user_name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{order.user_phone}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {formatCurrency(order.total_amount)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge 
+                          status={order.order_status}
+                          color={getStatusColor(order.order_status)}
+                        >
+                          {getStatusText(order.order_status)}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <StatusBadge 
+                          status={order.payment_status}
+                          color={
+                            order.payment_status === 'paid' ? 'green' : 
+                            order.payment_status === 'refunded' ? 'gray' : 'yellow'
+                          }
+                        >
+                          {
+                            order.payment_status === 'pending' ? 'Chờ thanh toán' :
+                            order.payment_status === 'paid' ? 'Đã thanh toán' : 'Đã hoàn tiền'
+                          }
+                        </StatusBadge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        {getRelativeTime(order.created_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex gap-2">
+                          {order.order_status === 'pending' && (
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'processing')}
+                              disabled={isUpdating}
+                              className={`text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 ${
+                                isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {isUpdating ? 'Đang xử lý...' : 'Xác nhận'}
+                            </button>
+                          )}
+                          {order.order_status === 'processing' && (
+                            <button
+                              onClick={() => handleStatusChange(order.id, 'delivering')}
+                              disabled={isUpdating}
+                              className={`text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 ${
+                                isUpdating ? 'opacity-50 cursor-not-allowed' : ''
+                              }`}
+                            >
+                              {isUpdating ? 'Đang xử lý...' : 'Giao hàng'}
+                            </button>
+                          )}
+                          <button 
+                            className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100"
+                            onClick={() => {
+                              console.log('View order detail:', order.id);
+                            }}
                           >
-                            Xác nhận
+                            Chi tiết
                           </button>
-                        )}
-                        {order.order_status === 'confirmed' && (
-                          <button
-                            onClick={() => handleStatusChange(order.id, 'processing')}
-                            className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
-                          >
-                            Chuẩn bị
-                          </button>
-                        )}
-                        {order.order_status === 'processing' && (
-                          <button
-                            onClick={() => handleStatusChange(order.id, 'delivering')}
-                            className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300"
-                          >
-                            Giao hàng
-                          </button>
-                        )}
-                        <button className="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">
-                          Chi tiết
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
