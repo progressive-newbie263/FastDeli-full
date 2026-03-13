@@ -10,8 +10,9 @@ const supplierAuth = (req, res, next) => {
     // Lấy token từ header - hỗ trợ nhiều format
     let token = req.headers.authorization || req.header('Authorization');
     
+    // tạm thời ẩn đi log này cho đỡ chiếm terminal
     console.log('[SupplierAuth] Request:', req.method, req.path);
-    console.log('[SupplierAuth] Token detected:', token ? 'YES (' + token.substring(0, 10) + '...)' : 'NO');
+    //console.log('[SupplierAuth] Token detected:', token ? 'YES (' + token.substring(0, 10) + '...)' : 'NO');
     
     if (!token) {
       return res.status(401).json({
@@ -27,7 +28,7 @@ const supplierAuth = (req, res, next) => {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    console.log('[SupplierAuth] Decoded:', decoded);
+    //console.log('[SupplierAuth] Decoded:', decoded);
     
     // Kiểm tra role
     if (decoded.role !== 'restaurant_owner') {

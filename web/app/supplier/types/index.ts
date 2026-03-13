@@ -38,6 +38,19 @@ export interface Food {
   is_available: boolean;
   created_at: string;
   updated_at?: string;
+  nutrition?: FoodNutrition;
+}
+
+export interface FoodNutrition {
+  nutrition_id?: number;
+  food_id: number;
+  serving_size?: string;       // "100g", "1 suất", "1 tô"
+  calories?: number;           // kcal - Năng lượng
+  protein?: number;            // g - Chất đạm
+  fat?: number;                // g - Chất béo
+  sugar?: number;              // g - Đường
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Order {
@@ -47,6 +60,11 @@ export interface Order {
   customer_phone: string;
   delivery_address: string;
   total_amount: number;
+  original_total?: number;
+  discount_amount?: number;
+  delivery_fee?: number;
+  coupon_code?: string;
+  coupon_id?: number | null;
   order_status: 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
   payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
   payment_method: string;

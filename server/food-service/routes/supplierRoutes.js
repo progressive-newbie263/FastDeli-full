@@ -13,7 +13,11 @@ const {
   deleteFood,
   toggleFoodAvailability,
   updateRestaurant,
-  getReviews
+  getReviews,
+  getFoodNutrition,
+  upsertFoodNutrition,
+  deleteFoodNutrition,
+  calculateNutritionFromName
 } = require('../controllers/supplierController');
 
 /*
@@ -104,6 +108,34 @@ router.delete('/foods/:foodId',
 router.patch('/foods/:foodId/availability', 
   supplierAuth, 
   toggleFoodAvailability
+);
+
+// ======================
+// NUTRITION ROUTES
+// ======================
+
+// Tính tự động nutrition từ tên món ăn
+router.post('/foods/calculate-nutrition',
+  supplierAuth,
+  calculateNutritionFromName
+);
+
+// Get nutrition info của món ăn
+router.get('/foods/:foodId/nutrition',
+  supplierAuth,
+  getFoodNutrition
+);
+
+// Tạo hoặc cập nhật nutrition info
+router.post('/foods/:foodId/nutrition',
+  supplierAuth,
+  upsertFoodNutrition
+);
+
+// Xóa nutrition info
+router.delete('/foods/:foodId/nutrition',
+  supplierAuth,
+  deleteFoodNutrition
 );
 
 module.exports = router;

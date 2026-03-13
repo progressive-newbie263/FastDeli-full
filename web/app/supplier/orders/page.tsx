@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import SupplierLayout from '../components/SupplierLayout';
 import { useSupplierAuth } from '../contexts/SupplierAuthContext';
 import SupplierAPI from '../lib/api';
 import type { Order } from '../types';
-import { Search, Filter, Eye, CheckCircle, XCircle, Clock, Truck } from 'lucide-react';
+import { Search, Filter, Eye, CheckCircle, XCircle, Clock, Truck, X } from 'lucide-react';
 
 export default function OrdersPage() {
   const { restaurant, isLoading: authLoading } = useSupplierAuth();
@@ -28,6 +28,18 @@ export default function OrdersPage() {
       setLoading(false);
     }
   }, [restaurant, selectedStatus, authLoading]);
+
+  useEffect(() => {
+    if (selectedOrder) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedOrder]);
 
   const loadOrders = async () => {
     if (!restaurant?.id) return;
@@ -78,6 +90,33 @@ export default function OrdersPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
+
+  const getSafeMoney = (value: unknown) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getDiscountAmount = (order: Order) => {
+    return Math.max(getSafeMoney(order.discount_amount), 0);
+  };
+
+  const getOriginalTotal = (order: Order) => {
+    const original = getSafeMoney(order.original_total);
+    const finalTotal = getSafeMoney(order.total_amount);
+    if (original > 0) return original;
+    return finalTotal + getDiscountAmount(order);
+  };
+
+  const getItemSubtotal = useCallback((item: Order['items'][number]) => {
+    const subtotal = Number(item?.subtotal);
+    if (Number.isFinite(subtotal)) {
+      return subtotal;
+    }
+
+    const price = Number(item?.food_price) || 0;
+    const quantity = Number(item?.quantity) || 0;
+    return price * quantity;
+  }, []);
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString('vi-VN');
@@ -186,9 +225,20 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="text-right">
+                    {getDiscountAmount(order) > 0 && (
+                      <p className="text-xs text-gray-400 line-through mb-0.5">
+                        {formatCurrency(getOriginalTotal(order))}
+                      </p>
+                    )}
                     <p className="text-xl font-bold text-gray-900 mb-2">
-                      {formatCurrency(order.total_amount)}
+                      {formatCurrency(getSafeMoney(order.total_amount))}
                     </p>
+                    {getDiscountAmount(order) > 0 && (
+                      <p className="text-sm text-green-600 font-medium mb-2">
+                        -{formatCurrency(getDiscountAmount(order))}
+                        {order.coupon_code ? ` (${order.coupon_code})` : ''}
+                      </p>
+                    )}
                     
                     <button
                       onClick={() => setSelectedOrder(order)}
@@ -260,68 +310,150 @@ export default function OrdersPage() {
 
       {/* Order detail modal */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-900">Chi tiết đơn hàng #{selectedOrder.order_code}</h2>
-                <button
-                  onClick={() => setSelectedOrder(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="space-y-4">
-                <div key="customer-info">
-                  <h3 className="font-semibold text-gray-900 mb-2">Thông tin khách hàng</h3>
-                  <p className="text-sm text-gray-600">Tên: {selectedOrder.customer_name}</p>
-                  <p className="text-sm text-gray-600">SĐT: {selectedOrder.customer_phone}</p>
-                  <p className="text-sm text-gray-600">Địa chỉ: {selectedOrder.delivery_address}</p>
-                </div>
-
-                <div key="order-items">
-                  <h3 className="font-semibold text-gray-900 mb-2">Món ăn</h3>
-                  {selectedOrder.items?.map((item) => (
-                    <div key={item.order_item_id} className="flex justify-between text-sm mb-2">
-                      <span>
-                        {item.quantity}x {item.food_name}
-                      </span>
-                      <span className="font-medium">{formatCurrency(item.subtotal)}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div key="order-total" className="border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Tổng cộng:</span>
-                    <span className="text-orange-600">{formatCurrency(selectedOrder.total_amount)}</span>
-                  </div>
-                </div>
-
-                {selectedOrder.notes && (
-                  <div key="order-notes">
-                    <h3 className="font-semibold text-gray-900 mb-2">Ghi chú</h3>
-                    <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-200 bg-gray-50">
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          formatCurrency={formatCurrency}
+          getItemSubtotal={getItemSubtotal}
+        />
       )}
     </SupplierLayout>
+  );
+}
+
+function OrderDetailModal({
+  order,
+  onClose,
+  formatCurrency,
+  getItemSubtotal,
+}: {
+  order: Order;
+  onClose: () => void;
+  formatCurrency: (amount: number) => string;
+  getItemSubtotal: (item: Order['items'][number]) => number;
+}) {
+  const [visible, setVisible] = useState(false);
+
+  const getSafeMoney = (value: unknown) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const discountAmount = Math.max(getSafeMoney(order.discount_amount), 0);
+  const finalTotal = getSafeMoney(order.total_amount);
+  const originalTotalRaw = getSafeMoney(order.original_total);
+  const originalTotal = originalTotalRaw > 0 ? originalTotalRaw : finalTotal + discountAmount;
+  const deliveryFee = getSafeMoney(order.delivery_fee);
+  const itemsTotal = Math.max(originalTotal - deliveryFee, 0);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  const handleClose = () => {
+    setVisible(false);
+    setTimeout(onClose, 220);
+  };
+
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      handleClose();
+    }
+  };
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-200 ${
+        visible ? 'backdrop-blur-sm bg-black/40' : 'backdrop-blur-none bg-black/0'
+      }`}
+      onClick={handleBackdropClick}
+    >
+      <div
+        className={`bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto transition-all duration-220 ${
+          visible ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
+        }`}
+        style={{ transition: 'opacity 220ms ease, transform 220ms ease' }}
+      >
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Chi tiết đơn hàng #{order.order_code}</h2>
+            <p className="text-sm text-gray-400 mt-0.5">{order.created_at ? new Date(order.created_at).toLocaleString('vi-VN') : ''}</p>
+          </div>
+          <button
+            onClick={handleClose}
+            className="p-2 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <h3 className="font-semibold text-gray-900 mb-3">Thông tin khách hàng</h3>
+            <div className="space-y-1.5 text-sm text-gray-600">
+              <p>Tên: {order.customer_name}</p>
+              <p>SĐT: {order.customer_phone}</p>
+              <p>Địa chỉ: {order.delivery_address}</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-3">Món ăn</h3>
+            <div className="space-y-2">
+              {order.items?.map((item) => (
+                <div
+                  key={item.order_item_id}
+                  className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm"
+                >
+                  <span className="text-gray-700">
+                    {item.quantity}x {item.food_name}
+                  </span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(getItemSubtotal(item))}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-4 space-y-2">
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Tạm tính món:</span>
+              <span>{formatCurrency(itemsTotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>Phí giao hàng:</span>
+              <span>{formatCurrency(deliveryFee)}</span>
+            </div>
+            {discountAmount > 0 && (
+              <div className="flex items-center justify-between text-sm text-green-600 font-medium">
+                <span>
+                  Giảm giá{order.coupon_code ? ` (${order.coupon_code})` : ''}:
+                </span>
+                <span>-{formatCurrency(discountAmount)}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-2xl font-bold pt-1">
+              <span className="text-gray-900">Tổng cộng:</span>
+              <span className="text-orange-600">{formatCurrency(finalTotal)}</span>
+            </div>
+          </div>
+
+          {order.notes && (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Ghi chú</h3>
+              <p className="text-sm text-gray-600">{order.notes}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+          <button
+            onClick={handleClose}
+            className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-medium"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

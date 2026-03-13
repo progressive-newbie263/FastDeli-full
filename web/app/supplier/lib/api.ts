@@ -16,6 +16,7 @@ import type {
   Promotion,
   Review,
   ApiResponse,
+  FoodNutrition,
 } from '../types';
 import { MOCK_RESTAURANT, MOCK_FOODS, MOCK_ORDERS, MOCK_STATS, MOCK_CATEGORIES } from './mockData';
 
@@ -590,6 +591,130 @@ class SupplierAPI {
       return {
         success: false,
         message: 'Không thể lấy đánh giá',
+      };
+    }
+  }
+
+  // ============================================
+  // NUTRITION APIs
+  // ============================================
+
+  /**
+   * Lấy thông tin dinh dưỡng của món ăn
+   */
+  static async getFoodNutrition(foodId: number): Promise<ApiResponse<FoodNutrition>> {
+    try {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}/nutrition`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể lấy thông tin dinh dưỡng',
+      };
+    }
+  }
+
+  /**
+   * Tạo hoặc cập nhật thông tin dinh dưỡng
+   */
+  static async upsertFoodNutrition(foodId: number, nutritionData: Partial<FoodNutrition>): Promise<ApiResponse<FoodNutrition>> {
+    try {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}/nutrition`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(nutritionData),
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể lưu thông tin dinh dưỡng',
+      };
+    }
+  }
+
+  /**
+   * Xóa thông tin dinh dưỡng
+   */
+  static async deleteFoodNutrition(foodId: number): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}/nutrition`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(),
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể xóa thông tin dinh dưỡng',
+      };
+    }
+  }
+
+  /**
+   * Tính tự động nutrition từ tên món ăn (Vietnamese Food DB)
+   */
+  static async calculateNutritionFromName(foodName: string): Promise<ApiResponse<Partial<FoodNutrition>>> {
+    try {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/calculate-nutrition`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ foodName }),
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể tính toán dinh dưỡng',
+      };
+    }
+  }
+
+  // ============================================
+  // UPLOAD APIs
+  // ============================================
+
+  /**
+   * Upload ảnh món ăn
+   */
+  static async uploadFoodImage(foodId: number, imageFile: File): Promise<ApiResponse<{url: string}>> {
+    try {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+
+      const response = await fetch(`${FOOD_API_URL}/api/food-upload/foods/${foodId}`, {
+        method: 'POST',
+        body: formData,
+        // Không set Content-Type header, browser sẽ tự động set với boundary
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể upload ảnh',
+      };
+    }
+  }
+
+  /**
+   * Upload ảnh nhà hàng
+   */
+  static async uploadRestaurantImage(restaurantId: number, imageFile: File): Promise<ApiResponse<{url: string}>> {
+    try {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+
+      const response = await fetch(`${FOOD_API_URL}/api/food-upload/restaurants/${restaurantId}`, {
+        method: 'POST',
+        body: formData,
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể upload ảnh',
       };
     }
   }

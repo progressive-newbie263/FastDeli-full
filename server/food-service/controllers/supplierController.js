@@ -1,4 +1,5 @@
 const { foodPool, sharedPool } = require('../config/db');
+const { getNutritionFromUSDA } = require('../utils/usdaAPI');
 
 const buildUsersMap = async (userIds) => {
   if (!userIds.length) {
@@ -911,6 +912,184 @@ const getReviews = async (req, res) => {
   }
 };
 
+/**
+ * Lấy thông tin dinh dưỡng của món ăn
+ * GET /api/supplier/foods/:foodId/nutrition
+ */
+const getFoodNutrition = async (req, res) => {
+  try {
+    const { foodId } = req.params;
+
+    const result = await foodPool.query(
+      `SELECT fn.*, f.food_name, f.restaurant_id
+       FROM food_nutrition fn
+       INNER JOIN foods f ON f.food_id = fn.food_id
+       WHERE fn.food_id = $1`,
+      [foodId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'Món ăn chưa có thông tin dinh dưỡng'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Get food nutrition error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy thông tin dinh dưỡng.'
+    });
+  }
+};
+
+/**
+ * Tạo hoặc cập nhật thông tin dinh dưỡng của món ăn (Simple version - 4 fields)
+ * POST /api/supplier/foods/:foodId/nutrition
+ * Body: { calories, protein, fat, sugar, serving_size }
+ */
+const upsertFoodNutrition = async (req, res) => {
+  try {
+    const { foodId } = req.params;
+    const {
+      calories,
+      protein,
+      fat,
+      sugar,
+      serving_size
+    } = req.body;
+
+    // Kiểm tra food có tồn tại không
+    const foodCheck = await foodPool.query(
+      'SELECT food_id, restaurant_id FROM foods WHERE food_id = $1',
+      [foodId]
+    );
+
+    if (foodCheck.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy món ăn'
+      });
+    }
+
+    // Upsert nutrition info (INSERT ... ON CONFLICT UPDATE)
+    const result = await foodPool.query(
+      `INSERT INTO food_nutrition (
+        food_id, calories, protein, fat, sugar, serving_size
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      ON CONFLICT (food_id)
+      DO UPDATE SET
+        calories = EXCLUDED.calories,
+        protein = EXCLUDED.protein,
+        fat = EXCLUDED.fat,
+        sugar = EXCLUDED.sugar,
+        serving_size = EXCLUDED.serving_size,
+        updated_at = CURRENT_TIMESTAMP
+      RETURNING *`,
+      [foodId, calories, protein, fat, sugar, serving_size]
+    );
+
+    res.json({
+      success: true,
+      message: 'Cập nhật thông tin dinh dưỡng thành công',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Upsert food nutrition error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lưu thông tin dinh dưỡng.'
+    });
+  }
+};
+
+/**
+ * Xóa thông tin dinh dưỡng của món ăn
+ * DELETE /api/supplier/foods/:foodId/nutrition
+ */
+const deleteFoodNutrition = async (req, res) => {
+  try {
+    const { foodId } = req.params;
+
+    await foodPool.query(
+      'DELETE FROM food_nutrition WHERE food_id = $1',
+      [foodId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Xóa thông tin dinh dưỡng thành công'
+    });
+  } catch (error) {
+    console.error('Delete food nutrition error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi xóa thông tin dinh dưỡng.'
+    });
+  }
+};
+
+/**
+ * Tự động tính nutrition từ tên món ăn (dùng USDA API)
+ * POST /api/supplier/foods/calculate-nutrition
+ * Body: { foodName: string }
+ */
+const calculateNutritionFromName = async (req, res) => {
+  try {
+    const { foodName } = req.body;
+
+    if (!foodName) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng nhập tên món ăn'
+      });
+    }
+
+    console.log(`🔍 [USDA] Tìm kiếm nutrition cho: "${foodName}"`);
+
+    // Call USDA API to get nutrition data
+    const nutritionData = await getNutritionFromUSDA(foodName);
+
+    if (!nutritionData) {
+      return res.json({
+        success: false,
+        message: `Không tìm thấy "${foodName}" trong USDA database.`,
+        data: {
+          suggestion: 'Vui lòng nhập thủ công hoặc thử tên món bằng tiếng Anh (e.g., "Chicken Rice", "Pho", "Pizza")'
+        }
+      });
+    }
+
+    console.log(`✅ [USDA] Tìm thấy: ${nutritionData.food_name}`);
+
+    res.json({
+      success: true,
+      message: `Tìm thấy thông tin dinh dưỡng cho "${nutritionData.food_name}"`,
+      data: {
+        food_name: nutritionData.food_name,
+        serving_size: nutritionData.serving_size,
+        calories: nutritionData.calories,
+        protein: nutritionData.protein,
+        fat: nutritionData.fat,
+        sugar: nutritionData.sugar,
+        source: 'USDA FoodData Central'
+      }
+    });
+  } catch (error) {
+    console.error('Calculate nutrition error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Lỗi khi tính toán dinh dưỡng từ USDA API'
+    });
+  }
+};
+
 module.exports = {
   getMyRestaurant,
   getStatistics,
@@ -923,5 +1102,9 @@ module.exports = {
   deleteFood,
   toggleFoodAvailability,
   updateRestaurant,
-  getReviews
+  getReviews,
+  getFoodNutrition,
+  upsertFoodNutrition,
+  deleteFoodNutrition,
+  calculateNutritionFromName
 };
