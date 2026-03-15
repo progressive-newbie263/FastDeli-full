@@ -51,7 +51,7 @@ const CartClient = () => {
           if (!resFoods.success || !resInfo.success) continue;
 
           const foods: Food[] = Array.isArray(resFoods?.data) ? (resFoods.data as Food[]) : [];
-          const restaurantName: string = resInfo.data.name; // ✅ Đổi từ restaurant_name -> name
+          const restaurantName: string = resInfo.data.name; // Đổi từ restaurant_name -> name
           const restaurantImage: string = resInfo.data.image_url || 'https://via.placeholder.com/80';
           const storedItems = parsedCart[restaurantId];
           const items: CartItem[] = [];

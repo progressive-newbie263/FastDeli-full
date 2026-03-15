@@ -162,7 +162,7 @@ Danh sach cac api endpoint dang co (dan vao terminal):
 
 
 -----------------------------------------------------------------------------
-------------------------------GITPUSH, 12-1-2025-----------------------------
+------------------------------GITPUSH, 12-1-2026-----------------------------
 
 * push của 12-1 là 1 push lớn. Nó ảnh hưởng nhiều đến các trang admin-ui và supplier
 * Rất nhiều api sẽ được copilot gen (nó khó với trình mình hiện tại -_-)
@@ -179,7 +179,7 @@ Danh sach cac api endpoint dang co (dan vao terminal):
 
 
 -----------------------------------------------------------------------------
-------------------------------GITPUSH, 15-1-2025-----------------------------
+------------------------------GITPUSH, 15-1-2026-----------------------------
 
 * SUPPLIER PORTAL - PHASE 1 (BACKEND & FLOW)
 * Định hướng: Cải thiện hạ tầng Backend cho chủ nhà hàng (Supplier). Tích hợp luồng Auth.
@@ -247,13 +247,33 @@ Danh sach cac api endpoint dang co (dan vao terminal):
 
 
 -------------------------------------------------------------------------------------
-------------------------------GITPUSH + NOTE, 09-02-2025-----------------------------
+------------------------------GITPUSH + NOTE, 09-02-2026-----------------------------
 
 1.  đã làm lại giao diện và chuẩn bị implement tính năng coupon code giảm giá vào hệ thống. Trước hết, việc đầu tiên cần làm sẽ là "thay đổi code trang PaymentClient.tsx" để nó cập nhật "coupon" vào đó. Hiện tại order truyền đúng rồi, tuy nhiên nó tự động trừ tiền từ coupon, bởi lẽ hệ thống + database còn đang chắp vá chưa vào đâu. Ưu tiên hàng đầu sẽ là, ngay lập tức update database, mục đơn hàng, thêm 1 cột "coupon" hay gì gì đó cùng nghĩa vào database. Sau đó, update code trang PaymentClient, để thành công thêm tính năng coupon trong hệ thống. Ưu tiên là để mặc định/default các order đã có hiện tại là ko sử dụng coupon, cũng như đảm bảo có trường "ko sử dụng" lưu vào db.
 
 
 
 -------------------------------------------------------------------------------------
-------------------------------GITPUSH + NOTE, 25-02-2025-----------------------------
+------------------------------GITPUSH + NOTE, 25-02-2026-----------------------------
 
 1. Fix giao diện + lỗi nhỏ.
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 13-03-2026-----------------------------
+
+1. cập nhật tính năng tính dinh dưỡng cho supplier. Khi bên supplier nhận thành phần món 
+ăn (trứng x quả, thịt y gam) sẽ tự tính ra các chất dinh dưỡng trong đó (kcal, chất béo, ...)
+
+2. Cập nhật kết quả vào db và đảm bảo hiển thị được cho 3 bên supplier, customer, admin
+
+3. Nhà hàng có thể thoải mái tùy chỉnh các thông số ấy. Kết quả tính đúng, tuy nhiên sẽ
+chỉ mang tính tham khảo đối với bên nhà hàng. Họ có quyền chấp nhận kết quả ấy hoặc ko.
+Nếu sai, tự họ đi chịu trách nhiệm.
+
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 16-03-2026-----------------------------
+
+1. bản vá nhỏ, cập nhật trạng thái giao hàng
+2. Sửa lại 1 số lỗi nhỏ, làm sạch code hơn

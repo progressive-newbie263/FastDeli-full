@@ -236,10 +236,10 @@ export default function DashboardAdmin() {
                   Cần xử lý
                 </h3>
                 <div className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-1">
-                  {stats?.pendingOrders || 0}
+                  {(stats?.pendingOrders || 0) + (stats?.pendingRestaurants || 0)}
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Đơn hàng chờ xác nhận
+                  {stats?.pendingOrders || 0} đơn hàng, {stats?.pendingRestaurants || 0} supplier chờ duyệt
                 </p>
               </div>
               
@@ -283,7 +283,6 @@ export default function DashboardAdmin() {
                         {/* kiểm tra kĩ status đoạn này ? */}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           order.order_status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
-                          // order.order_status === 'confirmed' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
                           order.order_status === 'processing' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300' :
                           order.order_status === 'delivering' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' :
                           order.order_status === 'delivered' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
@@ -292,7 +291,6 @@ export default function DashboardAdmin() {
                         }`}>
                           {
                             order.order_status === 'pending' ? 'Chờ xác nhận' :
-                            // order.order_status === 'confirmed' ? 'Đã xác nhận' :
                             order.order_status === 'processing' ? 'Đang chuẩn bị' :
                             order.order_status === 'delivering' ? 'Đang giao' :
                             order.order_status === 'delivered' ? 'Đã giao' :
@@ -324,9 +322,9 @@ export default function DashboardAdmin() {
                         'text-red-600 dark:text-red-400'
                       }`}>
                         {
-                          order.payment_status === 'paid' ? '✓ Đã thanh toán' :
-                          order.payment_status === 'pending' ? '⏳ Chưa thanh toán' :
-                          '✗ Thất bại'
+                          order.payment_status === 'paid' ? 'Đã thanh toán' :
+                          order.payment_status === 'pending' ? 'Chưa thanh toán' :
+                          'Thất bại'
                         }
                       </div>
                     </div>

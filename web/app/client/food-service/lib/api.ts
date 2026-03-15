@@ -18,16 +18,14 @@ export async function fetchAPI<T = any>(
 ): Promise<T> {
   const { requireAuth = false, ...fetchOptions } = options;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...fetchOptions.headers,
-  };
+  const headers = new Headers(fetchOptions.headers);
+  headers.set('Content-Type', 'application/json');
 
   // Thêm token nếu cần auth
   if (requireAuth) {
     const token = localStorage.getItem('token');
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers.set('Authorization', `Bearer ${token}`);
     }
   }
 
@@ -37,7 +35,6 @@ export async function fetchAPI<T = any>(
       headers,
     });
 
-    // Xử lý response
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
@@ -53,8 +50,7 @@ export async function fetchAPI<T = any>(
     if (error instanceof APIError) {
       throw error;
     }
-    
-    // Network error hoặc lỗi khác
+
     throw new APIError(
       0,
       error instanceof Error ? error.message : 'Network error',

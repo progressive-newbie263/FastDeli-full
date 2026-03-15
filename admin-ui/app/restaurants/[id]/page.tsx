@@ -241,7 +241,7 @@ export default function RestaurantDetailPage() {
                   disabled={isUpdating}
                   className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
                 >
-                  <span>✓</span>
+                  <span>OK</span>
                   <span>{isUpdating ? 'Đang xử lý...' : 'Phê duyệt nhà hàng'}</span>
                 </button>
                 <button
@@ -249,7 +249,7 @@ export default function RestaurantDetailPage() {
                   disabled={isUpdating}
                   className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
                 >
-                  <span>✗</span>
+                  <span>No</span>
                   <span>Từ chối nhà hàng</span>
                 </button>
               </>
@@ -283,7 +283,7 @@ export default function RestaurantDetailPage() {
                 disabled={isUpdating}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
               >
-                <span>✓</span>
+                <span>OK</span>
                 <span>{isUpdating ? 'Đang xử lý...' : 'Phê duyệt lại'}</span>
               </button>
             )}
@@ -377,9 +377,7 @@ export default function RestaurantDetailPage() {
             )} */}
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-6">
-            
+          <div className="space-y-6">            
             {/* Statistics */}
             <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
@@ -418,7 +416,7 @@ export default function RestaurantDetailPage() {
               </div>
             </div>
 
-            {/* System Information */}
+            {/* tt hệ thống */}
             <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                 <span>⚙️</span>
@@ -455,7 +453,7 @@ export default function RestaurantDetailPage() {
 
         </div>
 
-        {/* Foods List - Full Width */}
+        {/* Danh sách món ăn */}
         <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
             <span>🍽️</span>
@@ -505,7 +503,7 @@ export default function RestaurantDetailPage() {
                           ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200' 
                           : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200'
                       }`}>
-                        {food.is_available ? '✓ Còn hàng' : '✗ Hết hàng'}
+                        {food.is_available ? 'Còn hàng' : 'Hết hàng'}
                       </span>
                     </div>
                   </div>
@@ -525,14 +523,14 @@ export default function RestaurantDetailPage() {
                   disabled={isUpdating}
                   className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors"
                 >
-                  {isUpdating ? 'Đang xử lý...' : '✓ Phê duyệt nhà hàng'}
+                  {isUpdating ? 'Đang xử lý...' : 'Phê duyệt nhà hàng'}
                 </button>
                 <button
                   onClick={() => setShowRejectModal(true)}
                   disabled={isUpdating}
                   className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors"
                 >
-                  ✗ Từ chối nhà hàng
+                  Từ chối nhà hàng
                 </button>
               </>
             )}
@@ -563,7 +561,7 @@ export default function RestaurantDetailPage() {
                 disabled={isUpdating}
                 className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors"
               >
-                {isUpdating ? 'Đang xử lý...' : '✓ Phê duyệt lại'}
+                {isUpdating ? 'Đang xử lý...' : 'Phê duyệt lại'}
               </button>
             )}
           </div>

@@ -275,7 +275,7 @@ const CheckoutClient = () => {
       setCouponCode(validatedCoupon.code);
       setValidatedDiscount(discountAmount);
       setShowCouponList(false);
-      toast.success(`✅ Áp dụng mã ${validatedCoupon.code} thành công!`);
+      toast.success(`Áp dụng mã ${validatedCoupon.code} thành công!`);
     } catch (error) {
       console.error('Lỗi apply coupon:', error);
       toast.error('Lỗi khi áp dụng coupon');
@@ -355,16 +355,16 @@ const CheckoutClient = () => {
             window.dispatchEvent(new Event("cart-updated"));
           }
         } catch (err) {
-          console.error("❌ Lỗi khi xóa cart:", err);
+          console.error("Lỗi khi xóa cart:", err);
         }
 
-        toast.success(`✅ Đặt hàng thành công! Mã đơn: ${orderCode}`);
+        toast.success(`Đặt hàng thành công! Mã đơn: ${orderCode}`);
         
         setTimeout(() => {
           router.push("/client/food-service/orders");
         }, 1500);
        } catch (err) {
-        console.error("❌ Lỗi tạo đơn COD:", err);
+        console.error("Lỗi tạo đơn COD:", err);
         toast.error("Đặt hàng thất bại. Vui lòng thử lại!");
       }
     } else if (paymentMethod === 'card') {
@@ -413,7 +413,7 @@ const CheckoutClient = () => {
           {/* ===== CỘT TRÁI - MAIN CONTENT ===== */}
           <div className="lg:col-span-2 space-y-4">
             
-            {/* ✅ Địa chỉ giao hàng */}
+            {/* Địa chỉ giao hàng */}
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">

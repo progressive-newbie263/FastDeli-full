@@ -38,7 +38,7 @@ router.post('/foods/:foodId', upload.single('image'), async (req, res) => {
       url: imageUrl
     });
   } catch (err) {
-    console.error('❌ Upload food image error:', err);
+    console.error('Upload food image error:', err);
     return res.status(500).json({
       success: false,
       message: 'Upload thất bại',
@@ -79,7 +79,7 @@ router.post('/restaurants/:restaurantId', upload.single('image'), async (req, re
       url: imageUrl
     });
   } catch (err) {
-    console.error('❌ Upload restaurant image error:', err);
+    console.error('Upload restaurant image error:', err);
     return res.status(500).json({
       success: false,
       message: 'Upload thất bại',

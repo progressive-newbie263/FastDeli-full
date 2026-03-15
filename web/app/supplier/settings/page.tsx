@@ -57,7 +57,7 @@ export default function SettingsPage() {
         {/* Success message */}
         {success && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
-            ✓ Cập nhật thông tin thành công!
+            Cập nhật thông tin thành công!
           </div>
         )}
 

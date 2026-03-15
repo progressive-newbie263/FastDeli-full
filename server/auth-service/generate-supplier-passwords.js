@@ -22,8 +22,8 @@ async function generateHashes() {
     console.log('---\n');
   }
 
-  console.log('✅ Hoàn tất! Copy các hash trên vào file supplier_migration.sql');
-  console.log('   Thay thế $2b$10$YourHashedPasswordHere bằng hash tương ứng\n');
+  console.log(' Hoàn tất! Copy các hash trên vào file supplier_migration.sql');
+  console.log(' Thay thế $2b$10$YourHashedPasswordHere bằng hash tương ứng\n');
 }
 
 generateHashes().catch(console.error);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useReducer } from 'react';
+import { useState, useEffect } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatusBadge from '@/components/ui/StatusBadge';
 import ApiService from '@/lib/api';
@@ -13,7 +13,7 @@ export default function RestaurantsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   
-  // Pagination state
+  // phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -59,6 +59,51 @@ export default function RestaurantsPage() {
     }
   };
 
+  const handleApproveSupplier = async (id: number) => {
+    if (!confirm('Xác nhận duyệt supplier này?')) {
+      return;
+    }
+
+    try {
+      const response = await ApiService.approveRestaurant(id.toString());
+      if (response.success) {
+        fetchRestaurants();
+        return;
+      }
+
+      alert(response?.message || 'Không thể duyệt supplier.');
+    } catch (error) {
+      console.error('Error approving supplier:', error);
+      alert('Có lỗi khi duyệt supplier.');
+    }
+  };
+
+  const handleRejectSupplier = async (id: number) => {
+    const reason = prompt('Nhập lý do từ chối supplier:');
+    if (reason === null) {
+      return;
+    }
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      alert('Lý do từ chối không được để trống.');
+      return;
+    }
+
+    try {
+      const response = await ApiService.rejectRestaurant(id.toString(), trimmedReason);
+      if (response.success) {
+        fetchRestaurants();
+        return;
+      }
+
+      alert(response?.message || 'Không thể từ chối supplier.');
+    } catch (error) {
+      console.error('Error rejecting supplier:', error);
+      alert('Có lỗi khi từ chối supplier.');
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -77,7 +122,6 @@ export default function RestaurantsPage() {
       title="Quản lý nhà hàng" 
       subtitle="Quản lý các nhà hàng trong hệ thống"
     >
-      {/* Filters */}
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex gap-2 flex-wrap">
           {['all', 'active', 'inactive', 'pending', 'rejected'].map((status) => (
@@ -85,7 +129,7 @@ export default function RestaurantsPage() {
               key={status}
               onClick={() => {
                 setFilter(status);
-                setCurrentPage(1); // Reset về trang 1 khi đổi filter
+                setCurrentPage(1);
               }}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === status
@@ -93,18 +137,20 @@ export default function RestaurantsPage() {
                   : 'bg-white dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/15 border border-gray-200 dark:border-white/10'
               }`}
             >
-              {status === 'all' ? 'Tất cả' : 
-               status === 'active' ? 'Đang hoạt động' : 
-               status === 'inactive' ? 'Tạm dừng' :
-               status === 'pending' ? 'Chờ duyệt' :
-               'Từ chối'}
+              {
+                status === 'all' ? 'Tất cả' : 
+                status === 'active' ? 'Đang hoạt động' : 
+                status === 'inactive' ? 'Tạm dừng' :
+                status === 'pending' ? 'Chờ duyệt' :
+                'Từ chối'
+              }
             </button>
           ))}
         </div>
 
-        {/* Items per page selector */}
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-300">Hiển thị:</span>
+          
           <select
             value={perPage}
             onChange={(e) => handlePerPageChange(Number(e.target.value))}
@@ -118,7 +164,7 @@ export default function RestaurantsPage() {
         </div>
       </div>
 
-      {/* Desktop Table View */}
+      {/* Desktop Table */}
       <div className="hidden lg:block bg-white dark:bg-gray-800 rounded-xl card-shadow overflow-hidden border border-transparent dark:border-gray-700">
         <div className="overflow-hidden">
           <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 table-fixed">
@@ -147,6 +193,7 @@ export default function RestaurantsPage() {
                 </th>
               </tr>
             </thead>
+
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
@@ -172,6 +219,7 @@ export default function RestaurantsPage() {
                             alt={restaurant.name}
                           />
                         </div>
+
                         <div className="ml-3 min-w-0 flex-1">
                           <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate" title={restaurant.name}>
                             {restaurant.name}
@@ -182,14 +230,17 @@ export default function RestaurantsPage() {
                         </div>
                       </div>
                     </td>
+
                     <td className="px-3 py-4">
                       <div className="text-sm text-gray-900 dark:text-gray-100 line-clamp-2" title={restaurant.address}>
                         {restaurant.address}
                       </div>
                     </td>
+
                     <td className="px-3 py-4 text-sm text-gray-900 dark:text-gray-100">
                       <div className="break-words">{restaurant.phone}</div>
                     </td>
+
                     <td className="px-3 py-4">
                       <div className="text-sm text-gray-900 dark:text-gray-100">
                         <div className="flex items-center gap-1">
@@ -201,6 +252,7 @@ export default function RestaurantsPage() {
                         </div>
                       </div>
                     </td>
+
                     <td className="px-3 py-4">
                       <StatusBadge 
                         status={restaurant.status}
@@ -215,21 +267,41 @@ export default function RestaurantsPage() {
                          restaurant.status === "rejected" ? 'Từ chối' : 'Tạm dừng'}
                       </StatusBadge>
                     </td>
+
                     <td className="px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                       <div className="whitespace-nowrap">{new Date(restaurant.created_at).toLocaleDateString('vi-VN')}</div>
                     </td>
+
                     <td className="px-3 py-4 text-sm font-medium">
                       <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => handleToggleActive(restaurant.id, restaurant.status)}
-                          className={`text-left whitespace-nowrap ${
-                            restaurant.status === "active" 
-                              ? 'text-red-600 hover:text-red-900' 
-                              : 'text-green-600 hover:text-green-900'
-                          }`}
-                        >
-                          {restaurant.status === "active" ? 'Tạm dừng' : 'Kích hoạt'}
-                        </button>
+                        {restaurant.status === 'pending' ? (
+                          <>
+                            <button
+                              onClick={() => handleApproveSupplier(restaurant.id)}
+                              className="text-left whitespace-nowrap text-green-600 hover:text-green-900"
+                            >
+                              Duyệt supplier
+                            </button>
+                            <button
+                              onClick={() => handleRejectSupplier(restaurant.id)}
+                              className="text-left whitespace-nowrap text-red-600 hover:text-red-900"
+                            >
+                              Từ chối
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleActive(restaurant.id, restaurant.status)}
+                            className={`text-left whitespace-nowrap ${
+                              restaurant.status === "active"
+                                ? 'text-red-600 hover:text-red-900'
+                                : 'text-green-600 hover:text-green-900'
+                            }`}
+                          >
+                            {restaurant.status === "active" ? 'Tạm dừng' : 'Kích hoạt'}
+                          </button>
+                        )}
+
                         <button 
                           className="text-left text-blue-600 hover:text-blue-900 whitespace-nowrap cursor-pointer"
                           onClick={() =>handleViewRestaurantDetails(restaurant.id)}
@@ -246,7 +318,7 @@ export default function RestaurantsPage() {
         </div>
       </div>
 
-      {/* Mobile/Tablet Card View */}
+      {/* Mobile/Tablet UI */}
       <div className="lg:hidden space-y-4">
         {isLoading ? (
           <div className="bg-white rounded-xl card-shadow p-8 text-center text-gray-500">
@@ -329,16 +401,33 @@ export default function RestaurantsPage() {
               </div>
 
               <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex gap-2">
-                <button
-                  onClick={() => handleToggleActive(restaurant.id, restaurant.status)}
-                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    restaurant.status === "active" 
-                      ? 'bg-red-50 text-red-700 hover:bg-red-100' 
-                      : 'bg-green-50 text-green-700 hover:bg-green-100'
-                  }`}
-                >
-                  {restaurant.status === "active" ? 'Tạm dừng' : 'Kích hoạt'}
-                </button>
+                {restaurant.status === 'pending' ? (
+                  <>
+                    <button
+                      onClick={() => handleApproveSupplier(restaurant.id)}
+                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                    >
+                      Duyệt
+                    </button>
+                    <button
+                      onClick={() => handleRejectSupplier(restaurant.id)}
+                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                    >
+                      Từ chối
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleToggleActive(restaurant.id, restaurant.status)}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      restaurant.status === "active"
+                        ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                        : 'bg-green-50 text-green-700 hover:bg-green-100'
+                    }`}
+                  >
+                    {restaurant.status === "active" ? 'Tạm dừng' : 'Kích hoạt'}
+                  </button>
+                )}
                 <button className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
                   Xem chi tiết
                 </button>
@@ -348,7 +437,7 @@ export default function RestaurantsPage() {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* Phân trang */}
       {!isLoading && totalPages > 1 && (
         <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl card-shadow p-4">
           <div className="text-sm text-gray-700">
@@ -374,7 +463,6 @@ export default function RestaurantsPage() {
 
             <div className="flex gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                // Show first, last, current, and adjacent pages
                 if (
                   page === 1 ||
                   page === totalPages ||

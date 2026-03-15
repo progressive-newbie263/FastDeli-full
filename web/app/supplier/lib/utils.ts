@@ -1,13 +1,12 @@
 /**
  * ============================================
- * SUPPLIER UTILITIES
+ * Hàm supplier utils (dùng chung)
  * ============================================
- * Helper functions cho supplier portal
- */
+*/
 
-/**
- * Format currency to Vietnamese Dong
- */
+/*
+  Chuyển tiền tệ chung về VNĐ
+*/
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -15,9 +14,9 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-/**
- * Format date time to Vietnamese locale
- */
+/*
+  Set GMT+7 (Việt Nam) cho tất cả các ngày giờ hiển thị
+*/
 export const formatDateTime = (dateString: string): string => {
   return new Date(dateString).toLocaleString('vi-VN', {
     year: 'numeric',
@@ -28,9 +27,6 @@ export const formatDateTime = (dateString: string): string => {
   });
 };
 
-/**
- * Format date only
- */
 export const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleDateString('vi-VN', {
     year: 'numeric',
@@ -39,9 +35,6 @@ export const formatDate = (dateString: string): string => {
   });
 };
 
-/**
- * Format time only
- */
 export const formatTime = (dateString: string): string => {
   return new Date(dateString).toLocaleTimeString('vi-VN', {
     hour: '2-digit',
@@ -49,9 +42,9 @@ export const formatTime = (dateString: string): string => {
   });
 };
 
-/**
- * Get relative time (e.g., "2 giờ trước", "5 phút trước")
- */
+/*
+  Hàm tính thời gian chuẩn hóa (VD: x phút trước, y giờ trước, ...)
+*/
 export const getRelativeTime = (dateString: string): string => {
   const now = new Date();
   const date = new Date(dateString);
@@ -67,9 +60,9 @@ export const getRelativeTime = (dateString: string): string => {
   return formatDate(dateString);
 };
 
-/**
- * Order status configuration
- */
+/*
+  Tập hợp trạng thái đơn hàng
+*/
 export const ORDER_STATUS_CONFIG: Record<
   string,
   { label: string; className: string; color: string }
@@ -78,11 +71,6 @@ export const ORDER_STATUS_CONFIG: Record<
     label: 'Chờ xác nhận',
     className: 'bg-yellow-100 text-yellow-800',
     color: 'yellow',
-  },
-  confirmed: {
-    label: 'Đã xác nhận',
-    className: 'bg-blue-100 text-blue-800',
-    color: 'blue',
   },
   processing: {
     label: 'Đang chuẩn bị',
@@ -106,9 +94,9 @@ export const ORDER_STATUS_CONFIG: Record<
   },
 };
 
-/**
- * Payment status configuration
- */
+/*
+  Trạng thái thanh toán
+*/
 export const PAYMENT_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
   pending: { label: 'Chưa thanh toán', className: 'bg-yellow-100 text-yellow-800' },
   paid: { label: 'Đã thanh toán', className: 'bg-green-100 text-green-800' },
@@ -116,55 +104,40 @@ export const PAYMENT_STATUS_CONFIG: Record<string, { label: string; className: s
   refunded: { label: 'Đã hoàn tiền', className: 'bg-gray-100 text-gray-800' },
 };
 
-/**
- * Validate email
- */
+/* 
+  Các hàm regex, validate chung
+*/
 export const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 };
 
-/**
- * Validate phone number (Vietnamese format)
- */
 export const isValidPhone = (phone: string): boolean => {
   const phoneRegex = /^(0|\+84)[0-9]{9,10}$/;
   return phoneRegex.test(phone);
 };
 
-/**
- * Validate price
- */
 export const isValidPrice = (price: number): boolean => {
   return price > 0 && price < 100000000; // Max 100 million VND
 };
 
-/**
- * Truncate text
- */
 export const truncateText = (text: string, maxLength: number): string => {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
 };
 
-/**
- * Calculate percentage change
- */
-export const calculatePercentChange = (current: number, previous: number): number => {
+export const calculatePercentChange = (
+  current: number, 
+  previous: number
+): number => {
   if (previous === 0) return current > 0 ? 100 : 0;
   return Math.round(((current - previous) / previous) * 100);
 };
 
-/**
- * Format percentage
- */
 export const formatPercent = (value: number): string => {
   return `${value >= 0 ? '+' : ''}${value}%`;
 };
 
-/**
- * Debounce function
- */
 export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   wait: number
@@ -176,24 +149,24 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-/**
- * Download data as JSON file
- */
 export const downloadJSON = (data: any, filename: string): void => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { 
+    type: 'application/json' 
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
+  
   link.href = url;
   link.download = `${filename}.json`;
+  
   document.body.appendChild(link);
   link.click();
+  
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
 
-/**
- * Copy text to clipboard
- */
+
 export const copyToClipboard = async (text: string): Promise<boolean> => {
   try {
     await navigator.clipboard.writeText(text);
@@ -204,20 +177,20 @@ export const copyToClipboard = async (text: string): Promise<boolean> => {
   }
 };
 
-/**
- * Generate random order code (fallback)
- */
+/* 
+  - Hàm gen mã đơn hàng.
+  - Thuật toán sẽ là tự viết, dựa trên 1 số đặc điểm unique để
+  đảm bảo mã đơn hàng cũng unique
+*/
 export const generateOrderCode = (): string => {
   const timestamp = Date.now().toString(36);
   const random = Math.random().toString(36).substring(2, 7);
   return `ORD-${timestamp}-${random}`.toUpperCase();
 };
 
-/**
- * Check if restaurant is open
- */
+
 export const isRestaurantOpen = (openingTime?: string, closingTime?: string): boolean => {
-  if (!openingTime || !closingTime) return true; // Assume open if not set
+  if (!openingTime || !closingTime) return true; 
 
   const now = new Date();
   const currentTime = now.getHours() * 60 + now.getMinutes();
@@ -231,9 +204,7 @@ export const isRestaurantOpen = (openingTime?: string, closingTime?: string): bo
   return currentTime >= openMinutes && currentTime <= closeMinutes;
 };
 
-/**
- * Get status color class
- */
+
 export const getStatusColorClass = (status: string): string => {
   const colorMap: Record<string, string> = {
     active: 'text-green-600',

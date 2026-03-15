@@ -172,7 +172,7 @@ Test trên các breakpoints:
 2. Select device
 3. Test navigation, forms, modals
 
-## ✅ Checklist kiểm tra UI
+## Checklist kiểm tra UI
 
 - [ ] Login page hiển thị đúng demo credentials
 - [ ] Dashboard stats cards render correctly

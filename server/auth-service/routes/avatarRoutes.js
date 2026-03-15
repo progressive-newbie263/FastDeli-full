@@ -30,7 +30,7 @@ router.post('/', upload.single('image'), async (req, res) => {
 
     return res.json({ success: true, url: imageUrl });
   } catch (err) {
-    console.error('❌ Upload error:', err);
+    console.error('Upload error:', err);
     return res.status(500).json({ success: false, message: 'Upload failed' });
   }
 });

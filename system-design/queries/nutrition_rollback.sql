@@ -43,16 +43,16 @@ BEGIN
     ) INTO table_exists;
     
     IF NOT table_exists THEN
-        RAISE NOTICE '✅ ROLLBACK THÀNH CÔNG: Bảng food_nutrition đã được xóa hoàn toàn';
+        RAISE NOTICE 'ROLLBACK THÀNH CÔNG: Bảng food_nutrition đã được xóa hoàn toàn';
     ELSE
-        RAISE EXCEPTION '❌ ROLLBACK THẤT BẠI: Bảng food_nutrition vẫn còn tồn tại';
+        RAISE EXCEPTION 'ROLLBACK THẤT BẠI: Bảng food_nutrition vẫn còn tồn tại';
     END IF;
 END $$;
 
 COMMIT;
 
 -- Kết quả mong đợi:
--- ✅ Database đã quay về trạng thái trước khi có bảng nutrition
--- ✅ Không còn bất kỳ object nào liên quan đến food_nutrition
+-- Database đã quay về trạng thái trước khi có bảng nutrition
+-- Không còn bất kỳ object nào liên quan đến food_nutrition
 
 SELECT 'Database đã rollback về trạng thái trước migration nutrition' AS final_status;

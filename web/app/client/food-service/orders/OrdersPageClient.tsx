@@ -29,7 +29,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [selectedOrderImage, setSelectedOrderImage] = useState<{ src: string; title: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filteredStatus, setFilteredStatus] = useState<'all' | 'pending' | 'processing' | 'delivered' | 'cancelled'>('all');
+  const [filteredStatus, setFilteredStatus] = useState<'all' | 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled'>('all');
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -152,15 +152,17 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
   const getOrderStatusColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
       case 'processing':
-        return 'bg-blue-50 text-blue-700 border border-blue-200';
+        return 'bg-sky-50 text-sky-700 border border-sky-200';
+      case 'delivering':
+        return 'bg-violet-50 text-violet-700 border border-violet-200';
       case 'delivered':
-        return 'bg-green-50 text-green-700 border border-green-200';
+        return 'bg-emerald-50 text-emerald-700 border border-emerald-200';
       case 'cancelled':
-        return 'bg-red-50 text-red-700 border border-red-200';
+        return 'bg-rose-50 text-rose-700 border border-rose-200';
       default:
-        return 'bg-gray-50 text-gray-700 border border-gray-200';
+        return 'bg-slate-50 text-slate-700 border border-slate-200';
     }
   };
 
@@ -185,6 +187,8 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
         return 'Chờ thanh toán';
       case 'processing':
         return 'Đang xử lý';
+      case 'delivering':
+        return 'Đang giao hàng';
       case 'delivered':
         return 'Hoàn thành';
       case 'cancelled':
@@ -227,6 +231,7 @@ export default function OrdersPageClient({initialOrders = []}: {initialOrders?: 
           { label: 'Tất cả', value: 'all' },
           { label: 'Chờ thanh toán', value: 'pending' },
           { label: 'Đang xử lí', value: 'processing' },
+          { label: 'Đang giao hàng', value: 'delivering' },
           { label: 'Hoàn thành', value: 'delivered' },
           { label: 'Đã hủy', value: 'cancelled' },
         ].map((filter) => (

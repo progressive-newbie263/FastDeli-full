@@ -10,8 +10,8 @@ SELECT
             SELECT 1 FROM information_schema.tables 
             WHERE table_name = 'food_nutrition'
         ) 
-        THEN '✅ Bảng food_nutrition: TỒN TẠI'
-        ELSE '❌ Bảng food_nutrition: KHÔNG TỒN TẠI'
+        THEN 'Bảng food_nutrition: TỒN TẠI'
+        ELSE 'Bảng food_nutrition: KHÔNG TỒN TẠI'
     END AS table_status;
 
 -- 2. Kiểm tra cấu trúc bảng
@@ -32,8 +32,8 @@ SELECT
             SELECT 1 FROM pg_proc 
             WHERE proname = 'update_nutrition_timestamp'
         ) 
-        THEN '✅ Function update_nutrition_timestamp(): TỒN TẠI'
-        ELSE '❌ Function update_nutrition_timestamp(): KHÔNG TỒN TẠI'
+        THEN 'Function update_nutrition_timestamp(): TỒN TẠI'
+        ELSE 'Function update_nutrition_timestamp(): KHÔNG TỒN TẠI'
     END AS function_status;
 
 -- 4. Kiểm tra trigger có tồn tại không
@@ -43,8 +43,8 @@ SELECT
             SELECT 1 FROM pg_trigger 
             WHERE tgname = 'trigger_update_nutrition_timestamp'
         ) 
-        THEN '✅ Trigger trigger_update_nutrition_timestamp: TỒN TẠI'
-        ELSE '❌ Trigger trigger_update_nutrition_timestamp: KHÔNG TỒN TẠI'
+        THEN 'Trigger trigger_update_nutrition_timestamp: TỒN TẠI'
+        ELSE 'Trigger trigger_update_nutrition_timestamp: KHÔNG TỒN TẠI'
     END AS trigger_status;
 
 -- 5. Kiểm tra index có tồn tại không
@@ -54,8 +54,8 @@ SELECT
             SELECT 1 FROM pg_indexes 
             WHERE indexname = 'idx_food_nutrition_food_id'
         ) 
-        THEN '✅ Index idx_food_nutrition_food_id: TỒN TẠI'
-        ELSE '❌ Index idx_food_nutrition_food_id: KHÔNG TỒN TẠI'
+        THEN 'Index idx_food_nutrition_food_id: TỒN TẠI'
+        ELSE 'Index idx_food_nutrition_food_id: KHÔNG TỒN TẠI'
     END AS index_status;
 
 -- 6. Kiểm tra UNIQUE constraint trên food_id
@@ -81,5 +81,5 @@ DELETE FROM food_nutrition WHERE food_id = 999;
 
 -- 8. Kết quả tổng hợp
 SELECT 
-    '✅ MIGRATION HOÀN TẤT' AS summary,
+    'MIGRATION HOÀN TẤT' AS summary,
     'Nếu tất cả status đều ✅ thì migration thành công!' AS note;

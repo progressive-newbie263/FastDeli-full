@@ -81,14 +81,14 @@ async function searchUSDAFood(query, pageSize = 5) {
     });
 
     if (data && data.foods && data.foods.length > 0) {
-      console.log(`✅ [USDA] Found ${data.foods.length} results`);
+      console.log(`[USDA] Found ${data.foods.length} results`);
       return data.foods;
     }
 
-    console.log(`⚠️ [USDA] No results found for "${query}"`);
+    console.log(`[USDA] No results found for "${query}"`);
     return [];
   } catch (error) {
-    console.error('❌ [USDA] API Error:', error.message);
+    console.error('[USDA] API Error:', error.message);
     throw new Error('USDA API request failed');
   }
 }
@@ -106,7 +106,7 @@ async function getFoodDetails(fdcId) {
 
     return data;
   } catch (error) {
-    console.error('❌ [USDA] Error getting food details:', error.message);
+    console.error('[USDA] Error getting food details:', error.message);
     throw new Error('Failed to get food details');
   }
 }
@@ -166,15 +166,15 @@ async function getNutritionFromUSDA(foodName) {
     const bestMatch = searchResults[0];
     const nutrition = extractNutrition(bestMatch);
 
-    console.log(`✅ [USDA] Extracted nutrition for "${nutrition.food_name}"`);
-    console.log(`   Calories: ${nutrition.calories} kcal`);
-    console.log(`   Protein: ${nutrition.protein}g`);
-    console.log(`   Fat: ${nutrition.fat}g`);
-    console.log(`   Sugar: ${nutrition.sugar}g`);
+    console.log(` [USDA] Extracted nutrition for "${nutrition.food_name}"`);
+    console.log(` Calories: ${nutrition.calories} kcal`);
+    console.log(` Protein: ${nutrition.protein}g`);
+    console.log(` Fat: ${nutrition.fat}g`);
+    console.log(` Sugar: ${nutrition.sugar}g`);
 
     return nutrition;
   } catch (error) {
-    console.error('❌ [USDA] Failed to get nutrition:', error.message);
+    console.error('[USDA] Failed to get nutrition:', error.message);
     return null;
   }
 }

@@ -48,18 +48,10 @@ router.get('/stats', async (req, res) => {
       - Tính từ order_items (food_price * quantity)
     */
     const revenueResult = await foodPool.query(
-      `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
-       FROM (
-         SELECT
-           o.id,
-           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-         FROM orders o
-         LEFT JOIN order_items oi ON oi.order_id = o.id
-         WHERE o.payment_status = 'paid'
-           AND o.order_status <> 'cancelled'
-         GROUP BY o.id
-       ) t`
+      `SELECT COALESCE(SUM(o.total_amount), 0)::float AS total
+       FROM orders o
+       WHERE o.payment_status = 'paid'
+         AND o.order_status <> 'cancelled'`
     );
     
     // Cac nhà hàng đang hoạt động
@@ -81,21 +73,19 @@ router.get('/stats', async (req, res) => {
       WHERE order_status = 'pending'
     `);
 
+    const pendingRestaurantsResult = await foodPool.query(`
+      SELECT COUNT(*)::int AS count
+      FROM restaurants
+      WHERE status = 'pending'
+    `);
+
     // Doanh thu kiếm được trong ngày
     const todayRevenueResult = await foodPool.query(
-      `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
-       FROM (
-         SELECT
-           o.id,
-           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-         FROM orders o
-         LEFT JOIN order_items oi ON oi.order_id = o.id
-         WHERE DATE(o.created_at) = CURRENT_DATE
-           AND o.payment_status = 'paid'
-           AND o.order_status <> 'cancelled'
-         GROUP BY o.id
-       ) t`
+      `SELECT COALESCE(SUM(o.total_amount), 0)::float AS total
+       FROM orders o
+       WHERE DATE(o.created_at) = CURRENT_DATE
+         AND o.payment_status = 'paid'
+         AND o.order_status <> 'cancelled'`
     );
 
     // Ước lượng xu hướng (so với tháng trước)
@@ -122,36 +112,20 @@ router.get('/stats', async (req, res) => {
     // Doanh thu theo xu hướng (so với tháng trước)
     const [currentMonthRevenueRes, lastMonthRevenueRes] = await Promise.all([
       foodPool.query(
-        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
-         FROM (
-           SELECT
-             o.id,
-             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-           FROM orders o
-           LEFT JOIN order_items oi ON oi.order_id = o.id
-           WHERE o.payment_status = 'paid'
-             AND o.order_status <> 'cancelled'
-             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
-             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
-           GROUP BY o.id
-         ) t`
+        `SELECT COALESCE(SUM(o.total_amount), 0)::float AS total
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+           AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'`
       ),
       foodPool.query(
-        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
-         FROM (
-           SELECT
-             o.id,
-             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-           FROM orders o
-           LEFT JOIN order_items oi ON oi.order_id = o.id
-           WHERE o.payment_status = 'paid'
-             AND o.order_status <> 'cancelled'
-             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)
-           GROUP BY o.id
-         ) t`
+        `SELECT COALESCE(SUM(o.total_amount), 0)::float AS total
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+           AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)`
       ),
     ]);
 
@@ -168,6 +142,7 @@ router.get('/stats', async (req, res) => {
       activeRestaurants: parseInt(restaurantsResult.rows[0].count),
       totalUsers: parseInt(usersResult.rows[0].count),
       pendingOrders: parseInt(pendingResult.rows[0].count),
+      pendingRestaurants: parseInt(pendingRestaurantsResult.rows[0].count),
       todayRevenue: parseFloat(todayRevenueResult.rows[0].total),
       ordersTrend: parseFloat(ordersTrend),
       revenueTrend,
@@ -231,24 +206,16 @@ router.get('/recent-orders', async (req, res) => {
 router.get('/chart-data', async (req, res) => {
   try {
     const result = await foodPool.query(
-      `WITH per_order AS (
-         SELECT
-           DATE(o.created_at) AS d,
-           o.id AS order_id,
-           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-         FROM orders o
-         LEFT JOIN order_items oi ON oi.order_id = o.id
-         WHERE o.created_at >= CURRENT_DATE - INTERVAL '7 days'
-         GROUP BY DATE(o.created_at), o.id
-       )
-       SELECT
-         TO_CHAR(d, 'YYYY-MM-DD') as date,
+      `SELECT
+         TO_CHAR(DATE(o.created_at), 'YYYY-MM-DD') as date,
          COUNT(*)::int as orders,
-         COALESCE(SUM(items_total + delivery_fee), 0)::float as revenue
-       FROM per_order
-       GROUP BY d
-       ORDER BY d ASC`
+         COALESCE(SUM(o.total_amount), 0)::float as revenue
+       FROM orders o
+       WHERE o.created_at >= CURRENT_DATE - INTERVAL '7 days'
+         AND o.payment_status = 'paid'
+         AND o.order_status <> 'cancelled'
+       GROUP BY DATE(o.created_at)
+       ORDER BY DATE(o.created_at) ASC`
     );
     
     res.json(result.rows);
@@ -305,36 +272,20 @@ router.get('/analytics', async (req, res) => {
       lastMonthAvgOrderRes
     ] = await Promise.all([
       foodPool.query(
-        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
-         FROM (
-           SELECT
-             o.id,
-             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-           FROM orders o
-           LEFT JOIN order_items oi ON oi.order_id = o.id
-           WHERE o.payment_status = 'paid'
-             AND o.order_status <> 'cancelled'
-             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
-             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
-           GROUP BY o.id
-         ) t`
+        `SELECT COALESCE(SUM(o.total_amount), 0)::float AS total
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+           AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'`
       ),
       foodPool.query(
-        `SELECT COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS total
-         FROM (
-           SELECT
-             o.id,
-             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-           FROM orders o
-           LEFT JOIN order_items oi ON oi.order_id = o.id
-           WHERE o.payment_status = 'paid'
-             AND o.order_status <> 'cancelled'
-             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)
-           GROUP BY o.id
-         ) t`
+        `SELECT COALESCE(SUM(o.total_amount), 0)::float AS total
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+           AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)`
       ),
       foodPool.query(
         `SELECT COUNT(*)::int AS count
@@ -349,36 +300,20 @@ router.get('/analytics', async (req, res) => {
            AND created_at <  DATE_TRUNC('month', CURRENT_DATE)`
       ),
       foodPool.query(
-        `SELECT COALESCE(AVG(t.items_total + t.delivery_fee), 0)::float AS avg
-         FROM (
-           SELECT
-             o.id,
-             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-           FROM orders o
-           LEFT JOIN order_items oi ON oi.order_id = o.id
-           WHERE o.payment_status = 'paid'
-             AND o.order_status <> 'cancelled'
-             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
-             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'
-           GROUP BY o.id
-         ) t`
+        `SELECT COALESCE(AVG(o.total_amount), 0)::float AS avg
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE)
+           AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE) + INTERVAL '1 month'`
       ),
       foodPool.query(
-        `SELECT COALESCE(AVG(t.items_total + t.delivery_fee), 0)::float AS avg
-         FROM (
-           SELECT
-             o.id,
-             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-           FROM orders o
-           LEFT JOIN order_items oi ON oi.order_id = o.id
-           WHERE o.payment_status = 'paid'
-             AND o.order_status <> 'cancelled'
-             AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-             AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)
-           GROUP BY o.id
-         ) t`
+        `SELECT COALESCE(AVG(o.total_amount), 0)::float AS avg
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+           AND o.created_at <  DATE_TRUNC('month', CURRENT_DATE)`
       ),
     ]);
 
@@ -433,21 +368,11 @@ router.get('/analytics', async (req, res) => {
        paid_revenue_by_month AS (
          SELECT
            EXTRACT(MONTH FROM o.created_at)::int AS month,
-           COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS revenue
-         FROM (
-           SELECT
-             o.id,
-             o.created_at,
-             COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-             COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-           FROM orders o
-           LEFT JOIN order_items oi ON oi.order_id = o.id
-           WHERE o.payment_status = 'paid'
-             AND o.order_status <> 'cancelled'
-             AND EXTRACT(YEAR FROM o.created_at) = $1
-           GROUP BY o.id
-         ) t
-         JOIN orders o ON o.id = t.id
+           COALESCE(SUM(o.total_amount), 0)::float AS revenue
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND EXTRACT(YEAR FROM o.created_at) = $1
          GROUP BY EXTRACT(MONTH FROM o.created_at)
        )
        SELECT
@@ -530,22 +455,13 @@ router.get('/analytics', async (req, res) => {
       `SELECT
          COALESCE(r.name, 'N/A') AS name,
          COUNT(*)::int AS orders,
-         COALESCE(SUM(t.items_total + t.delivery_fee), 0)::float AS revenue
-       FROM (
-         SELECT
-           o.id,
-           o.restaurant_id,
-           COALESCE(SUM(oi.quantity * oi.food_price), 0)::float AS items_total,
-           COALESCE(MAX(o.delivery_fee), 0)::float AS delivery_fee
-         FROM orders o
-         LEFT JOIN order_items oi ON oi.order_id = o.id
-         WHERE o.payment_status = 'paid'
-           AND o.order_status <> 'cancelled'
-           AND o.created_at >= ${rangeQuery.start}
-           AND o.created_at <  ${rangeQuery.end}
-         GROUP BY o.id
-       ) t
-       LEFT JOIN restaurants r ON t.restaurant_id = r.id
+         COALESCE(SUM(o.total_amount), 0)::float AS revenue
+       FROM orders o
+       LEFT JOIN restaurants r ON o.restaurant_id = r.id
+       WHERE o.payment_status = 'paid'
+         AND o.order_status <> 'cancelled'
+         AND o.created_at >= ${rangeQuery.start}
+         AND o.created_at <  ${rangeQuery.end}
        GROUP BY r.name
        ORDER BY revenue DESC
        LIMIT 5`

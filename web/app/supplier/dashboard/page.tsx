@@ -83,7 +83,6 @@ export default function SupplierDashboard() {
   const getOrderStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
       pending: { label: 'Chờ xác nhận', className: 'bg-yellow-100 text-yellow-800' },
-      //confirmed: { label: 'Đã xác nhận', className: 'bg-blue-100 text-blue-800' },
       processing: { label: 'Đang chuẩn bị', className: 'bg-purple-100 text-purple-800' },
       delivering: { label: 'Đang giao', className: 'bg-indigo-100 text-indigo-800' },
       delivered: { label: 'Đã giao', className: 'bg-green-100 text-green-800' },

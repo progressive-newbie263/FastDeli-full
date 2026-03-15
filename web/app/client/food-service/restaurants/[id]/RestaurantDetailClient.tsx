@@ -323,7 +323,7 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
         <span className="text-gray-600">{foods.length} món</span>
       </div>
 
-      {/* ✅ THÊM: Loading skeleton for foods */}
+      {/* THÊM: Loading skeleton for foods */}
       {loadingFoods ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
@@ -372,7 +372,7 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
                   </p>
                 </div>
 
-                {/* ✅ CẢI THIỆN: Better cart controls */}
+                {/* CẢI THIỆN: Better cart controls */}
                 <div className="absolute bottom-3 right-3 z-10">
                   {quantities[food.food_id] ? (
                     <div className="flex items-center bg-white rounded-lg border border-none overflow-hidden">

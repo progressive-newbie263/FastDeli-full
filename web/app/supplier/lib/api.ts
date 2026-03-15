@@ -1,9 +1,6 @@
-/**
- * ============================================
- * SUPPLIER API UTILITIES
- * ============================================
- * API functions để gọi backend services cho supplier portal
- */
+/*
+  1 số supplier utils.
+*/
 
 import type {
   Restaurant,
@@ -23,13 +20,14 @@ import { MOCK_RESTAURANT, MOCK_FOODS, MOCK_ORDERS, MOCK_STATS, MOCK_CATEGORIES }
 const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:5000';
 const FOOD_API_URL = process.env.NEXT_PUBLIC_FOOD_API_URL || 'http://localhost:5001';
 
-// Flag để bật/tắt mock mode - ĐỂ FALSE ĐỂ DÙNG API THẬT
+// Flag để bật/tắt mock mode 
+// set false để sử dụng API thật, true để sử dụng dữ liệu tạo sẵn (mock data)
 const USE_MOCK_DATA = false;
 
 class SupplierAPI {
-  /**
-   * Get auth headers với JWT token
-   */
+  /* 
+    Lấy auth headers với token jwt
+  */
   private static getAuthHeaders(): HeadersInit {
     const token = typeof window !== 'undefined' ? localStorage.getItem('supplier_token') : null;
     return {
@@ -38,9 +36,9 @@ class SupplierAPI {
     };
   }
 
-  /**
-   * Clear auth token khi logout
-   */
+  /* 
+    Đăng xuất sẽ xóa token và user info khỏi localStorage.
+  */
   static clearAuth() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('supplier_token');
@@ -53,9 +51,8 @@ class SupplierAPI {
   // AUTH APIs
   // ============================================
 
-  /**
-   * Login cho restaurant owners
-   */
+
+  // login cho supplier/ nhà hàng
   static async login(email: string, password: string): Promise<ApiResponse> {
     try {
       const response = await fetch(`${AUTH_API_URL}/api/auth/login`, {
@@ -95,9 +92,9 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Get current user profile
-   */
+  /*
+    Lấy hồ sơ thông tin supplier
+  */
   static async getProfile(): Promise<ApiResponse> {
     try {
       const response = await fetch(`${AUTH_API_URL}/api/auth/profile`, {
@@ -116,13 +113,13 @@ class SupplierAPI {
   // RESTAURANT APIs
   // ============================================
 
-  /**
-   * Lấy thông tin nhà hàng của supplier
-   */
+  /*
+    Lấy thông tin nhà hàng (supplier)
+  */
   static async getMyRestaurant(): Promise<ApiResponse<Restaurant>> {
-    // Mock mode: Return mock data
+    // test data ảo.
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 300));
       return {
         success: true,
         message: 'Lấy thông tin nhà hàng thành công',
@@ -130,7 +127,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/my-restaurant`, {
         headers: this.getAuthHeaders(),
@@ -144,14 +140,14 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Cập nhật thông tin nhà hàng
-   */
+  /*
+    Cập nhật thông tin nhà hàng
+  */
   static async updateRestaurant(restaurantId: number, data: Partial<Restaurant>): Promise<ApiResponse<Restaurant>> {
-    // Mock mode: Return updated restaurant data
     if (USE_MOCK_DATA) {
       await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
       const updatedRestaurant = { ...MOCK_RESTAURANT, ...data };
+      
       return {
         success: true,
         message: 'Cập nhật thông tin nhà hàng thành công',
@@ -159,7 +155,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}`, {
         method: 'PATCH',
@@ -179,13 +174,13 @@ class SupplierAPI {
   // FOOD/MENU APIs
   // ============================================
 
-  /**
-   * Lấy danh sách món ăn của nhà hàng
-   */
+  /*
+    Lấy danh sách món ăn của nhà hàng
+  */
   static async getMyFoods(restaurantId: number, page = 1, limit = 20): Promise<ApiResponse<FoodsResponse>> {
-    // Mock mode: Return mock data
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 400)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
       return {
         success: true,
         message: 'Lấy danh sách món ăn thành công',
@@ -201,7 +196,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(
         `${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/foods?page=${page}&limit=${limit}`,
@@ -218,13 +212,13 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Tạo món ăn mới
-   */
+  /*
+    Tạo món ăn mới
+  */
   static async createFood(restaurantId: number, foodData: Partial<Food>): Promise<ApiResponse<Food>> {
-    // Mock mode: Return new food with generated ID
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 600)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
       const newFood: Food = {
         food_id: MOCK_FOODS.length + 1,
         food_name: foodData.food_name || 'Món mới',
@@ -236,6 +230,7 @@ class SupplierAPI {
         is_available: foodData.is_available ?? true,
         created_at: new Date().toISOString(),
       };
+
       return {
         success: true,
         message: 'Tạo món ăn thành công',
@@ -243,7 +238,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/foods`, {
         method: 'POST',
@@ -259,20 +253,22 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Cập nhật món ăn
-   */
+  /*
+    Cập nhật món ăn
+  */
   static async updateFood(foodId: number, foodData: Partial<Food>): Promise<ApiResponse<Food>> {
-    // Mock mode: Return updated food data
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const existingFood = MOCK_FOODS.find(f => f.food_id === foodId);
+      
       if (!existingFood) {
         return {
           success: false,
           message: 'Không tìm thấy món ăn',
         };
       }
+      
       const updatedFood: Food = {
         ...existingFood,
         ...foodData,
@@ -280,6 +276,7 @@ class SupplierAPI {
           ? MOCK_CATEGORIES.find(c => c.category_id === foodData.category_id)?.category_name
           : existingFood.category_name,
       };
+      
       return {
         success: true,
         message: 'Cập nhật món ăn thành công',
@@ -287,7 +284,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}`, {
         method: 'PATCH',
@@ -303,11 +299,7 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Xóa món ăn
-   */
   static async deleteFood(foodId: number): Promise<ApiResponse> {
-    // Mock mode: Return success
     if (USE_MOCK_DATA) {
       await new Promise(resolve => setTimeout(resolve, 400)); // Simulate delay
       const foodExists = MOCK_FOODS.find(f => f.food_id === foodId);
@@ -323,7 +315,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}`, {
         method: 'DELETE',
@@ -338,27 +329,28 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Toggle food availability (available/unavailable)
-   */
+  /*
+    Toggle trạng thái món ăn (có bán/ ko bán)
+  */
   static async toggleFoodAvailability(foodId: number, isAvailable: boolean): Promise<ApiResponse> {
-    // Mock mode: Return success
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const foodExists = MOCK_FOODS.find(f => f.food_id === foodId);
+      
       if (!foodExists) {
         return {
           success: false,
           message: 'Không tìm thấy món ăn',
         };
       }
+      
       return {
         success: true,
         message: 'Cập nhật trạng thái món ăn thành công',
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}/availability`, {
         method: 'PATCH',
@@ -378,18 +370,17 @@ class SupplierAPI {
   // ORDER APIs
   // ============================================
 
-  /**
-   * Lấy danh sách đơn hàng của nhà hàng
-   */
+  /*
+    Lấy danh sách đơn hàng (Nhà hàng)
+  */
   static async getMyOrders(
     restaurantId: number,
     page = 1,
     limit = 20,
     status?: string
   ): Promise<ApiResponse<OrdersResponse>> {
-    // Mock mode: Return mock data
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       let filteredOrders = MOCK_ORDERS;
       if (status) {
@@ -411,7 +402,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -434,9 +424,9 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Lấy chi tiết đơn hàng
-   */
+  /*
+    chi tiết đơn hàng
+  */
   static async getOrderDetail(orderId: number): Promise<ApiResponse<Order>> {
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/orders/${orderId}`, {
@@ -451,13 +441,12 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Cập nhật trạng thái đơn hàng
-   */
+  /*
+    Cập nhật trạng thái đơn hàng
+  */
   static async updateOrderStatus(orderId: number, status: string): Promise<ApiResponse> {
-    // Mock mode: Return success
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 500));
       const orderExists = MOCK_ORDERS.find(o => o.order_id === orderId);
       if (!orderExists) {
         return {
@@ -471,12 +460,15 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify({ order_status: status }),
+        body: JSON.stringify({ 
+          status, 
+          order_status: status 
+        }),
+
       });
       return response.json();
     } catch (error) {
@@ -491,11 +483,10 @@ class SupplierAPI {
   // STATISTICS APIs
   // ============================================
 
-  /**
-   * Lấy thống kê dashboard
-   */
+  /*
+    Lấy thống kê dashboard
+  */
   static async getStatistics(restaurantId: number): Promise<ApiResponse<SupplierStats>> {
-    // Mock mode: Return mock data
     if (USE_MOCK_DATA) {
       await new Promise(resolve => setTimeout(resolve, 400)); // Simulate delay
       return {
@@ -505,11 +496,11 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/statistics`, {
         headers: this.getAuthHeaders(),
       });
+
       return response.json();
     } catch (error) {
       return {
@@ -519,9 +510,9 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Lấy dữ liệu biểu đồ doanh thu
-   */
+  /*
+    Lấy dữ liệu biểu đồ doanh thu
+  */
   static async getRevenueChart(restaurantId: number, days = 7): Promise<ApiResponse> {
     try {
       const response = await fetch(
@@ -543,13 +534,9 @@ class SupplierAPI {
   // CATEGORY APIs
   // ============================================
 
-  /**
-   * Lấy danh sách categories
-   */
   static async getCategories(): Promise<ApiResponse<FoodCategory[]>> {
-    // Mock mode: Return mock categories
     if (USE_MOCK_DATA) {
-      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
+      await new Promise(resolve => setTimeout(resolve, 300));
       return {
         success: true,
         message: 'Lấy danh sách danh mục thành công',
@@ -557,7 +544,6 @@ class SupplierAPI {
       };
     }
 
-    // Real API call
     try {
       const response = await fetch(`${FOOD_API_URL}/api/categories`, {
         headers: this.getAuthHeaders(),
@@ -575,9 +561,6 @@ class SupplierAPI {
   // REVIEWS APIs (future)
   // ============================================
 
-  /**
-   * Lấy reviews của nhà hàng
-   */
   static async getReviews(restaurantId: number, page = 1, limit = 20): Promise<ApiResponse> {
     try {
       const response = await fetch(
@@ -599,9 +582,6 @@ class SupplierAPI {
   // NUTRITION APIs
   // ============================================
 
-  /**
-   * Lấy thông tin dinh dưỡng của món ăn
-   */
   static async getFoodNutrition(foodId: number): Promise<ApiResponse<FoodNutrition>> {
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}/nutrition`, {
@@ -616,9 +596,6 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Tạo hoặc cập nhật thông tin dinh dưỡng
-   */
   static async upsertFoodNutrition(foodId: number, nutritionData: Partial<FoodNutrition>): Promise<ApiResponse<FoodNutrition>> {
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}/nutrition`, {
@@ -635,9 +612,6 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Xóa thông tin dinh dưỡng
-   */
   static async deleteFoodNutrition(foodId: number): Promise<ApiResponse> {
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}/nutrition`, {
@@ -653,9 +627,6 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Tính tự động nutrition từ tên món ăn (Vietnamese Food DB)
-   */
   static async calculateNutritionFromName(foodName: string): Promise<ApiResponse<Partial<FoodNutrition>>> {
     try {
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/calculate-nutrition`, {
@@ -676,9 +647,6 @@ class SupplierAPI {
   // UPLOAD APIs
   // ============================================
 
-  /**
-   * Upload ảnh món ăn
-   */
   static async uploadFoodImage(foodId: number, imageFile: File): Promise<ApiResponse<{url: string}>> {
     try {
       const formData = new FormData();
@@ -698,9 +666,9 @@ class SupplierAPI {
     }
   }
 
-  /**
-   * Upload ảnh nhà hàng
-   */
+  /*
+    Upload ảnh nhà hàng
+  */
   static async uploadRestaurantImage(restaurantId: number, imageFile: File): Promise<ApiResponse<{url: string}>> {
     try {
       const formData = new FormData();
@@ -710,6 +678,7 @@ class SupplierAPI {
         method: 'POST',
         body: formData,
       });
+      
       return response.json();
     } catch (error) {
       return {

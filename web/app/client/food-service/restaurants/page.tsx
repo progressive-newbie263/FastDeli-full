@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import RestaurantList from './Restaurants';
 import { Restaurant } from '../interfaces';
 
-// ✅ Constants cho cache
+// Constants cho cache
 const CACHE_KEY = 'restaurants_cache';
 const CACHE_TIME_KEY = 'restaurants_cache_time';
 const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
@@ -20,22 +20,22 @@ const RestaurantClient = () => {
         setLoading(true);
         setError(null);
         
-        // ✅ THÊM: Kiểm tra cache trong sessionStorage
+        // Kiểm tra cache trong sessionStorage
         const cached = sessionStorage.getItem(CACHE_KEY);
         const cacheTime = sessionStorage.getItem(CACHE_TIME_KEY);
         
         if (cached && cacheTime) {
           const age = Date.now() - parseInt(cacheTime);
           if (age < CACHE_DURATION) {
-            console.log('✅ Using cached restaurants data');
+            console.log('Using cached restaurants data');
             setRestaurants(JSON.parse(cached));
             setLoading(false);
             return;
           }
         }
 
-        // ✅ THÊM: Log khi fetch mới
-        console.log('🔄 Fetching fresh restaurants data');
+        // Log khi fetch mới
+        console.log('Fetching fresh restaurants data');
         
         const res = await fetch('http://localhost:5001/api/restaurants', {
           headers: {
@@ -52,15 +52,15 @@ const RestaurantClient = () => {
         if (data.success && Array.isArray(data.data.restaurants)) {
           setRestaurants(data.data.restaurants);
           
-          // ✅ THÊM: Lưu vào sessionStorage
+          // Lưu vào sessionStorage
           sessionStorage.setItem(CACHE_KEY, JSON.stringify(data.data.restaurants));
           sessionStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-          console.log('✅ Cached restaurants data');
+          console.log('Cached restaurants data');
         } else {
           throw new Error('Invalid data structure');
         }
       } catch (err) {
-        console.error('❌ Error fetching restaurants:', err);
+        console.error('Error fetching restaurants:', err);
         setError('Không thể tải danh sách nhà hàng. Vui lòng thử lại.');
       } finally {
         setLoading(false);
@@ -70,7 +70,7 @@ const RestaurantClient = () => {
     fetchRestaurants();
   }, []);
 
-  // ✅ THÊM: Loading state
+  // Loading state
   if (loading) {
     return (
       <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">
@@ -83,7 +83,7 @@ const RestaurantClient = () => {
     );
   }
 
-  // ✅ THÊM: Error state
+  // Error state
   if (error) {
     return (
       <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">

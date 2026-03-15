@@ -48,7 +48,7 @@ export function updateLocalStorage(groupedCart: RestaurantGroup[]): void {
   localStorage.setItem('cart', JSON.stringify(fullCart));
 }
 
-// ✅ CẢI THIỆN: func cập nhật lại số lượng sản phẩm ở giỏ hàng với error handling tốt hơn
+// CẢI THIỆN: func cập nhật lại số lượng sản phẩm ở giỏ hàng với error handling tốt hơn
 export function updateCartQuantity(groupedCart: RestaurantGroup[]): void {
   try {
     // Kiểm tra nếu cart rỗng hoặc không hợp lệ

@@ -60,12 +60,14 @@ const PaymentClient = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const restaurantIdFromQuery = searchParams.get("restaurantId");
+  type ToastType = "success" | "error" | "warning" | "info";
 
   const [timeLeft, setTimeLeft] = useState(300); // 5 phút
   const [paymentStatus, setPaymentStatus] = useState<"pending" | "paid" | "failed">("pending");
   const [isProcessing, setIsProcessing] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<ToastType>("info");
 
   const [payload, setPayload] = useState<any>(null);
   const [orderCode, setOrderCode] = useState<string | null>(null);
@@ -75,6 +77,16 @@ const PaymentClient = () => {
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
   const [showBankSelector, setShowBankSelector] = useState(false);
+
+  const showToastMessage = (message: string, type: ToastType = "info", duration = 3000) => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+
+    if (duration > 0) {
+      setTimeout(() => setShowToast(false), duration);
+    }
+  };
 
   const originalTotal = Number(payload?.orderData?.original_total || payload?.orderData?.total_amount || 0);
   const deliveryFee = Number(payload?.orderData?.delivery_fee || 0);
@@ -104,9 +116,7 @@ const PaymentClient = () => {
   // Generate QR Code khi đã chọn bank (học từ payment-gate)
   const generateQRCode = () => {
     if (!selectedBank || !orderId || !orderCode) {
-      setToastMessage("Vui lòng tạo đơn hàng và chọn ngân hàng trước!");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      showToastMessage("Vui lòng tạo đơn hàng và chọn ngân hàng trước!", "warning");
       return;
     }
 
@@ -116,7 +126,7 @@ const PaymentClient = () => {
     setQrCodeUrl(qrUrl);
     setShowBankSelector(false);
     
-    console.log(`✅ QR Code generated for ${selectedBank.name}:`, qrUrl);
+    console.log(`QR Code generated for ${selectedBank.name}:`, qrUrl);
   };
 
   // Auto-generate QR khi chọn bank
@@ -136,8 +146,7 @@ const PaymentClient = () => {
   // Auto-redirect khi hết thời gian
   useEffect(() => {
     if (timeLeft === 0 && paymentStatus === "pending") {
-      setToastMessage("⏱️ Hết thời gian thanh toán! Đơn hàng sẽ bị hủy.");
-      setShowToast(true);
+      showToastMessage("Hết thời gian thanh toán! Đơn hàng sẽ bị hủy.", "warning");
       setPaymentStatus("failed");
       
       setTimeout(() => {
@@ -164,8 +173,7 @@ const PaymentClient = () => {
 
     try {
       setIsProcessing(true);
-      setToastMessage("🔄 Đang tạo đơn hàng...");
-      setShowToast(true);
+      showToastMessage("Đang tạo đơn hàng...", "info", 0);
 
       const res = await fetch("http://localhost:5001/api/orders", {
         method: "POST",
@@ -182,33 +190,25 @@ const PaymentClient = () => {
       setOrderCode(code || null);
       setOrderId(newOrderId || null);
 
-      setToastMessage(`✅ Tạo đơn ${code} thành công!`);
-      setShowToast(true);
-      
-      setTimeout(() => setShowToast(false), 3000);
+      showToastMessage(`Tạo đơn ${code} thành công!`, "success");
       setIsProcessing(false);
     } catch (err) {
-      console.error("❌ Lỗi tạo đơn:", err);
-      setToastMessage("❌ Lỗi tạo đơn hàng");
-      setShowToast(true);
+      console.error("Lỗi tạo đơn:", err);
+      showToastMessage("Lỗi tạo đơn hàng", "error");
       setIsProcessing(false);
-      setTimeout(() => setShowToast(false), 3000);
     }
   };
 
   // Bước 2: Giả lập thanh toán (gọi webhook)
   const handleSimulatePayment = async () => {
     if (!orderId) {
-      setToastMessage("❌ Chưa có đơn hàng để thanh toán");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      showToastMessage("Chưa có đơn hàng để thanh toán", "warning");
       return;
     }
 
     try {
       setIsProcessing(true);
-      setToastMessage("⚡ Đang xử lý thanh toán...");
-      setShowToast(true);
+      showToastMessage("Đang xử lý thanh toán...", "info", 0);
 
       // Gọi webhook simulation
       const webhookRes = await fetch("http://localhost:5001/api/payments/webhook", {
@@ -225,7 +225,7 @@ const PaymentClient = () => {
       if (!webhookRes.ok) throw new Error("Webhook thất bại");
 
       const webhookData = await webhookRes.json();
-      console.log("✅ Webhook response:", webhookData);
+      console.log("Webhook response:", webhookData);
 
       // Xóa cart
       try {
@@ -237,13 +237,12 @@ const PaymentClient = () => {
           window.dispatchEvent(new Event("cart-updated"));
         }
       } catch (err) {
-        console.error("❌ Lỗi khi xóa cart:", err);
+        console.error("Lỗi khi xóa cart:", err);
       }
 
       setPaymentStatus("paid");
       setTimeLeft(0);
-      setToastMessage("✅ Thanh toán thành công!");
-      setShowToast(true);
+      showToastMessage("Thanh toán thành công!", "success");
 
       setTimeout(() => {
         router.push("/client/food-service/orders");
@@ -251,12 +250,10 @@ const PaymentClient = () => {
 
       setIsProcessing(false);
     } catch (err) {
-      console.error("❌ Lỗi thanh toán:", err);
-      setToastMessage("❌ Lỗi khi xử lý thanh toán");
-      setShowToast(true);
+      console.error("Lỗi thanh toán:", err);
+      showToastMessage("Lỗi khi xử lý thanh toán", "error");
       setPaymentStatus("failed");
       setIsProcessing(false);
-      setTimeout(() => setShowToast(false), 3000);
     }
   };
 
@@ -267,7 +264,6 @@ const PaymentClient = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/20 to-gray-50 pb-20">
-      {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
@@ -396,9 +392,9 @@ const PaymentClient = () => {
                   ? "bg-green-50 text-green-700 border-2 border-green-200"
                   : "bg-red-50 text-red-700 border-2 border-red-200"
               }`}>
-                {paymentStatus === "pending" && "⏳ Chờ thanh toán"}
-                {paymentStatus === "paid" && "✅ Thanh toán thành công"}
-                {paymentStatus === "failed" && "❌ Thất bại"}
+                {paymentStatus === "pending" && "Chờ thanh toán"}
+                {paymentStatus === "paid" && "Thanh toán thành công"}
+                {paymentStatus === "failed" && "Thất bại"}
               </div>
             </div>
 
@@ -478,9 +474,9 @@ const PaymentClient = () => {
       {showToast && (
         <div className="fixed top-4 right-4 z-50 max-w-sm animate-slide-in">
           <div className={`border-l-4 rounded-lg shadow-lg p-4 ${
-            toastMessage.includes("✅") ? "bg-white border-green-500" :
-            toastMessage.includes("❌") ? "bg-white border-red-500" :
-            toastMessage.includes("⏱️") ? "bg-white border-orange-500" :
+            toastType === "success" ? "bg-white border-green-500" :
+            toastType === "error" ? "bg-white border-red-500" :
+            toastType === "warning" ? "bg-white border-orange-500" :
             "bg-white border-purple-500"
           }`}>
             <p className="text-sm font-medium text-gray-900">

@@ -125,7 +125,6 @@ export default function OrdersPage() {
   const getStatusBadge = (status: string) => {
     const config: Record<string, { label: string; className: string }> = {
       pending: { label: 'Chờ xác nhận', className: 'bg-yellow-100 text-yellow-800' },
-      // confirmed: { label: 'Đã xác nhận', className: 'bg-blue-100 text-blue-800' },
       processing: { label: 'Đang chuẩn bị', className: 'bg-purple-100 text-purple-800' },
       delivering: { label: 'Đang giao', className: 'bg-indigo-100 text-indigo-800' },
       delivered: { label: 'Đã giao', className: 'bg-green-100 text-green-800' },
@@ -263,7 +262,7 @@ export default function OrdersPage() {
                 <div className="flex gap-2 flex-wrap">
                   {order.order_status === 'pending' && (
                     <button
-                      onClick={() => handleStatusChange(order.order_id, 'confirmed')}
+                      onClick={() => handleStatusChange(order.order_id ?? (order as any).id, 'processing')}
                       className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                     >
                       <CheckCircle size={18} />
@@ -273,7 +272,7 @@ export default function OrdersPage() {
                   
                   {order.order_status === 'pending' && (
                     <button
-                      onClick={() => handleStatusChange(order.order_id, 'cancelled')}
+                      onClick={() => handleStatusChange(order.order_id ?? (order as any).id, 'cancelled')}
                       className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                       <XCircle size={18} />
@@ -283,24 +282,13 @@ export default function OrdersPage() {
 
                   {order.order_status === 'processing' && (
                     <button
-                      onClick={() => handleStatusChange(order.order_id, 'processing')}
+                      onClick={() => handleStatusChange(order.order_id ?? (order as any).id, 'delivering')}
                       className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                     >
                       <Clock size={18} />
-                      Bắt đầu chuẩn bị
+                      Bàn giao đơn hàng
                     </button>
                   )}
-
-                  {/* {order.order_status === 'confirmed' && (
-                    <button
-                      key="processing-action"
-                      onClick={() => handleStatusChange(order.order_id, 'delivering')}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <Truck size={18} />
-                      Bàn giao shipper
-                    </button>
-                  )} */}
                 </div>
               </div>
             ))}
@@ -308,7 +296,6 @@ export default function OrdersPage() {
         )}
       </div>
 
-      {/* Order detail modal */}
       {selectedOrder && (
         <OrderDetailModal
           order={selectedOrder}

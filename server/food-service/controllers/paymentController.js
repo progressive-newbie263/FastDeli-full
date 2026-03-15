@@ -104,7 +104,7 @@ class PaymentController {
         transaction_id,
       });
     } catch (error) {
-      console.error('❌ Webhook error:', error);
+      console.error('Webhook error:', error);
       return errorResponse(res, 'Lỗi khi xử lý webhook', error);
     }
   }
@@ -171,7 +171,7 @@ class PaymentController {
         }
       );
 
-      return successResponse(res, '✅ Giả lập thanh toán thành công', result);
+      return successResponse(res, 'Giả lập thanh toán thành công', result);
     } catch (error) {
       return errorResponse(res, 'Lỗi khi giả lập thanh toán', error);
     }

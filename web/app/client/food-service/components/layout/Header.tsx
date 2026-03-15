@@ -33,10 +33,10 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
   const pathname = usePathname();
   const isAuthenticated = contextIsAuthenticated ?? propIsAuthenticated ?? false;
 
-  // 👉 Lấy số lượng tổng trong localStorage
+  // Lấy số lượng tổng trong localStorage
   const [cartQuantity, setCartQuantity] = useState(0);
 
-  // ✅ CẢI THIỆN: Hàm tính tổng số món trong cart với error handling tốt hơn
+  // CẢI THIỆN: Hàm tính tổng số món trong cart với error handling tốt hơn
   const getTotalItemsFromCart = (): number => {
     try {
       const raw = localStorage.getItem('cart');

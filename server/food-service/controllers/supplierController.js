@@ -21,9 +21,9 @@ const buildUsersMap = async (userIds) => {
   return map;
 };
 
-/**
- * Lấy thông tin restaurant của supplier
- */
+/*
+  Lấy thông tin restaurant của supplier
+*/
 const getMyRestaurant = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -61,9 +61,9 @@ const getMyRestaurant = async (req, res) => {
   }
 };
 
-/**
- * Lấy thống kê dashboard cho supplier
- */
+/*
+  Lấy thống kê dashboard cho supplier
+*/
 const getStatistics = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
@@ -151,9 +151,9 @@ const getStatistics = async (req, res) => {
   }
 };
 
-/**
- * Lấy danh sách đơn hàng của restaurant
- */
+/*
+  Lấy danh sách đơn hàng của restaurant
+*/
 const getOrders = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
@@ -161,7 +161,7 @@ const getOrders = async (req, res) => {
     const { foodPool, sharedPool } = require('../config/db');
 
     let query = `
-      SELECT o.*, 
+      SELECT o.*, o.id AS order_id,
         (SELECT json_agg(json_build_object(
           'order_item_id', oi.order_item_id,
           'food_name', oi.food_name,
@@ -178,14 +178,13 @@ const getOrders = async (req, res) => {
     const params = [restaurantId];
     let paramCount = 1;
 
-    // Filter by status
+    // lọc theo trạng thái đơn hàng
     if (status && status !== 'all') {
       paramCount++;
       query += ` AND o.order_status = $${paramCount}`;
       params.push(status);
     }
 
-    // Search by order code or ID
     if (search) {
       paramCount++;
       query += ` AND (o.order_code ILIKE $${paramCount} OR o.id::text = $${paramCount})`;
@@ -194,14 +193,14 @@ const getOrders = async (req, res) => {
 
     query += ` ORDER BY o.created_at DESC`;
 
-    // Pagination
+    // phân trang
     const offset = (page - 1) * limit;
     query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
     params.push(limit, offset);
 
     const result = await foodPool.query(query, params);
     
-    // Fetch user info từ shared DB
+    // lấy ttin người dùng (shared-db-deli)
     const userIds = [...new Set(result.rows.map(r => r.user_id).filter(id => id))];
     let usersMap = new Map();
     if (userIds.length > 0) {
@@ -212,7 +211,6 @@ const getOrders = async (req, res) => {
       usersResult.rows.forEach(u => usersMap.set(u.user_id, u));
     }
     
-    // Enrich orders with customer info
     const enrichedOrders = result.rows.map(order => {
       const user = usersMap.get(order.user_id) || {};
       return {
@@ -223,7 +221,7 @@ const getOrders = async (req, res) => {
       };
     });
 
-    // Get total count
+    // Tính tổng
     let countQuery = `
       SELECT COUNT(*) 
       FROM orders o
@@ -268,9 +266,9 @@ const getOrders = async (req, res) => {
   }
 };
 
-/**
- * Lấy chi tiết đơn hàng
- */
+/*
+  Thông tin chi tiết đơn hàng
+*/
 const getOrderById = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -339,16 +337,16 @@ const getOrderById = async (req, res) => {
   }
 };
 
-/**
- * Cập nhật trạng thái đơn hàng
- */
+/*
+  Cập nhật trạng thái đơn hàng
+*/
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
-    const { status } = req.body;
-    const restaurantId = req.restaurantId;
+    const status = req.body?.status || req.body?.order_status;
+    const userId = req.user.userId;
 
-    const allowedStatuses = ['processing', 'ready', 'cancelled'];
+    const allowedStatuses = ['pending', 'processing', 'delivering', 'delivered', 'cancelled'];
     
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
@@ -357,11 +355,13 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Verify order belongs to restaurant
     const { foodPool } = require('../config/db');
     const checkResult = await foodPool.query(
-      'SELECT order_status FROM orders WHERE id = $1 AND restaurant_id = $2',
-      [orderId, restaurantId]
+      `SELECT o.id, o.restaurant_id
+       FROM orders o
+       JOIN restaurants r ON r.id = o.restaurant_id
+       WHERE o.id = $1 AND r.owner_id = $2`,
+      [orderId, userId]
     );
 
     if (checkResult.rows.length === 0) {
@@ -371,7 +371,8 @@ const updateOrderStatus = async (req, res) => {
       });
     }
 
-    // Update status
+    const restaurantId = checkResult.rows[0].restaurant_id;
+
     const result = await foodPool.query(
       `UPDATE orders 
        SET order_status = $1, updated_at = NOW()
@@ -394,9 +395,9 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-/**
- * Lấy danh sách món ăn của restaurant
- */
+/*
+  Lấy danh sách món ăn của restaurant
+*/
 const getFoods = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
@@ -434,14 +435,14 @@ const getFoods = async (req, res) => {
 
     query += ` ORDER BY f.created_at DESC`;
     
-    // Pagination
+    // Phân trang
     const offset = (parseInt(page) - 1) * parseInt(limit);
     query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
     params.push(parseInt(limit), offset);
 
     const result = await foodPool.query(query, params);
     
-    // Get total count
+    // Tổng số
     let countQuery = `SELECT COUNT(*) FROM foods f WHERE f.restaurant_id = $1`;
     const countParams = [restaurantId];
     let countParamIndex = 1;
@@ -488,15 +489,14 @@ const getFoods = async (req, res) => {
   }
 };
 
-/**
- * Tạo món ăn mới
- */
+/*
+  Tạo món ăn mới
+*/
 const createFood = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
     const { name, description, price, category_id, image_url, is_available = true } = req.body;
 
-    // Validation
     if (!name || !price) {
       return res.status(400).json({
         success: false,
@@ -526,9 +526,9 @@ const createFood = async (req, res) => {
   }
 };
 
-/**
- * Cập nhật món ăn
- */
+/*
+  Cập nhật món ăn
+*/
 const updateFood = async (req, res) => {
   try {
     const { foodId } = req.params;
@@ -536,7 +536,6 @@ const updateFood = async (req, res) => {
     const { name, description, price, category_id, image_url, is_available } = req.body;
     const { foodPool } = require('../config/db');
 
-    // Verify food belongs to restaurant
     const checkResult = await foodPool.query(
       `SELECT f.food_id, f.restaurant_id, r.owner_id
        FROM foods f
@@ -626,16 +625,15 @@ const updateFood = async (req, res) => {
   }
 };
 
-/**
- * Xóa món ăn
- */
+/*
+  Xóa món ăn
+*/
 const deleteFood = async (req, res) => {
   try {
     const { foodId } = req.params;
     const userId = req.user.userId;
     const { foodPool } = require('../config/db');
 
-    // Verify food belongs to restaurant
     const checkResult = await foodPool.query(
       `SELECT f.food_id, r.owner_id
        FROM foods f
@@ -676,16 +674,15 @@ const deleteFood = async (req, res) => {
   }
 };
 
-/**
- * Toggle trạng thái món ăn (available/unavailable)
- */
+/*
+  Toggle trạng thái món ăn
+*/
 const toggleFoodAvailability = async (req, res) => {
   try {
     const { foodId } = req.params;
     const userId = req.user.userId;
     const { foodPool } = require('../config/db');
 
-    // Verify ownership
     const ownershipResult = await foodPool.query(
       `SELECT f.food_id, r.owner_id
        FROM foods f
@@ -737,9 +734,9 @@ const toggleFoodAvailability = async (req, res) => {
   }
 };
 
-/**
- * Cập nhật thông tin restaurant
- */
+/*
+  Cập nhật thông tin restaurant
+*/
 const updateRestaurant = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
@@ -845,9 +842,6 @@ const updateRestaurant = async (req, res) => {
   }
 };
 
-/**
- * Lấy reviews của restaurant
- */
 const getReviews = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
@@ -855,7 +849,6 @@ const getReviews = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    // Get reviews from food DB
     const result = await foodPool.query(
       `SELECT r.*
        FROM reviews r
@@ -864,8 +857,7 @@ const getReviews = async (req, res) => {
        LIMIT $2 OFFSET $3`,
       [restaurantId, limit, offset]
     );
-    
-    // Get user info from shared DB
+
     const userIds = [...new Set(result.rows.map(r => r.user_id).filter(id => id))];
     let usersMap = new Map();
     if (userIds.length > 0) {
@@ -875,8 +867,7 @@ const getReviews = async (req, res) => {
       );
       usersResult.rows.forEach(u => usersMap.set(u.user_id, u));
     }
-    
-    // Enrich reviews with user info
+
     const enrichedReviews = result.rows.map(review => {
       const user = usersMap.get(review.user_id) || {};
       return {
@@ -912,10 +903,10 @@ const getReviews = async (req, res) => {
   }
 };
 
-/**
- * Lấy thông tin dinh dưỡng của món ăn
- * GET /api/supplier/foods/:foodId/nutrition
- */
+/*
+  lấy thông tin dinh dưỡng của món ăn
+  GET /api/supplier/foods/:foodId/nutrition
+*/
 const getFoodNutrition = async (req, res) => {
   try {
     const { foodId } = req.params;
@@ -949,11 +940,13 @@ const getFoodNutrition = async (req, res) => {
   }
 };
 
-/**
- * Tạo hoặc cập nhật thông tin dinh dưỡng của món ăn (Simple version - 4 fields)
- * POST /api/supplier/foods/:foodId/nutrition
- * Body: { calories, protein, fat, sugar, serving_size }
- */
+/*
+  Tạo hoặc cập nhật thông tin dinh dưỡng của món ăn (thử nghiệm, làm đơn giản)
+  
+  POST /api/supplier/foods/:foodId/nutrition
+  
+  Body: { calories, protein, fat, sugar, serving_size }
+*/
 const upsertFoodNutrition = async (req, res) => {
   try {
     const { foodId } = req.params;
@@ -965,7 +958,6 @@ const upsertFoodNutrition = async (req, res) => {
       serving_size
     } = req.body;
 
-    // Kiểm tra food có tồn tại không
     const foodCheck = await foodPool.query(
       'SELECT food_id, restaurant_id FROM foods WHERE food_id = $1',
       [foodId]
@@ -978,7 +970,6 @@ const upsertFoodNutrition = async (req, res) => {
       });
     }
 
-    // Upsert nutrition info (INSERT ... ON CONFLICT UPDATE)
     const result = await foodPool.query(
       `INSERT INTO food_nutrition (
         food_id, calories, protein, fat, sugar, serving_size
@@ -1009,10 +1000,11 @@ const upsertFoodNutrition = async (req, res) => {
   }
 };
 
-/**
- * Xóa thông tin dinh dưỡng của món ăn
- * DELETE /api/supplier/foods/:foodId/nutrition
- */
+/*
+  Xóa thông tin dinh dưỡng của món ăn
+  
+  DELETE /api/supplier/foods/:foodId/nutrition
+*/
 const deleteFoodNutrition = async (req, res) => {
   try {
     const { foodId } = req.params;
@@ -1035,11 +1027,13 @@ const deleteFoodNutrition = async (req, res) => {
   }
 };
 
-/**
- * Tự động tính nutrition từ tên món ăn (dùng USDA API)
- * POST /api/supplier/foods/calculate-nutrition
- * Body: { foodName: string }
- */
+/*
+  Tự động tính nutrition từ tên món ăn (dùng USDA API)
+  
+  POST /api/supplier/foods/calculate-nutrition
+  
+  Body: { foodName: string }
+*/
 const calculateNutritionFromName = async (req, res) => {
   try {
     const { foodName } = req.body;
@@ -1051,9 +1045,8 @@ const calculateNutritionFromName = async (req, res) => {
       });
     }
 
-    console.log(`🔍 [USDA] Tìm kiếm nutrition cho: "${foodName}"`);
+    console.log(`[USDA] Tìm kiếm mức dinh dưỡng cho: "${foodName}"`);
 
-    // Call USDA API to get nutrition data
     const nutritionData = await getNutritionFromUSDA(foodName);
 
     if (!nutritionData) {
@@ -1066,7 +1059,7 @@ const calculateNutritionFromName = async (req, res) => {
       });
     }
 
-    console.log(`✅ [USDA] Tìm thấy: ${nutritionData.food_name}`);
+    console.log(`[USDA] Tìm thấy: ${nutritionData.food_name}`);
 
     res.json({
       success: true,

@@ -38,7 +38,7 @@
 - Xem danh sách đơn hàng với filter theo trạng thái
 - Tìm kiếm theo mã đơn, tên khách, SĐT
 - Xác nhận/Từ chối đơn hàng
-- Cập nhật trạng thái (pending → confirmed → processing → delivering)
+- Cập nhật trạng thái (pending → processing → delivering)
 - Xem chi tiết đơn hàng
 
 ### Quản lý thực đơn
@@ -135,19 +135,19 @@ http://localhost:3000/supplier
 ## Cải tiến đã thực hiện ✨
 
 ### Code Quality
-- ✅ Fix TypeScript errors (category_id type issues)
-- ✅ Thêm proper type conversion cho form data
-- ✅ Tạo reusable utility functions
-- ✅ Tạo reusable UI components
+- Fix TypeScript errors (category_id type issues)
+- Thêm proper type conversion cho form data
+- Tạo reusable utility functions
+- Tạo reusable UI components
 
 ### UI/UX Improvements  
-- ✅ Better loading states với text descriptions
-- ✅ Better error handling với retry buttons
-- ✅ Demo credentials hiển thị trên login page
-- ✅ Avatar fallback với initials
-- ✅ Improved responsive design
-- ✅ Better empty states
-- ✅ Helper text cho form fields
+- Better loading states với text descriptions
+- Better error handling với retry buttons
+- Demo credentials hiển thị trên login page
+- Avatar fallback với initials
+- Improved responsive design
+- Better empty states
+- Helper text cho form fields
 
 ### Components Created
 - `StatsCard` - Reusable stats display

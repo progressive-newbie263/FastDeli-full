@@ -2,7 +2,8 @@
  * ============================================
  * SUPPLIER TYPES & INTERFACES
  * ============================================
- * Định nghĩa types cho supplier portal (restaurant owners)
+ 
+  Định nghĩa types cho supplier portal (restaurant owners)
 */
 
 export interface Restaurant {

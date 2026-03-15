@@ -215,7 +215,7 @@
                 {
                   "key": "status",
                   "value": "pending",
-                  "description": "pending, confirmed, processing, delivering, delivered, cancelled"
+                  "description": "pending, processing, delivering, delivered, cancelled"
                 },
                 {
                   "key": "page",
@@ -300,7 +300,7 @@
               "port": "5001",
               "path": ["api", "supplier", "orders", "1", "status"]
             },
-            "description": "Allowed status: confirmed, processing, ready, cancelled"
+            "description": "Allowed status: processing, ready, cancelled"
           }
         }
       ]

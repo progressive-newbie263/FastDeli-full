@@ -632,7 +632,7 @@ function NutritionModal({ foodId, foodName, onClose }: {
         fat:      Math.round(totalFat * 10) / 10,
         sugar:    Math.round(totalSug * 10) / 10,
       }));
-      let msg = `✅ Thành công ${ok}/${ingredients.length} thành phần\n\n📊 Kết quả:\n• Calories: ${Math.round(totalCal)} kcal\n• Protein: ${Math.round(totalPro*10)/10}g\n• Fat: ${Math.round(totalFat*10)/10}g\n• Sugar: ${Math.round(totalSug*10)/10}g`;
+      let msg = `Thành công ${ok}/${ingredients.length} thành phần\n\nKết quả:\n• Calories: ${Math.round(totalCal)} kcal\n• Protein: ${Math.round(totalPro*10)/10}g\n• Fat: ${Math.round(totalFat*10)/10}g\n• Sugar: ${Math.round(totalSug*10)/10}g`;
       if (failed.length) msg += `\n\n⚠️ Không tìm thấy: ${failed.join(', ')}`;
       alert(msg);
     } catch { alert('Lỗi khi tính toán'); }

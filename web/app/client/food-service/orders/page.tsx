@@ -12,5 +12,5 @@ export default async function OrdersPage({
   params: Promise<{ id: string }> 
 }) {
   const { id } = await params;
-  return <OrdersPageClient orderId={id} />;
+  return <OrdersPageClient />;
 }

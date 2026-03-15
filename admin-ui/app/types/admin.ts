@@ -10,6 +10,7 @@ export interface DashboardStats {
   activeRestaurants: number;
   totalUsers: number;
   pendingOrders?: number;
+  pendingRestaurants?: number;
   todayRevenue?: number;
   ordersTrend?: number;
   revenueTrend?: number;

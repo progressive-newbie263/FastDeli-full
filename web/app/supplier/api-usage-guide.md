@@ -222,19 +222,19 @@ NEXT_PUBLIC_FOOD_API_URL=http://localhost:5001
 
 ## Features Highlights
 
-✅ Fully responsive design (mobile, tablet, desktop)
-✅ Real-time order notifications
-✅ Image preview for foods and restaurant
-✅ Search and filter functionality
-✅ Modal forms for CRUD operations
-✅ Loading states and error handling
-✅ Protected routes with authentication
-✅ Optimistic UI updates
-✅ Currency formatting (VNĐ)
-✅ Date/time formatting (Vietnamese locale)
-✅ Status badges with color coding
-✅ Quick actions for common tasks
-✅ Charts and data visualization
+- Fully responsive design (mobile, tablet, desktop)
+- Real-time order notifications
+- Image preview for foods and restaurant
+- Search and filter functionality
+- Modal forms for CRUD operations
+- Loading states and error handling
+- Protected routes with authentication
+- Optimistic UI updates
+- Currency formatting (VNĐ)
+- Date/time formatting (Vietnamese locale)
+- Status badges with color coding
+- Quick actions for common tasks
+- Charts and data visualization
 
 ## Future Enhancements
 
