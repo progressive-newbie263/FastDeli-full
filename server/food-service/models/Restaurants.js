@@ -13,10 +13,13 @@ class Restaurant {
   // lấy tất cả nhà hàng (GET /restaurants )
   static async getAll(filters = {}) {
     let query = `
-      SELECT r.*, 
+        SELECT r.*, 
+          rl.latitude,
+          rl.longitude,
              COALESCE(AVG(rev.rating), 0) as avg_rating,
              COUNT(rev.review_id) as review_count
       FROM restaurants r
+        LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
       LEFT JOIN reviews rev ON r.id = rev.restaurant_id
       WHERE r.status = 'active'
     `;
@@ -25,7 +28,7 @@ class Restaurant {
     let paramIndex = 1;
 
     if (filters.search) {
-      query += ` AND r.name ILIKE $${paramIndex}`;
+      query += ` AND (r.name ILIKE $${paramIndex} OR r.address ILIKE $${paramIndex})`;
       params.push(`%${filters.search}%`);
       paramIndex++;
     }
@@ -36,7 +39,7 @@ class Restaurant {
       paramIndex++;
     }
 
-    query += ` GROUP BY r.id ORDER BY r.created_at DESC`;
+    query += ` GROUP BY r.id, rl.latitude, rl.longitude ORDER BY r.created_at DESC`;
 
     if (filters.limit) {
       query += ` LIMIT $${paramIndex}`;
@@ -54,17 +57,20 @@ class Restaurant {
   static async getRestaurantById(id) {
     const query = `
       SELECT 
-        id,
-        name,
-        address,
-        phone,
-        image_url,
-        description,
-        status,
-        rating,
-        total_reviews
-      FROM restaurants
-      WHERE id = $1 AND status = 'active'
+        r.id,
+        r.name,
+        r.address,
+        r.phone,
+        r.image_url,
+        r.description,
+        r.status,
+        r.rating,
+        r.total_reviews,
+        rl.latitude,
+        rl.longitude
+      FROM restaurants r
+      LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
+      WHERE r.id = $1 AND r.status = 'active'
     `;
 
     try {
@@ -126,6 +132,38 @@ class Restaurant {
 
     const result = await foodPool.query(query, [id, ...values]);
     return result.rows[0];
+  }
+
+  static async getNearbyRestaurants(latitude, longitude, limit = 12) {
+    const lat = Number(latitude);
+    const lng = Number(longitude);
+    const safeLimit = Math.max(Number(limit) || 12, 1);
+
+    const query = `
+      SELECT
+        r.*, 
+        rl.latitude,
+        rl.longitude,
+        COALESCE(AVG(rev.rating), 0) as avg_rating,
+        COUNT(rev.review_id) as review_count,
+        SQRT(
+          POWER(CAST(rl.latitude AS numeric) - $1, 2)
+          +
+          POWER(CAST(rl.longitude AS numeric) - $2, 2)
+        ) as euclidean_distance
+      FROM restaurants r
+      LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
+      LEFT JOIN reviews rev ON r.id = rev.restaurant_id
+      WHERE r.status = 'active'
+        AND rl.latitude IS NOT NULL
+        AND rl.longitude IS NOT NULL
+      GROUP BY r.id, rl.latitude, rl.longitude
+      ORDER BY euclidean_distance ASC
+      LIMIT $3
+    `;
+
+    const result = await foodPool.query(query, [lat, lng, safeLimit]);
+    return result.rows;
   }
 
   /*

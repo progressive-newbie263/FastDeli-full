@@ -13,6 +13,7 @@ const addCacheHeaders = (req, res, next) => {
 
 // Public routes với cache
 router.get('/', addCacheHeaders, RestaurantController.getAllRestaurants);
+router.get('/nearby', addCacheHeaders, RestaurantController.getNearbyRestaurants);
 router.get('/:id', addCacheHeaders, RestaurantController.getRestaurantById);
 router.get('/:id/foods', addCacheHeaders, RestaurantController.getFoodsByRestaurantId);
 

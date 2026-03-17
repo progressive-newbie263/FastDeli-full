@@ -72,6 +72,7 @@ const PaymentClient = () => {
   const [payload, setPayload] = useState<any>(null);
   const [orderCode, setOrderCode] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
+  const [tempReference, setTempReference] = useState<string>("");
   
   // State cho QR Banking (học từ payment-gate)
   const [selectedBank, setSelectedBank] = useState<Bank | null>(null);
@@ -98,6 +99,8 @@ const PaymentClient = () => {
     if (typeof window === "undefined") return;
 
     try {
+      setTempReference(`FD-${Date.now()}`);
+
       const saved = sessionStorage.getItem("pendingOrderPayload");
       if (saved) {
         setPayload(JSON.parse(saved));
@@ -115,13 +118,14 @@ const PaymentClient = () => {
 
   // Generate QR Code khi đã chọn bank (học từ payment-gate)
   const generateQRCode = () => {
-    if (!selectedBank || !orderId || !orderCode) {
-      showToastMessage("Vui lòng tạo đơn hàng và chọn ngân hàng trước!", "warning");
+    if (!selectedBank || !payload?.orderData) {
+      showToastMessage("Thiếu dữ liệu thanh toán hoặc ngân hàng", "warning");
       return;
     }
 
     const amount = payload?.orderData?.total_amount || 0;
-    const qrUrl = `https://img.vietqr.io/image/${selectedBank.bin}-${ACCOUNT_NUMBER}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(orderCode)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
+    const reference = orderCode || tempReference || `FD-${Date.now()}`;
+    const qrUrl = `https://img.vietqr.io/image/${selectedBank.bin}-${ACCOUNT_NUMBER}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(reference)}&accountName=${encodeURIComponent(ACCOUNT_NAME)}`;
     
     setQrCodeUrl(qrUrl);
     setShowBankSelector(false);
@@ -131,10 +135,10 @@ const PaymentClient = () => {
 
   // Auto-generate QR khi chọn bank
   useEffect(() => {
-    if (selectedBank && orderId && orderCode) {
+    if (selectedBank && payload?.orderData) {
       generateQRCode();
     }
-  }, [selectedBank, orderId, orderCode]);
+  }, [selectedBank, orderCode, payload, tempReference]);
 
   // Countdown timer (300s = 5 phút như payment-gate)
   useEffect(() => {
@@ -161,18 +165,19 @@ const PaymentClient = () => {
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Bước 1: Tạo đơn hàng (chưa thanh toán) - AUTO TRIGGER
-  useEffect(() => {
-    if (payload && !orderId && !isProcessing) {
-      handleCreateOrder();
-    }
-  }, [payload]);
-
   const handleCreateOrder = async () => {
-    if (!payload || orderId) return;
+    if (!payload) {
+      throw new Error("Thiếu payload để tạo đơn");
+    }
+
+    if (orderId && orderCode) {
+      return {
+        id: orderId,
+        code: orderCode,
+      };
+    }
 
     try {
-      setIsProcessing(true);
       showToastMessage("Đang tạo đơn hàng...", "info", 0);
 
       const res = await fetch("http://localhost:5001/api/orders", {
@@ -186,23 +191,27 @@ const PaymentClient = () => {
       const data = await res.json();
       const newOrderId = data?.data?.id;
       const code = data?.data?.order_code;
+
+      if (!newOrderId || !code) {
+        throw new Error("Không nhận được mã đơn hàng từ server");
+      }
       
-      setOrderCode(code || null);
-      setOrderId(newOrderId || null);
+      setOrderCode(code);
+      setOrderId(newOrderId);
 
       showToastMessage(`Tạo đơn ${code} thành công!`, "success");
-      setIsProcessing(false);
+      return { id: newOrderId, code };
     } catch (err) {
       console.error("Lỗi tạo đơn:", err);
       showToastMessage("Lỗi tạo đơn hàng", "error");
-      setIsProcessing(false);
+      throw err;
     }
   };
 
   // Bước 2: Giả lập thanh toán (gọi webhook)
   const handleSimulatePayment = async () => {
-    if (!orderId) {
-      showToastMessage("Chưa có đơn hàng để thanh toán", "warning");
+    if (!payload) {
+      showToastMessage("Thiếu dữ liệu thanh toán", "warning");
       return;
     }
 
@@ -210,12 +219,19 @@ const PaymentClient = () => {
       setIsProcessing(true);
       showToastMessage("Đang xử lý thanh toán...", "info", 0);
 
+      const createdOrder = await handleCreateOrder();
+      const targetOrderId = createdOrder.id;
+
+      if (!targetOrderId) {
+        throw new Error("Không thể tạo đơn hàng trước khi thanh toán");
+      }
+
       // Gọi webhook simulation
       const webhookRes = await fetch("http://localhost:5001/api/payments/webhook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          order_id: orderId,
+          order_id: targetOrderId,
           payment_status: "paid",
           transaction_id: `TXN${Date.now()}`,
           bank_code: selectedBank?.id || "VCB",
@@ -243,6 +259,8 @@ const PaymentClient = () => {
       setPaymentStatus("paid");
       setTimeLeft(0);
       showToastMessage("Thanh toán thành công!", "success");
+      sessionStorage.removeItem("pendingOrderPayload");
+      sessionStorage.removeItem("selectedBank");
 
       setTimeout(() => {
         router.push("/client/food-service/orders");
@@ -329,7 +347,7 @@ const PaymentClient = () => {
                       <div className="text-center p-6">
                         <QrCode className="w-20 h-20 text-gray-400 mx-auto mb-3" />
                         <p className="text-sm text-gray-600 font-medium">
-                          {!orderId ? "Đang tạo đơn hàng..." : "Đang tạo mã QR thanh toán..."}
+                          Đang tạo mã QR thanh toán...
                         </p>
                         <div className="mt-4 flex justify-center">
                           <div className="animate-spin rounded-full h-8 w-8 border-4 border-green-600 border-t-transparent"></div>

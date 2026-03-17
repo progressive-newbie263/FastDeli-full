@@ -495,9 +495,10 @@ const getFoods = async (req, res) => {
 const createFood = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
-    const { name, description, price, category_id, image_url, is_available = true } = req.body;
+    const { name, food_name, description, price, category_id, image_url, is_available = true } = req.body;
+    const foodName = name ?? food_name;
 
-    if (!name || !price) {
+    if (!foodName || !price) {
       return res.status(400).json({
         success: false,
         message: 'Tên món ăn và giá là bắt buộc.'
@@ -509,7 +510,7 @@ const createFood = async (req, res) => {
       `INSERT INTO foods (restaurant_id, food_name, description, price, primary_category_id, image_url, is_available, created_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
        RETURNING *`,
-      [restaurantId, name, description, price, category_id, image_url, is_available]
+      [restaurantId, foodName, description, price, category_id, image_url, is_available]
     );
 
     res.status(201).json({
@@ -533,7 +534,8 @@ const updateFood = async (req, res) => {
   try {
     const { foodId } = req.params;
     const userId = req.user.userId;
-    const { name, description, price, category_id, image_url, is_available } = req.body;
+    const { name, food_name, description, price, category_id, image_url, is_available } = req.body;
+    const foodName = name ?? food_name;
     const { foodPool } = require('../config/db');
 
     const checkResult = await foodPool.query(
@@ -562,10 +564,10 @@ const updateFood = async (req, res) => {
     const params = [];
     let paramCount = 0;
 
-    if (name !== undefined) {
+    if (foodName !== undefined) {
       paramCount++;
       updates.push(`food_name = $${paramCount}`);
-      params.push(name);
+      params.push(foodName);
     }
     if (description !== undefined) {
       paramCount++;
@@ -633,9 +635,10 @@ const deleteFood = async (req, res) => {
     const { foodId } = req.params;
     const userId = req.user.userId;
     const { foodPool } = require('../config/db');
+    const { deleteImage } = require('../utils/cloudinary');
 
     const checkResult = await foodPool.query(
-      `SELECT f.food_id, r.owner_id
+      `SELECT f.food_id, f.image_url, r.owner_id
        FROM foods f
        JOIN restaurants r ON f.restaurant_id = r.id
        WHERE f.food_id = $1`,
@@ -654,6 +657,23 @@ const deleteFood = async (req, res) => {
         success: false,
         message: 'Bạn không có quyền xóa món ăn này.'
       });
+    }
+
+    // Với quy ước public_id cố định khi upload, xóa theo food id sẽ giải phóng tài nguyên Cloudinary.
+    if (checkResult.rows[0].image_url) {
+      try {
+        await deleteImage(`foods/food_${foodId}`);
+      } catch (cloudinaryError) {
+        const message = String(cloudinaryError?.message || '').toLowerCase();
+        const isNotFound =
+          cloudinaryError?.http_code === 404 ||
+          message.includes('not found') ||
+          message.includes('resource does not exist');
+
+        if (!isNotFound) {
+          throw cloudinaryError;
+        }
+      }
     }
 
     await foodPool.query(

@@ -36,6 +36,13 @@ class SupplierAPI {
     };
   }
 
+  private static getAuthOnlyHeaders(): HeadersInit {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('supplier_token') : null;
+    return {
+      ...(token && { Authorization: `Bearer ${token}` }),
+    };
+  }
+
   /* 
     Đăng xuất sẽ xóa token và user info khỏi localStorage.
   */
@@ -239,10 +246,15 @@ class SupplierAPI {
     }
 
     try {
+      const payload = {
+        ...foodData,
+        name: foodData.food_name,
+      };
+
       const response = await fetch(`${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/foods`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(foodData),
+        body: JSON.stringify(payload),
       });
       return response.json();
     } catch (error) {
@@ -285,10 +297,15 @@ class SupplierAPI {
     }
 
     try {
+      const payload = {
+        ...foodData,
+        name: foodData.food_name,
+      };
+
       const response = await fetch(`${FOOD_API_URL}/api/supplier/foods/${foodId}`, {
         method: 'PATCH',
         headers: this.getAuthHeaders(),
-        body: JSON.stringify(foodData),
+        body: JSON.stringify(payload),
       });
       return response.json();
     } catch (error) {
@@ -654,6 +671,7 @@ class SupplierAPI {
 
       const response = await fetch(`${FOOD_API_URL}/api/food-upload/foods/${foodId}`, {
         method: 'POST',
+        headers: this.getAuthOnlyHeaders(),
         body: formData,
         // Không set Content-Type header, browser sẽ tự động set với boundary
       });
@@ -676,6 +694,7 @@ class SupplierAPI {
 
       const response = await fetch(`${FOOD_API_URL}/api/food-upload/restaurants/${restaurantId}`, {
         method: 'POST',
+        headers: this.getAuthOnlyHeaders(),
         body: formData,
       });
       

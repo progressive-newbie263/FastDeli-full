@@ -1,23 +1,52 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import SupplierLayout from '../components/SupplierLayout';
 import { useSupplierAuth } from '../contexts/SupplierAuthContext';
 import SupplierAPI from '../lib/api';
 import type { Restaurant } from '../types';
-import { Save, MapPin, Phone, Mail, Clock, DollarSign } from 'lucide-react';
+import { Save, MapPin, Phone, Mail, Clock, DollarSign, Upload } from 'lucide-react';
 
 export default function SettingsPage() {
   const { restaurant, refreshRestaurantData } = useSupplierAuth();
   const [formData, setFormData] = useState<Partial<Restaurant>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (restaurant) {
       setFormData(restaurant);
     }
   }, [restaurant]);
+
+  const handleRestaurantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    if (!restaurant?.id) {
+      alert('Không tìm thấy thông tin nhà hàng');
+      return;
+    }
+
+    try {
+      setUploadingImage(true);
+      const response = await SupplierAPI.uploadRestaurantImage(restaurant.id, e.target.files[0]);
+      const imageUrl = response.data?.url || (response as unknown as { url?: string }).url;
+
+      if (response.success && imageUrl) {
+        setFormData((prev) => ({ ...prev, image_url: imageUrl }));
+        await refreshRestaurantData();
+        alert('Upload ảnh thành công! Nhấn "Lưu thay đổi" để cập nhật toàn bộ thông tin khác nếu cần.');
+      } else {
+        alert(response.message || 'Upload ảnh thất bại');
+      }
+    } catch (error) {
+      alert('Lỗi khi upload ảnh nhà hàng');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,23 +118,39 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">URL hình ảnh</label>
-              <input
-                type="url"
-                value={formData.image_url || ''}
-                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
-                placeholder="https://example.com/restaurant.jpg"
-              />
-              {formData.image_url && (
-                <div className="mt-2">
-                  <img
-                    src={formData.image_url}
-                    alt="Preview"
-                    className="w-48 h-32 object-cover rounded-lg border border-gray-200"
-                  />
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh đại diện nhà hàng</label>
+              <div className="flex items-center gap-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+                <div className="w-48 h-32 rounded-lg border border-gray-200 overflow-hidden bg-white flex items-center justify-center">
+                  {formData.image_url ? (
+                    <img
+                      src={formData.image_url}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-400">Chưa có ảnh</span>
+                  )}
                 </div>
-              )}
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleRestaurantImageUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingImage}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    <Upload size={16} />
+                    {uploadingImage ? 'Đang upload...' : 'Tải ảnh lên'}
+                  </button>
+                  <p className="text-xs text-gray-500 mt-2">Ảnh sẽ được lưu trên Cloudinary</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

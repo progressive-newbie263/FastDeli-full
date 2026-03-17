@@ -32,12 +32,9 @@ const Home = () => {
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState<boolean>(false);
   const isPermissionToastShowing = useRef<boolean>(false);
-
-  const hasRequestedLocation = useRef<boolean>(false);
-  const locationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 🔥 Hiển thị toast thông báo redirect từ trang khác
+  // Hiển thị toast thông báo redirect từ trang khác
   useEffect(() => {
     const message = localStorage.getItem("toastMessage");
     if (message) {
@@ -79,7 +76,6 @@ const Home = () => {
 
   useEffect(() => {
     return () => {
-      if (locationTimeoutRef.current) clearTimeout(locationTimeoutRef.current);
       if (abortControllerRef.current) abortControllerRef.current.abort();
     };
   }, []);
@@ -109,7 +105,6 @@ const Home = () => {
     }
   }, []);
 
-  // Enhanced location permission handler
   const handleLocationPermission = useCallback(async (granted: boolean) => {
     toast.dismiss(); // Đóng tất cả toast hiện tại
     isPermissionToastShowing.current = false; // Reset state khi xử lý
@@ -119,7 +114,7 @@ const Home = () => {
       return;
     }
     if (!navigator.geolocation) {
-      toast.error('📍 Trình duyệt không hỗ trợ định vị');
+      toast.error('Trình duyệt không hỗ trợ định vị');
       return;
     }
     setIsGettingLocation(true);
@@ -128,7 +123,7 @@ const Home = () => {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
           reject(new Error('Timeout'));
-        }, 10000);
+        }, 15000);
 
         // Thử với độ chính xác cao trước
         navigator.geolocation.getCurrentPosition(
@@ -150,8 +145,8 @@ const Home = () => {
                 },
                 {
                   enableHighAccuracy: false,
-                  timeout: 10000,
-                  maximumAge: 300000, // Cache 5 phút
+                  timeout: 15000,
+                  maximumAge: 600000,
                 }
               );
             } else {
@@ -161,7 +156,7 @@ const Home = () => {
           },
           {
             enableHighAccuracy: true,
-            timeout: 10000,
+            timeout: 15000,
             maximumAge: 0,
           }
         );
@@ -180,6 +175,7 @@ const Home = () => {
       localStorage.setItem('userLocation', JSON.stringify(locationData));
       localStorage.setItem('locationPermissionAsked', 'true');
       setCurrentAddress(address);
+      window.dispatchEvent(new Event('user-location-updated'));
       
       const input = document.getElementById('search-input') as HTMLInputElement;
       if (input) {
@@ -189,15 +185,31 @@ const Home = () => {
       toast.success('📍 Đã lưu vị trí của bạn!');
     } catch (error) {
       console.error('Lỗi vị trí:', error);
-      localStorage.setItem('locationPermissionAsked', `denied:${Date.now()}`);
+
+      const savedLocation = localStorage.getItem('userLocation');
+      if (savedLocation) {
+        try {
+          const parsed: LocationData = JSON.parse(savedLocation);
+          if (parsed?.address) {
+            setCurrentAddress(parsed.address);
+            const input = document.getElementById('search-input') as HTMLInputElement;
+            if (input) {
+              input.value = parsed.address;
+            }
+          }
+        } catch (parseError) {
+          console.error('Lỗi parse userLocation fallback:', parseError);
+        }
+      }
       
       if (error instanceof GeolocationPositionError) {
         switch (error.code) {
           case error.PERMISSION_DENIED:
+            localStorage.setItem('locationPermissionAsked', `denied:${Date.now()}`);
             toast.error(
               <div>
                 <p className="font-bold text-base mb-1">
-                ⚠️ Bạn đã từ chối quyền truy cập vị trí. Vui lòng mở lại quyền để cho phép sử dụng tính năng này. 
+                  Bạn đã từ chối quyền truy cập vị trí. Vui lòng mở lại quyền để cho phép sử dụng tính năng này. 
                 </p>
                 
                 <ol className="list-decimal ml-4 space-y-1 text-sm ">
@@ -226,6 +238,10 @@ const Home = () => {
             break;
         }
       }
+
+      if (error instanceof Error && error.message === 'Timeout') {
+        toast.error('Hết thời gian lấy vị trí. Hệ thống sẽ dùng địa chỉ đã lưu gần nhất nếu có.');
+      }
     } finally {
       setIsGettingLocation(false);
     }
@@ -238,13 +254,32 @@ const Home = () => {
     if (!isMounted || !isLoggedIn) return;
     
     if (!navigator.geolocation) {
-      toast.error('📍Trình duyệt không hỗ trợ định vị');
+      toast.error('Trình duyệt không hỗ trợ định vị');
       return;
     }
 
     if (isGettingLocation) {
-      toast.info('📍Đang lấy vị trí, vui lòng đợi...');
+      toast.info('Đang lấy vị trí, vui lòng đợi...');
       return;
+    }
+
+    const savedLocationRaw = localStorage.getItem('userLocation');
+    if (savedLocationRaw) {
+      try {
+        const savedLocation: Partial<LocationData> = JSON.parse(savedLocationRaw);
+        const isFresh = typeof savedLocation.timestamp === 'number' && (Date.now() - savedLocation.timestamp) < 5 * 60 * 1000;
+        if (isFresh && typeof savedLocation.address === 'string' && savedLocation.address.trim().length > 0) {
+          setCurrentAddress(savedLocation.address);
+          const input = document.getElementById('search-input') as HTMLInputElement;
+          if (input) {
+            input.value = savedLocation.address;
+          }
+          toast.info('Đang dùng địa chỉ đã cập nhật gần nhất.');
+          return;
+        }
+      } catch (error) {
+        console.error('Lỗi parse userLocation trong fillCurrentLocation:', error);
+      }
     }
 
     // QUAN TRỌNG: Kiểm tra xem toast permission đã hiển thị chưa. Rồi thì return luôn, ngắt quy trình.
@@ -266,7 +301,7 @@ const Home = () => {
       
       const toastId = toast.info(
         <div>
-          ℹ️ {/* window + . */}
+          {/* window + . */}
           { wasDenied ? 
             'Bạn có muốn cho phép FoodDeli truy cập vị trí để tự động điền địa chỉ?' : 
             'FoodDeli muốn sử dụng vị trí hiện tại của bạn để tự động điền địa chỉ.'
@@ -324,100 +359,6 @@ const Home = () => {
   }, [isMounted, isLoggedIn, isGettingLocation, handleLocationPermission]);
 
 
-  /* 
-    ****** Popup yêu cầu vị trí người dùng sẽ hiển thị lần đầu khi người dùng đăng nhập. ******
-    ****** Thường đăng nhập xong thì vị trí người dùng lưu trong localStorage rồi. ******
-    
-    ****** Kiểm tra khi đăng nhập thành công ******
-    - Lần đầu đăng nhập xong hoặc mới xóa các value trong localStorage
-    - Sẽ hiển thị tin nhắn hỏi "Có cho phép lấy địa chỉ người dùng?"
-    - nếu không cho / nhấn cancel thì thôi. Sẽ có 1 vài giới hạn được áp đặt lên
-    - Nếu cho / nhấn allow thì localStorage sẽ nhận được 1 cái 'userPermission' là true
-    ở những lần đăng nhập tiếp theo thì cứ từ đó mà triển. 
-
-    - Đảm bảo đầy đủ cả 3 yêu cầu: isMounted, isLoggedIn và hasRequestedLocation thì nút bấm lấy
-    địa chỉ mới dùng được hoàn chỉnh.
-  */
-  useEffect(() => {
-    if (isMounted && isLoggedIn && !hasRequestedLocation.current) {
-      const savedLocation = localStorage.getItem('userLocation');
-      const askStatus = localStorage.getItem('locationPermissionAsked');
-
-      if (!savedLocation) {
-        let shouldAsk = false;
-
-        if (!askStatus) {
-          shouldAsk = true;
-        } 
-        else if (askStatus.startsWith('denied:')) {
-          const [, timestampStr] = askStatus.split(':');
-          const deniedTime = parseInt(timestampStr, 10);
-          const now = Date.now();
-          const daysPassed = (now - deniedTime) / (1000 * 60 * 60 * 24);
-
-          if (daysPassed >= 3) {
-            shouldAsk = true;
-          }
-        }
-
-        // Thêm kiểm tra flag trước khi hiển thị
-        if (shouldAsk && !isPermissionToastShowing.current) {
-          hasRequestedLocation.current = true;
-          isPermissionToastShowing.current = true; // Đánh dấu đang hiển thị
-
-          locationTimeoutRef.current = setTimeout(() => {
-            const toastId = toast.info(
-              <div>
-                📍 FoodDeli muốn sử dụng vị trí hiện tại của bạn để gợi ý nhà hàng gần nhất.<br/>
-                <small className="text-gray-600">
-                  (Bạn luôn có thể thay đổi quyết định bằng cách bấm vào biểu tượng định vị)
-                </small>
-
-                <div className="mt-2 flex gap-4 justify-end">
-                  <button
-                    onClick={() => {
-                      // Reset flag và đóng toast
-                      isPermissionToastShowing.current = false;
-                      toast.dismiss(toastId);
-                      handleLocationPermission(true);
-                    }}
-                    className="px-3 py-1 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm transition-colors"
-                    aria-label="Cho phép truy cập vị trí"
-                  >
-                    Cho phép
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      // Reset flag và đóng toast
-                      isPermissionToastShowing.current = false;
-                      toast.dismiss(toastId);
-                      handleLocationPermission(false);
-                    }}
-                    className="px-3 py-1 bg-gray-300 text-black rounded-md hover:bg-gray-400 text-sm transition-colors"
-                    aria-label="Từ chối truy cập vị trí"
-                  >
-                    Từ chối
-                  </button>
-                </div>
-              </div>,
-              {
-                autoClose: false,
-                closeOnClick: false,
-                closeButton: false,
-                // Reset flag khi toast bị đóng
-                onClose: () => {
-                  isPermissionToastShowing.current = false;
-                }
-              }
-            );    
-          }, 1000);
-        }
-      }
-    }
-  }, [isMounted, isLoggedIn, handleLocationPermission]);
-
-
   // useEffect để lấy danh sách thể loại món ăn từ API (vd: cơm, mì, ...)
   useEffect(() => {
     if (!isMounted) return;
@@ -463,12 +404,28 @@ const Home = () => {
     const input = document.getElementById('search-input') as HTMLInputElement | null;
     const query = input?.value.trim() || '';
 
-    if (query === '') {
-      window.location.href = '/client/food-service/restaurants';
+    const savedLocation = localStorage.getItem('userLocation');
+    let savedAddress = '';
+    try {
+      if (savedLocation) {
+        const parsed = JSON.parse(savedLocation);
+        savedAddress = String(parsed?.address || '').trim();
+      }
+    } catch (error) {
+      console.error('Không parse được userLocation khi tìm kiếm:', error);
+    }
+
+    const shouldUseNearby =
+      query === '' ||
+      (savedAddress.length > 0 && query.toLowerCase() === savedAddress.toLowerCase()) ||
+      (currentAddress.length > 0 && query.toLowerCase() === currentAddress.toLowerCase());
+
+    if (shouldUseNearby) {
+      window.location.href = '/client/food-service/restaurants?nearby=1';
     } else {
       window.location.href = `/client/food-service/restaurants?search=${encodeURIComponent(query)}`;
     }
-  }, []);
+  }, [currentAddress]);
 
 
   // thêm keypress: enter để tìm kiếm, thay vì chỉ bấm chuột vào nút tìm kiếm.

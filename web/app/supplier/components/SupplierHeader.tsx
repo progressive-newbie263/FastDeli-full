@@ -26,6 +26,8 @@ export default function SupplierHeader() {
   const { user, restaurant, logout } = useSupplierAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [pendingOrders, setPendingOrders] = React.useState(0);
+  const [newOrdersAlert, setNewOrdersAlert] = React.useState(0);
+  const prevPendingOrdersRef = React.useRef<number | null>(null);
 
   // Fetch real pending orders count from API
   React.useEffect(() => {
@@ -35,7 +37,15 @@ export default function SupplierHeader() {
       try {
         const response = await SupplierAPI.getStatistics(restaurant.id);
         if (response.success && response.data) {
-          setPendingOrders(response.data.orders.pending_orders || 0);
+          const nextPending = response.data.orders.pending_orders || 0;
+          const prevPending = prevPendingOrdersRef.current;
+
+          if (prevPending !== null && nextPending > prevPending) {
+            setNewOrdersAlert((current) => current + (nextPending - prevPending));
+          }
+
+          prevPendingOrdersRef.current = nextPending;
+          setPendingOrders(nextPending);
         }
       } catch (error) {
         console.error('Failed to fetch pending orders:', error);
@@ -66,6 +76,13 @@ export default function SupplierHeader() {
     router.push('/supplier/login');
     router.refresh();
   };
+
+  const clearNewOrderAlert = () => {
+    setNewOrdersAlert(0);
+  };
+
+  const avatarUrl = restaurant?.image_url || user?.avatar_url;
+  const avatarAlt = restaurant?.name || user?.full_name || 'Supplier avatar';
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -113,8 +130,22 @@ export default function SupplierHeader() {
 
           {/* Right Section */}
           <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+            {newOrdersAlert > 0 && (
+              <Link
+                href="/supplier/orders?status=pending"
+                className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-semibold hover:bg-amber-100 transition-colors"
+                onClick={clearNewOrderAlert}
+              >
+                +{newOrdersAlert} đơn mới
+              </Link>
+            )}
+
             {/* Notifications */}
-            <button className="relative p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors">
+            <button
+              onClick={clearNewOrderAlert}
+              className="relative p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+              title="Thông báo đơn hàng"
+            >
               <Bell size={20} />
               {pendingOrders > 0 && (
                 <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
@@ -124,10 +155,10 @@ export default function SupplierHeader() {
             {/* User info */}
             {user && (
               <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
-                {user.avatar_url ? (
+                {avatarUrl ? (
                   <img
-                    src={user.avatar_url}
-                    alt={user.full_name}
+                    src={avatarUrl}
+                    alt={avatarAlt}
                     className="w-8 h-8 rounded-full object-cover border-2 border-orange-200"
                   />
                 ) : (
@@ -171,10 +202,10 @@ export default function SupplierHeader() {
             {/* User Info Mobile */}
             {user && (
               <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg mb-3">
-                {user.avatar_url ? (
+                {avatarUrl ? (
                   <img
-                    src={user.avatar_url}
-                    alt={user.full_name}
+                    src={avatarUrl}
+                    alt={avatarAlt}
                     className="w-10 h-10 rounded-full object-cover border-2 border-orange-200"
                   />
                 ) : (

@@ -4,7 +4,6 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Restaurant } from '../interfaces';
-// THAY ĐỔI: Dùng Lucide thay vì React Icons (nhẹ hơn 90%)
 import { MapPin, Phone, Star, Truck, Clock } from 'lucide-react';
 import { getOptimizedCloudinaryUrl, isCloudinaryUrl, getBlurDataURL } from '../utils/imageUtils';
 
@@ -70,10 +69,16 @@ const RestaurantList: React.FC<RestaurantListProps> = ({ restaurants }) => {
               </h3>
 
               <p className="text-sm text-gray-600 mb-2 flex items-center gap-1 line-clamp-1">
-                {/* THAY ĐỔI: Dùng Lucide icons */}
                 <MapPin className="text-red-500 w-4 h-4 flex-shrink-0" />
                 {restaurant.address}
               </p>
+
+              {typeof restaurant.distance_km === 'number' && (
+                <p className="text-sm text-blue-700 mb-2 flex items-center gap-1">
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
+                  Cách bạn khoảng {restaurant.distance_km.toFixed(2)} km
+                </p>
+              )}
 
               <p className="text-sm text-gray-600 mb-2 flex items-center gap-1">
                 <Phone className="text-green-500 w-4 h-4 flex-shrink-0" />

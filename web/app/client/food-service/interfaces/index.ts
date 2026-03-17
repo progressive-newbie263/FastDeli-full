@@ -24,6 +24,10 @@ export interface Restaurant {
   review_count?: string;
   opening_time?: string;
   closing_time?: string;
+  latitude?: number | string | null;
+  longitude?: number | string | null;
+  euclidean_distance?: number | string | null;
+  distance_km?: number | null;
 }
 
 export interface Food {

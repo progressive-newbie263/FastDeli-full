@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@food/context/AuthContext';
 import Header from '@food/components/layout/Header';
 import Footer from '@food/components/layout/Footer';
+import LocationAutoUpdater from '@food/components/location/LocationAutoUpdater';
 
 import './globals.css';
 import 'leaflet/dist/leaflet.css';
@@ -23,6 +24,7 @@ export default function ClientLayout({
   return (
     <AuthProvider>
       <div className="flex flex-col min-h-screen">
+        <LocationAutoUpdater />
         {!isAuthPage && <Header />}
 
         <main className="flex-grow">{children}</main>

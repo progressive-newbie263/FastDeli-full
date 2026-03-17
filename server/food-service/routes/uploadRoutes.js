@@ -1,16 +1,47 @@
 const express = require('express');
 const multer = require('multer');
 const { uploadFoodImage, uploadRestaurantImage } = require('../utils/cloudinary');
+const { supplierAuth, verifyRestaurantOwnership } = require('../middleware/supplierAuth');
 const router = express.Router();
 const { foodPool } = require('../config/db');
 
 const upload = multer({ dest: 'uploads/' });
 
+const verifyFoodOwnership = async (req, res, next) => {
+  try {
+    const { foodId } = req.params;
+    const userId = req.user.userId;
+
+    const result = await foodPool.query(
+      `SELECT f.food_id
+       FROM foods f
+       JOIN restaurants r ON f.restaurant_id = r.id
+       WHERE f.food_id = $1 AND r.owner_id = $2`,
+      [foodId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền cập nhật ảnh món ăn này.'
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Verify food ownership error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi xác thực quyền sở hữu món ăn.'
+    });
+  }
+};
+
 /**
  * Upload ảnh món ăn
  * POST /api/food-upload/foods/:foodId
  */
-router.post('/foods/:foodId', upload.single('image'), async (req, res) => {
+router.post('/foods/:foodId', supplierAuth, verifyFoodOwnership, upload.single('image'), async (req, res) => {
   try {
     const file = req.file;
     const { foodId } = req.params;
@@ -51,7 +82,7 @@ router.post('/foods/:foodId', upload.single('image'), async (req, res) => {
  * Upload ảnh nhà hàng
  * POST /api/food-upload/restaurants/:restaurantId
  */
-router.post('/restaurants/:restaurantId', upload.single('image'), async (req, res) => {
+router.post('/restaurants/:restaurantId', supplierAuth, verifyRestaurantOwnership, upload.single('image'), async (req, res) => {
   try {
     const file = req.file;
     const { restaurantId } = req.params;

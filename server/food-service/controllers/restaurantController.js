@@ -24,6 +24,41 @@ class RestaurantController {
     }
   }
 
+  static async getNearbyRestaurants(req, res) {
+    try {
+      const { latitude, longitude, limit } = req.query;
+
+      if (latitude === undefined || longitude === undefined) {
+        return errorResponse(res, 'Thiếu latitude hoặc longitude', null, 400);
+      }
+
+      const lat = Number(latitude);
+      const lng = Number(longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return errorResponse(res, 'latitude hoặc longitude không hợp lệ', null, 400);
+      }
+
+      const safeLimit = Number(limit) || 12;
+      let restaurants = await Restaurant.getNearbyRestaurants(lat, lng, safeLimit);
+      let fallbackUsed = false;
+
+      if (!restaurants.length) {
+        restaurants = await Restaurant.getAll({ limit: safeLimit });
+        fallbackUsed = true;
+      }
+
+      return successResponse(res, 'Lấy danh sách nhà hàng gần bạn thành công', {
+        latitude: lat,
+        longitude: lng,
+        restaurants,
+        total: restaurants.length,
+        fallbackUsed,
+      });
+    } catch (error) {
+      return errorResponse(res, 'Lỗi khi lấy danh sách nhà hàng gần bạn', error);
+    }
+  }
+
   //controller rút id nhà hàng và lấy ra thông tin của nhà hàng đó
   static async getRestaurantById(req, res) {
     try {

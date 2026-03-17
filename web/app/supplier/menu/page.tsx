@@ -260,7 +260,7 @@ function FoodFormModal({
     try {
       setUploading(true);
       const response = await SupplierAPI.uploadFoodImage(food.food_id, e.target.files[0]);
-      const imageUrl = response.data?.url;
+      const imageUrl = response.data?.url || (response as unknown as { url?: string }).url;
 
       if (response.success && imageUrl) {
         setFormData(p => ({ ...p, image_url: imageUrl }));
