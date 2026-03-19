@@ -10,6 +10,21 @@ import { Save, MapPin, Phone, Mail, Clock, DollarSign, Upload } from 'lucide-rea
 export default function SettingsPage() {
   const { restaurant, refreshRestaurantData } = useSupplierAuth();
   const [formData, setFormData] = useState<Partial<Restaurant>>({});
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [creatingCoupon, setCreatingCoupon] = useState(false);
+  const [editingCouponId, setEditingCouponId] = useState<number | null>(null);
+  const [couponForm, setCouponForm] = useState({
+    code: '',
+    title: '',
+    description: '',
+    discount_type: 'fixed_amount' as 'fixed_amount' | 'percentage',
+    discount_value: 10000,
+    min_order_value: 0,
+    max_discount: 0,
+    start_date: '',
+    end_date: '',
+  });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -18,8 +33,91 @@ export default function SettingsPage() {
   useEffect(() => {
     if (restaurant) {
       setFormData(restaurant);
+      void loadCoupons(restaurant.id);
     }
   }, [restaurant]);
+
+  const loadCoupons = async (restaurantId: number) => {
+    try {
+      setCouponLoading(true);
+      const response = await SupplierAPI.getMyCoupons(restaurantId);
+      if (response.success && response.data?.coupons) {
+        setCoupons(response.data.coupons);
+      }
+    } catch (error) {
+      console.error('Không thể tải coupons:', error);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleCreateCoupon = async () => {
+    if (!restaurant?.id) return;
+
+    try {
+      setCreatingCoupon(true);
+      const payload = {
+        ...couponForm,
+        max_discount: couponForm.max_discount > 0 ? couponForm.max_discount : null,
+      };
+      const response = editingCouponId
+        ? await SupplierAPI.updateMyCoupon(restaurant.id, editingCouponId, payload)
+        : await SupplierAPI.createMyCoupon(restaurant.id, payload);
+      if (!response.success) {
+        alert(response.message || (editingCouponId ? 'Cập nhật coupon thất bại' : 'Tạo coupon thất bại'));
+        return;
+      }
+
+      setCouponForm({
+        code: '',
+        title: '',
+        description: '',
+        discount_type: 'fixed_amount',
+        discount_value: 10000,
+        min_order_value: 0,
+        max_discount: 0,
+        start_date: '',
+        end_date: '',
+      });
+      setEditingCouponId(null);
+      await loadCoupons(restaurant.id);
+      alert(editingCouponId ? 'Cập nhật coupon thành công' : 'Tạo coupon thành công');
+    } catch (error) {
+      alert(editingCouponId ? 'Lỗi khi cập nhật coupon' : 'Lỗi khi tạo coupon');
+    } finally {
+      setCreatingCoupon(false);
+    }
+  };
+
+  const handleEditCoupon = (coupon: any) => {
+    setEditingCouponId(Number(coupon.id));
+    setCouponForm({
+      code: String(coupon.code || ''),
+      title: String(coupon.title || ''),
+      description: String(coupon.description || ''),
+      discount_type: coupon.discount_type === 'percentage' ? 'percentage' : 'fixed_amount',
+      discount_value: Number(coupon.discount_value || 0),
+      min_order_value: Number(coupon.min_order_value || 0),
+      max_discount: Number(coupon.max_discount || 0),
+      start_date: coupon.start_date ? String(coupon.start_date).slice(0, 16) : '',
+      end_date: coupon.end_date ? String(coupon.end_date).slice(0, 16) : '',
+    });
+  };
+
+  const resetCouponForm = () => {
+    setEditingCouponId(null);
+    setCouponForm({
+      code: '',
+      title: '',
+      description: '',
+      discount_type: 'fixed_amount',
+      discount_value: 10000,
+      min_order_value: 0,
+      max_discount: 0,
+      start_date: '',
+      end_date: '',
+    });
+  };
 
   const handleRestaurantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
@@ -237,7 +335,7 @@ export default function SettingsPage() {
             Cài đặt giao hàng
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Phí giao hàng (VNĐ)</label>
               <input
@@ -253,12 +351,25 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Thời gian giao hàng</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Giao hàng tối thiểu (phút)</label>
               <input
-                type="text"
-                value={formData.delivery_time || ''}
-                onChange={(e) => setFormData({ ...formData, delivery_time: e.target.value })}
-                placeholder="30-45 phút"
+                type="number"
+                min="0"
+                value={formData.delivery_time_min ?? 0}
+                onChange={(e) => setFormData({ ...formData, delivery_time_min: Number(e.target.value) })}
+                placeholder="30"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Giao hàng tối đa (phút)</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.delivery_time_max ?? 0}
+                onChange={(e) => setFormData({ ...formData, delivery_time_max: Number(e.target.value) })}
+                placeholder="45"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black"
               />
             </div>
@@ -311,6 +422,135 @@ export default function SettingsPage() {
           <p className="text-xs text-gray-500 mt-2">
             Tọa độ giúp hiển thị chính xác vị trí nhà hàng trên bản đồ cho khách hàng
           </p>
+        </div>
+
+        {/* Coupon settings */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Coupon của nhà hàng</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Coupon tạo tại đây chỉ áp dụng cho đơn hàng thuộc nhà hàng của bạn.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <input
+              required
+              value={couponForm.code}
+              onChange={(e) => setCouponForm((p) => ({ ...p, code: e.target.value.toUpperCase() }))}
+              placeholder="Mã coupon (VD: BUNCHA20)"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+            <input
+              value={couponForm.title}
+              onChange={(e) => setCouponForm((p) => ({ ...p, title: e.target.value }))}
+              placeholder="Tiêu đề coupon"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+            <select
+              value={couponForm.discount_type}
+              onChange={(e) => setCouponForm((p) => ({ ...p, discount_type: e.target.value as 'fixed_amount' | 'percentage' }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            >
+              <option value="fixed_amount">Giảm số tiền cố định</option>
+              <option value="percentage">Giảm theo %</option>
+            </select>
+            <input
+              type="number"
+              min="1"
+              required
+              value={couponForm.discount_value}
+              onChange={(e) => setCouponForm((p) => ({ ...p, discount_value: Number(e.target.value) }))}
+              placeholder="Giá trị giảm"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+            <input
+              type="number"
+              min="0"
+              value={couponForm.min_order_value}
+              onChange={(e) => setCouponForm((p) => ({ ...p, min_order_value: Number(e.target.value) }))}
+              placeholder="Đơn tối thiểu"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+            <input
+              type="number"
+              min="0"
+              value={couponForm.max_discount}
+              onChange={(e) => setCouponForm((p) => ({ ...p, max_discount: Number(e.target.value) }))}
+              placeholder="Mức giảm tối đa (nếu có)"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+            <input
+              type="datetime-local"
+              required
+              value={couponForm.start_date}
+              onChange={(e) => setCouponForm((p) => ({ ...p, start_date: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+            <input
+              type="datetime-local"
+              required
+              value={couponForm.end_date}
+              onChange={(e) => setCouponForm((p) => ({ ...p, end_date: e.target.value }))}
+              className="px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+            <textarea
+              value={couponForm.description}
+              onChange={(e) => setCouponForm((p) => ({ ...p, description: e.target.value }))}
+              placeholder="Mô tả coupon"
+              className="md:col-span-2 px-3 py-2 border border-gray-300 rounded-lg text-black"
+            />
+
+            <div className="md:col-span-2 flex gap-2">
+              <button
+                type="button"
+                onClick={handleCreateCoupon}
+                disabled={creatingCoupon}
+                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+              >
+                {creatingCoupon
+                  ? (editingCouponId ? 'Đang cập nhật...' : 'Đang tạo...')
+                  : (editingCouponId ? 'Lưu chỉnh sửa coupon' : 'Tạo coupon nhà hàng')}
+              </button>
+              {editingCouponId && (
+                <button
+                  type="button"
+                  onClick={resetCouponForm}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                >
+                  Hủy chỉnh sửa
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-800">Danh sách coupon đã tạo</h3>
+            {couponLoading ? (
+              <p className="text-sm text-gray-500">Đang tải...</p>
+            ) : coupons.length === 0 ? (
+              <p className="text-sm text-gray-500">Chưa có coupon nào.</p>
+            ) : (
+              coupons.map((coupon) => (
+                <div key={coupon.id} className="rounded-lg border border-gray-200 p-3">
+                  <p className="font-semibold text-gray-900">{coupon.code} {coupon.title ? `- ${coupon.title}` : ''}</p>
+                  <p className="text-sm text-gray-600">
+                    {coupon.discount_type === 'percentage'
+                      ? `Giảm ${coupon.discount_value}%`
+                      : `Giảm ${Number(coupon.discount_value).toLocaleString('vi-VN')}đ`}
+                    {' '}| Đơn tối thiểu {Number(coupon.min_order_value || 0).toLocaleString('vi-VN')}đ
+                  </p>
+                  <div className="mt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEditCoupon(coupon)}
+                      className="text-sm text-blue-600 hover:text-blue-700"
+                    >
+                      Chỉnh sửa
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* Submit button */}

@@ -5,6 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import RestaurantList from './Restaurants';
 import { Restaurant } from '../interfaces';
 
+type Category = {
+  category_id: number;
+  category_name: string;
+};
+
 // Constants cho cache
 const CACHE_KEY = 'restaurants_cache';
 const CACHE_TIME_KEY = 'restaurants_cache_time';
@@ -85,8 +90,10 @@ const RestaurantClient = () => {
   const searchParams = useSearchParams();
   const searchKeyword = (searchParams.get('search') || '').trim();
   const forceNearby = searchParams.get('nearby') === '1';
+  const selectedCategory = Number(searchParams.get('category') || 0);
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNearbyMode, setIsNearbyMode] = useState(false);
@@ -133,7 +140,7 @@ const RestaurantClient = () => {
       
       const cached = sessionStorage.getItem(CACHE_KEY);
       const cacheTime = sessionStorage.getItem(CACHE_TIME_KEY);
-      const canUseCache = searchKeyword.length === 0 && !forceNearby;
+      const canUseCache = searchKeyword.length === 0 && selectedCategory === 0 && !forceNearby;
 
       if (canUseCache && cached && cacheTime) {
         const age = Date.now() - parseInt(cacheTime);
@@ -142,7 +149,7 @@ const RestaurantClient = () => {
           const userCoords = await resolveUserCoordinates();
           if (userCoords) {
             setRestaurants(withDistance(cachedData, userCoords.latitude, userCoords.longitude));
-            setIsNearbyMode(true);
+            setIsNearbyMode(false);
           } else {
             setRestaurants(cachedData);
           }
@@ -153,9 +160,17 @@ const RestaurantClient = () => {
 
       const userCoords = await resolveUserCoordinates();
 
-      if (searchKeyword.length > 0) {
+      if (searchKeyword.length > 0 || selectedCategory > 0) {
+        const query = new URLSearchParams();
+        if (searchKeyword.length > 0) {
+          query.set('search', searchKeyword);
+        }
+        if (selectedCategory > 0) {
+          query.set('category_id', String(selectedCategory));
+        }
+
         const searchRes = await fetch(
-          `http://localhost:5001/api/restaurants?search=${encodeURIComponent(searchKeyword)}`,
+          `http://localhost:5001/api/restaurants?${query.toString()}`,
           {
             headers: {
               'Cache-Control': 'max-age=60',
@@ -180,7 +195,7 @@ const RestaurantClient = () => {
         }
       }
 
-      if (userCoords && (forceNearby || searchKeyword.length === 0)) {
+      if (userCoords && forceNearby) {
         const nearbyRes = await fetch(
           `http://localhost:5001/api/restaurants/nearby?latitude=${userCoords.latitude}&longitude=${userCoords.longitude}&limit=50`,
           {
@@ -220,7 +235,7 @@ const RestaurantClient = () => {
         const userCoordsFallback = await resolveUserCoordinates();
         if (userCoordsFallback) {
           setRestaurants(withDistance(data.data.restaurants, userCoordsFallback.latitude, userCoordsFallback.longitude));
-          setIsNearbyMode(true);
+          setIsNearbyMode(false);
         } else {
           setRestaurants(data.data.restaurants);
         }
@@ -238,9 +253,22 @@ const RestaurantClient = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://localhost:5001/api/categories');
+      const data = await response.json();
+      if (data?.success && Array.isArray(data?.data)) {
+        setCategories(data.data);
+      }
+    } catch (err) {
+      console.error('Không thể tải category:', err);
+    }
+  };
+
   useEffect(() => {
+    fetchCategories();
     fetchRestaurants();
-  }, [searchKeyword, forceNearby]);
+  }, [searchKeyword, forceNearby, selectedCategory]);
 
   useEffect(() => {
     const handleLocationUpdated = () => {
@@ -291,6 +319,33 @@ const RestaurantClient = () => {
   return (
     <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">
       <h1 className="text-3xl font-bold">Danh sách nhà hàng</h1>
+      {categories.length > 0 && (
+        <div className="mt-4 flex gap-2 flex-wrap">
+          <a
+            href="/client/food-service/restaurants"
+            className={`px-3 py-1.5 rounded-full text-sm border transition ${
+              selectedCategory <= 0
+                ? 'bg-green-600 text-white border-green-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
+            }`}
+          >
+            Tất cả
+          </a>
+          {categories.map((category) => (
+            <a
+              key={category.category_id}
+              href={`/client/food-service/restaurants?category=${category.category_id}`}
+              className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                selectedCategory === category.category_id
+                  ? 'bg-green-600 text-white border-green-600'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
+              }`}
+            >
+              {category.category_name}
+            </a>
+          ))}
+        </div>
+      )}
       {isNearbyMode && (
         <p className="text-sm text-blue-700 mt-2">
           Hệ thống đang ưu tiên gợi ý các nhà hàng gần vị trí hiện tại của bạn.

@@ -18,7 +18,7 @@ export default function SupplierLayout({ children, title, subtitle }: SupplierLa
 
   useEffect(() => {
     // Redirect to login if not authenticated (except on login page)
-    if (!isLoading && !isAuthenticated && pathname !== '/supplier/login') {
+    if (!isLoading && !isAuthenticated && pathname !== '/supplier/login' && pathname !== '/supplier/register') {
       router.push('/supplier/login');
     }
   }, [isAuthenticated, isLoading, pathname, router]);
@@ -36,7 +36,7 @@ export default function SupplierLayout({ children, title, subtitle }: SupplierLa
   }
 
   // Don't render layout on login page
-  if (pathname === '/supplier/login') {
+  if (pathname === '/supplier/login' || pathname === '/supplier/register') {
     return <>{children}</>;
   }
 

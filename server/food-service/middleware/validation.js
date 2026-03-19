@@ -8,8 +8,9 @@ const validateRestaurant = (req, res, next) => {
     phone: Joi.string().pattern(/^[0-9]{10,11}$/).required(),
     image_url: Joi.string().uri().optional(),
     description: Joi.string().max(1000).optional(),
-    delivery_time: Joi.string().max(50).optional(),
-    min_order_amount: Joi.number().min(0).optional(),
+    delivery_time_min: Joi.number().integer().min(0).optional(),
+    delivery_time_max: Joi.number().integer().min(0).optional(),
+    min_order_value: Joi.number().min(0).optional(),
     delivery_fee: Joi.number().min(0).optional()
   });
 

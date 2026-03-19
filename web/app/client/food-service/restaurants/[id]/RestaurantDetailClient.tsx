@@ -19,6 +19,14 @@ interface Cart {
   [restaurant_id: string]: CartItem[];
 }
 
+interface ReviewItem {
+  review_id: number;
+  rating: number;
+  comment?: string | null;
+  created_at: string;
+  customer_name?: string;
+}
+
 // set biến riêng cho nhanh, khi lặp lại nó nhiều lần
 const CLIENT_FOOD_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
 
@@ -67,13 +75,18 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [foods, setFoods] = useState<Food[]>([]);
   const [quantities, setQuantities] = useState<{ [foodId: number]: number }>({});
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
   /* 
     bổ sung: 3 state cải thiện UI trang bán hàng
   */
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingFoods, setLoadingFoods] = useState(true);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState('');
 
   // fix logic tiền
   const formatPrice = (price: string | number) => {
@@ -121,9 +134,70 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
     }
   };
 
+  const fetchReviews = async () => {
+    if (!id) return;
+
+    try {
+      setReviewLoading(true);
+      const res = await fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/reviews?limit=20`);
+      const data = await res.json();
+      if (data?.success && Array.isArray(data?.data?.reviews)) {
+        setReviews(data.data.reviews);
+      }
+    } catch (err) {
+      console.error('Error fetching reviews:', err);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchRestaurantData();
+    fetchReviews();
   }, [id]);
+
+  const submitReview = async () => {
+    if (!id) return;
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để gửi đánh giá.');
+      return;
+    }
+
+    const userId = Number((currentUser as any)?.user_id || (currentUser as any)?.id);
+    if (!userId || Number.isNaN(userId)) {
+      toast.error('Không lấy được thông tin tài khoản để đánh giá.');
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+      const response = await fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/reviews`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          rating: newRating,
+          comment: newComment,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        toast.error(data?.message || 'Không thể gửi đánh giá');
+        return;
+      }
+
+      toast.success('Cảm ơn bạn đã gửi đánh giá!');
+      setNewComment('');
+      setNewRating(5);
+      await fetchReviews();
+    } catch (err) {
+      console.error('Submit review error:', err);
+      toast.error('Lỗi khi gửi đánh giá');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   // Load cart data từ localStorage khi component mount (fix)
   useEffect(() => {
@@ -430,6 +504,76 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
           </button>
         </div>
       )} */}
+
+      <section className="mt-12 bg-white rounded-xl shadow-sm p-6">
+        <h3 className="text-2xl font-bold text-gray-900 mb-4">Đánh giá từ khách hàng</h3>
+
+        <div className="mb-6 rounded-lg border border-gray-200 p-4">
+          <p className="font-semibold text-gray-800 mb-2">Gửi đánh giá của bạn</p>
+          <div className="flex items-center gap-2 mb-3">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setNewRating(star)}
+                className="p-1"
+              >
+                <Star
+                  size={20}
+                  className={star <= newRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                />
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            rows={3}
+            maxLength={300}
+            placeholder="Chia sẻ trải nghiệm món ăn và dịch vụ..."
+            className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-700"
+          />
+
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={submitReview}
+              disabled={submittingReview}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              {submittingReview ? 'Đang gửi...' : 'Gửi đánh giá'}
+            </button>
+          </div>
+        </div>
+
+        {reviewLoading ? (
+          <p className="text-sm text-gray-500">Đang tải đánh giá...</p>
+        ) : reviews.length === 0 ? (
+          <p className="text-sm text-gray-500">Chưa có đánh giá nào cho nhà hàng này.</p>
+        ) : (
+          <div className="space-y-3">
+            {reviews.map((review) => (
+              <div key={review.review_id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="font-semibold text-gray-800">{review.customer_name || 'Khách hàng'}</p>
+                  <p className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString('vi-VN')}</p>
+                </div>
+                <div className="flex items-center gap-1 mb-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={`${review.review_id}-${star}`}
+                      size={14}
+                      className={star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                    />
+                  ))}
+                </div>
+                <p className="text-sm text-gray-700">{review.comment || 'Khách hàng không để lại nhận xét.'}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

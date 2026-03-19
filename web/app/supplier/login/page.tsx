@@ -155,7 +155,7 @@ export default function SupplierLoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
               Chưa có tài khoản?{' '}
-              <a href="#" className="text-orange-600 hover:text-orange-700 font-medium">
+              <a href="/supplier/register" className="text-orange-600 hover:text-orange-700 font-medium">
                 Đăng ký ngay
               </a>
             </p>

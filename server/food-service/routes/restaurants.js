@@ -16,6 +16,8 @@ router.get('/', addCacheHeaders, RestaurantController.getAllRestaurants);
 router.get('/nearby', addCacheHeaders, RestaurantController.getNearbyRestaurants);
 router.get('/:id', addCacheHeaders, RestaurantController.getRestaurantById);
 router.get('/:id/foods', addCacheHeaders, RestaurantController.getFoodsByRestaurantId);
+router.get('/:id/reviews', addCacheHeaders, RestaurantController.getRestaurantReviews);
+router.post('/:id/reviews', RestaurantController.createRestaurantReview);
 
 // Protected routes (cần auth)
 //router.post('/', auth, validateRestaurant, RestaurantController.createRestaurant);

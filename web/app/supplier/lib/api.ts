@@ -99,6 +99,38 @@ class SupplierAPI {
     }
   }
 
+  static async registerPartner(payload: {
+    full_name: string;
+    email: string;
+    phone_number: string;
+    password: string;
+    restaurant_name: string;
+    restaurant_address: string;
+    restaurant_phone: string;
+    description?: string;
+    image_url?: string;
+    delivery_time_min?: number;
+    delivery_time_max?: number;
+    min_order_value?: number;
+    delivery_fee?: number;
+    latitude?: number;
+    longitude?: number;
+  }): Promise<ApiResponse> {
+    try {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Lỗi kết nối đến server khi đăng ký đối tác',
+      };
+    }
+  }
+
   /*
     Lấy hồ sơ thông tin supplier
   */
@@ -591,6 +623,94 @@ class SupplierAPI {
       return {
         success: false,
         message: 'Không thể lấy đánh giá',
+      };
+    }
+  }
+
+  // ============================================
+  // SUPPLIER COUPON APIs
+  // ============================================
+
+  static async getMyCoupons(restaurantId: number): Promise<ApiResponse> {
+    try {
+      const response = await fetch(
+        `${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/coupons`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể lấy danh sách coupon',
+      };
+    }
+  }
+
+  static async createMyCoupon(
+    restaurantId: number,
+    payload: {
+      code: string;
+      title?: string;
+      description?: string;
+      discount_type: 'percentage' | 'fixed_amount';
+      discount_value: number;
+      min_order_value?: number;
+      max_discount?: number | null;
+      start_date: string;
+      end_date: string;
+      is_active?: boolean;
+    }
+  ): Promise<ApiResponse> {
+    try {
+      const response = await fetch(
+        `${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/coupons`,
+        {
+          method: 'POST',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(payload),
+        }
+      );
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể tạo coupon',
+      };
+    }
+  }
+
+  static async updateMyCoupon(
+    restaurantId: number,
+    couponId: number,
+    payload: {
+      code?: string;
+      title?: string;
+      description?: string;
+      discount_type?: 'percentage' | 'fixed_amount';
+      discount_value?: number;
+      min_order_value?: number;
+      max_discount?: number | null;
+      start_date?: string;
+      end_date?: string;
+      is_active?: boolean;
+    }
+  ): Promise<ApiResponse> {
+    try {
+      const response = await fetch(
+        `${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/coupons/${couponId}`,
+        {
+          method: 'PATCH',
+          headers: this.getAuthHeaders(),
+          body: JSON.stringify(payload),
+        }
+      );
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể cập nhật coupon',
       };
     }
   }

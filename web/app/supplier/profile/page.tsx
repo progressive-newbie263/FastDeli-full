@@ -25,7 +25,8 @@ export default function ProfilePage() {
         email: restaurant.email || '',
         description: restaurant.description || '',
         image_url: restaurant.image_url || '',
-        delivery_time: restaurant.delivery_time || '',
+        delivery_time_min: restaurant.delivery_time_min ?? 30,
+        delivery_time_max: restaurant.delivery_time_max ?? 45,
         delivery_fee: restaurant.delivery_fee || 0,
         min_order_value: restaurant.min_order_value || 0,
         opening_time: restaurant.opening_time || '',
@@ -234,15 +235,28 @@ export default function ProfilePage() {
             Cài đặt giao hàng
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Thời gian giao hàng</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Giao hàng tối thiểu (phút)</label>
               <input
-                type="text"
-                value={formData.delivery_time || ''}
-                onChange={(e) => handleChange('delivery_time', e.target.value)}
+                type="number"
+                min="0"
+                value={formData.delivery_time_min ?? 0}
+                onChange={(e) => handleChange('delivery_time_min', Number(e.target.value))}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black focus:border-transparent"
-                placeholder="Ví dụ: 30-45 phút"
+                placeholder="30"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Giao hàng tối đa (phút)</label>
+              <input
+                type="number"
+                min="0"
+                value={formData.delivery_time_max ?? 0}
+                onChange={(e) => handleChange('delivery_time_max', Number(e.target.value))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 text-black focus:border-transparent"
+                placeholder="45"
               />
             </div>
 

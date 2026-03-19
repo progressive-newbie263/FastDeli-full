@@ -39,9 +39,48 @@ interface CouponItem {
   description?: string;
   discount_type: 'percentage' | 'fixed_amount';
   discount_value: number;
-  min_order_amount: number;
+  min_order_value: number;
   max_discount?: number | null;
 }
+
+const parseToNumber = (value: unknown): number | null => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const estimateDistanceKm = (
+  userLat?: number,
+  userLng?: number,
+  restaurantLat?: number,
+  restaurantLng?: number
+): number | null => {
+  if (
+    userLat === undefined ||
+    userLng === undefined ||
+    restaurantLat === undefined ||
+    restaurantLng === undefined
+  ) {
+    return null;
+  }
+
+  const dx = restaurantLat - userLat;
+  const dy = restaurantLng - userLng;
+  return Math.sqrt(dx * dx + dy * dy) * 111;
+};
+
+const calculateDeliveryFeeByDistance = (distanceKm: number, baseFee: number) => {
+  const safeBase = Number.isFinite(baseFee) && baseFee > 0 ? baseFee : 15000;
+  if (!Number.isFinite(distanceKm) || distanceKm < 0) {
+    return safeBase;
+  }
+
+  if (distanceKm <= 2) {
+    return safeBase;
+  }
+
+  const extraKm = Math.ceil(distanceKm - 2);
+  return safeBase + extraKm * 3500;
+};
 
 const formatCouponBenefit = (coupon: CouponItem) => {
   if (coupon.discount_type === 'percentage') {
@@ -80,7 +119,11 @@ const CheckoutClient = () => {
     phone: "",
     note: "",
   });
-  const [userLocation, setUserLocation] = useState({ location: "" });
+  const [userLocation, setUserLocation] = useState({
+    location: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
+  });
   const [cartData, setCartData] = useState<RestaurantGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -112,6 +155,9 @@ const CheckoutClient = () => {
           const foods: Food[] = Array.isArray(resFoods?.data) ? (resFoods.data as Food[]) : [];
           const restaurantName = resInfo.data.name;
           const restaurantImage = resInfo.data.image_url || "https://via.placeholder.com/64";
+          const restaurantLatitude = parseToNumber(resInfo?.data?.latitude);
+          const restaurantLongitude = parseToNumber(resInfo?.data?.longitude);
+          const restaurantDeliveryFee = parseToNumber(resInfo?.data?.delivery_fee) || 15000;
           const storedItems = parsedCart[restaurantId];
           const items: CartItem[] = [];
 
@@ -135,6 +181,9 @@ const CheckoutClient = () => {
               restaurant_id: restaurantId,
               restaurant_name: restaurantName,
               restaurant_image: restaurantImage,
+              restaurant_latitude: restaurantLatitude,
+              restaurant_longitude: restaurantLongitude,
+              restaurant_delivery_fee: restaurantDeliveryFee,
               items,
             });
           }
@@ -184,7 +233,11 @@ const CheckoutClient = () => {
     if (storedLocation) {
       try {
         const parsedLocation = JSON.parse(storedLocation);
-        setUserLocation({ location: parsedLocation.address });
+        setUserLocation({
+          location: parsedLocation.address || '',
+          latitude: parseToNumber(parsedLocation.latitude) ?? undefined,
+          longitude: parseToNumber(parsedLocation.longitude) ?? undefined,
+        });
       } catch (error) {
         console.error("Error parsing user location:", error);
       }
@@ -207,7 +260,21 @@ const CheckoutClient = () => {
   };
 
   const subtotal = calculateGrandTotal();
-  const deliveryFee = 20000;
+  const targetGroup = selectedRestaurantId
+    ? cartData.find((group) => group.restaurant_id === selectedRestaurantId)
+    : cartData?.[0];
+
+  const estimatedDistance = estimateDistanceKm(
+    userLocation.latitude,
+    userLocation.longitude,
+    targetGroup?.restaurant_latitude ?? undefined,
+    targetGroup?.restaurant_longitude ?? undefined
+  );
+
+  const deliveryFee = calculateDeliveryFeeByDistance(
+    estimatedDistance ?? -1,
+    targetGroup?.restaurant_delivery_fee || 15000
+  );
   const originalTotal = subtotal + deliveryFee;
 
   useEffect(() => {
@@ -744,6 +811,12 @@ const CheckoutClient = () => {
                   <span className="text-gray-600">Phí giao hàng</span>
                   <span className="font-medium">{deliveryFee.toLocaleString()}đ</span>
                 </div>
+
+                {typeof estimatedDistance === 'number' && (
+                  <p className="text-xs text-gray-500">
+                    Ước tính khoảng cách {estimatedDistance.toFixed(2)} km. Phí giao được tính theo khoảng cách từ nhà hàng đến địa chỉ của bạn.
+                  </p>
+                )}
                 
                 {discount > 0 && (
                   <div className="flex justify-between text-green-600">

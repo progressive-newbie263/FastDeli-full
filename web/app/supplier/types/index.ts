@@ -17,7 +17,8 @@ export interface Restaurant {
   rating: number;
   total_reviews: number;
   status: 'active' | 'inactive' | 'pending' | 'rejected';
-  delivery_time: string;
+  delivery_time_min?: number | null;
+  delivery_time_max?: number | null;
   delivery_fee: number;
   min_order_value?: number;
   opening_time?: string;

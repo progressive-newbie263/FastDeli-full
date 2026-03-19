@@ -277,3 +277,24 @@ Nếu sai, tự họ đi chịu trách nhiệm.
 
 1. bản vá nhỏ, cập nhật trạng thái giao hàng
 2. Sửa lại 1 số lỗi nhỏ, làm sạch code hơn
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 18-03-2026-----------------------------
+1. fix các lỗi còn tồn đọng
+
+2. Cập nhật thêm các "trạng thái đơn hàng" client side. Khách hàng sẽ thấy được đơn hàng
+của mình đang ở giai đoạn nào (VD: đang vận chuyển, thức ăn đang chế biến, ...)
+
+3. tạo "Đăng kí nhà hàng" . Các nhà hàng sẽ apply cho admin để đăng kí làm đối tác.
+Admin xác nhận duyệt xong là được.
+  - supplier/lib/api.ts sẽ là logic chủ chốt. Về sau sai phần này thì debug tại đây.
+
+4. xử lí food category. Chính thức tạo các danh mục cho nó.
+
+5. Cập nhật chính thức kinh + vĩ độ cho các nhà hàng trực tuyến. Trước lần push này, đã
+có địa chỉ các nhà hàng (kinh + vĩ độ) rồi, và dùng để tính toán khoảng cách giữa các điểm
+tuy nhiên vẫn còn lại 1 số điểm chưa được hay (VD: các địa điểm tính qua long/lat calculator
+rồi sau đó mới đưa vào db). Lần push này đảm bảo xử lí vấn đề này.
+
+6. Review sản phẩm. TÍnh năng này bắt đầu đưa vào làm.

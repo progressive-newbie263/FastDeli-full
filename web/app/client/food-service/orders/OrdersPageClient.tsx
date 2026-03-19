@@ -6,7 +6,7 @@ import dayjs from 'dayjs';
 
 type OrderStatus = 'pending' | 'processing' | 'delivering' | 'delivered' | 'cancelled';
 type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
-type StageState = 'done' | 'current' | 'waiting';
+type StageState = 'done' | 'current' | 'waiting'; //note lại
 
 interface Order {
   id: number;
@@ -38,6 +38,13 @@ interface FlowStage {
   image: string;
 }
 
+/*
+  tạm thời set data cứng như này cho các phân đoạn ở dưới.
+*/
+
+
+// bổ sung vào giai đoạn trong mỗi đơn hàng.
+// hiển thị các bước tương ứng với mỗi giai đoạn
 const ORDER_FLOW_STAGES: FlowStage[] = [
   {
     key: 'payment',
@@ -65,6 +72,7 @@ const ORDER_FLOW_STAGES: FlowStage[] = [
   },
 ];
 
+// giai đoạn để đặt món
 const MEAL_SLOT_RULES = [
   { slot: 'Ăn sáng', window: '06:00 - 10:00', cutoff: 'Đặt trước tối thiểu 45 phút' },
   { slot: 'Ăn trưa', window: '10:30 - 14:00', cutoff: 'Đặt trước tối thiểu 60 phút' },
@@ -144,15 +152,12 @@ const getFlowProgress = (order: Order): number => {
   if (order.order_status === 'cancelled') {
     return -1;
   }
-
   if (order.order_status === 'delivered') {
     return 3;
   }
-
   if (order.order_status === 'delivering') {
     return 2;
   }
-
   if (order.order_status === 'processing') {
     return 1;
   }
@@ -166,7 +171,6 @@ const getStageState = (order: Order, stageIndex: number): StageState => {
   if (progress > stageIndex) {
     return 'done';
   }
-
   if (progress === stageIndex) {
     return 'current';
   }
@@ -184,6 +188,10 @@ const getStageStyle = (state: StageState) => {
   return 'border-gray-200 bg-gray-50 text-gray-500';
 };
 
+/* 
+  giả định thời gian
+  - data cứng
+*/
 const getSampleSchedule = (deliverByText: string) => {
   const deliverBy = dayjs(deliverByText);
   if (!deliverBy.isValid()) {
@@ -347,6 +355,11 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
               const canCancelOrder =
                 (order.order_status === 'pending' || order.order_status === 'processing') &&
                 minutesPassed < 5;
+              const hasCouponCode = Boolean(order.coupon_code?.trim());
+              const discountValue = toNumber(order.discount_amount);
+              const originalTotalValue = toNumber(order.original_total);
+              const hasEffectiveDiscount = hasCouponCode && discountValue > 0;
+              const hasIneffectiveCoupon = hasCouponCode && discountValue <= 0;
 
               const sampleSchedule = getSampleSchedule(order.deliver_by || dayjs(order.created_at).add(8, 'hour').toISOString());
 
@@ -358,8 +371,8 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
                   <div className="flex flex-col md:flex-row gap-5">
                     <div className="relative w-full max-h-56 md:w-40 md:h-40 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center">
                       <img
-                        src={order.order_preview_image || order.restaurant_image || '/images/placeholder.png'}
-                        alt={order.order_preview_name || order.restaurant_name}
+                        src={order.restaurant_image || '/images/placeholder.png'}
+                        alt={order.restaurant_name}
                         className="max-w-full max-h-full object-contain"
                       />
                     </div>
@@ -395,9 +408,15 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
                         {dayjs(order.created_at).format('DD/MM/YYYY, HH:mm:ss')}
                       </p>
 
-                      {order.coupon_code && toNumber(order.discount_amount) > 0 && (
+                      {hasEffectiveDiscount && (
                         <p className="text-sm text-green-700 mb-3">
-                          <span className="font-semibold">Coupon:</span> {order.coupon_code} (-{toNumber(order.discount_amount).toLocaleString()}đ)
+                          <span className="font-semibold">Coupon:</span> {order.coupon_code} (-{discountValue.toLocaleString()}đ)
+                        </p>
+                      )}
+
+                      {hasIneffectiveCoupon && (
+                        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                          <span className="font-semibold">Coupon:</span> {order.coupon_code} Đơn hàng chưa thỏa mãn điều kiện để được giảm giá
                         </p>
                       )}
 
@@ -417,9 +436,9 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
                       <div className="flex justify-between items-center mt-auto">
                         <div className="font-bold text-xl text-orange-600">
                           {toNumber(order.total_amount).toLocaleString()}đ
-                          {toNumber(order.discount_amount) > 0 && toNumber(order.original_total) > 0 && (
+                          {discountValue > 0 && originalTotalValue > 0 && (
                             <p className="text-xs text-gray-500 font-normal mt-1">
-                              Giá gốc: {toNumber(order.original_total).toLocaleString()}đ
+                              Giá gốc: {originalTotalValue.toLocaleString()}đ
                             </p>
                           )}
                         </div>
@@ -569,7 +588,7 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
                 onClick={() => setSelectedOrderImage(null)}
                 className="text-gray-500 hover:text-gray-700 text-xl"
               >
-                ×
+                x
               </button>
             </div>
             <img

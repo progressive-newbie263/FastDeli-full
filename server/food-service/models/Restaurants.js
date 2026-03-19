@@ -1,6 +1,39 @@
 const { foodPool } = require('../config/db');
 
 class Restaurant {
+  static _columns = null;
+  static _foodColumns = null;
+
+  static async getColumns() {
+    if (this._columns) {
+      return this._columns;
+    }
+
+    const result = await foodPool.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'restaurants'`
+    );
+
+    this._columns = new Set((result.rows || []).map((row) => row.column_name));
+    return this._columns;
+  }
+
+  static async getFoodColumns() {
+    if (this._foodColumns) {
+      return this._foodColumns;
+    }
+
+    const result = await foodPool.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'foods'`
+    );
+
+    this._foodColumns = new Set((result.rows || []).map((row) => row.column_name));
+    return this._foodColumns;
+  }
+
   /*
     ================================================================
     ================================================================
@@ -12,6 +45,11 @@ class Restaurant {
   */
   // lấy tất cả nhà hàng (GET /restaurants )
   static async getAll(filters = {}) {
+    const foodColumns = await this.getFoodColumns();
+    const categoryColumn = foodColumns.has('primary_category_id')
+      ? 'f.primary_category_id'
+      : (foodColumns.has('category_id') ? 'f.category_id' : null);
+
     let query = `
         SELECT r.*, 
           rl.latitude,
@@ -36,6 +74,19 @@ class Restaurant {
     if (filters.is_featured) {
       query += ` AND r.is_featured = $${paramIndex}`;
       params.push(filters.is_featured);
+      paramIndex++;
+    }
+
+    if (filters.category_id && categoryColumn) {
+      query += `
+        AND EXISTS (
+          SELECT 1
+          FROM foods f
+          WHERE f.restaurant_id = r.id
+            AND ${categoryColumn} = $${paramIndex}
+        )
+      `;
+      params.push(filters.category_id);
       paramIndex++;
     }
 
@@ -94,20 +145,20 @@ class Restaurant {
   static async create(restaurantData) {
     const {
       name, address, phone, image_url, description,
-      delivery_time, min_order_amount, delivery_fee
+      delivery_time_min, delivery_time_max, min_order_value, delivery_fee
     } = restaurantData;
 
     const query = `
       INSERT INTO restaurants (
         name, address, phone, image_url, description,
-        delivery_time, min_order_amount, delivery_fee
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        delivery_time_min, delivery_time_max, min_order_value, delivery_fee
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `;
 
     const values = [
       name, address, phone, image_url, description,
-      delivery_time, min_order_amount, delivery_fee
+      delivery_time_min, delivery_time_max, min_order_value, delivery_fee
     ];
 
     const result = await foodPool.query(query, values);
@@ -276,17 +327,31 @@ class Restaurant {
   */
   static async updateStatus(id, status, reason = null) {
     try {
-      const query = `
-        UPDATE restaurants 
-        SET 
-          status = $1,
-          rejection_reason = $2,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = $3
-        RETURNING *
-      `;
+      const columns = await this.getColumns();
+      const hasRejectionReason = columns.has('rejection_reason');
+      const query = hasRejectionReason
+        ? `
+            UPDATE restaurants 
+            SET 
+              status = $1,
+              rejection_reason = $2,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = $3
+            RETURNING *
+          `
+        : `
+            UPDATE restaurants 
+            SET 
+              status = $1,
+              updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2
+            RETURNING *
+          `;
 
-      const result = await foodPool.query(query, [status, reason, id]);
+      const result = await foodPool.query(
+        query,
+        hasRejectionReason ? [status, reason, id] : [status, id]
+      );
       
       if (result.rows.length === 0) {
         return null;

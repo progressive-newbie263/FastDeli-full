@@ -25,10 +25,10 @@ export default function PromotionsPage() {
   const [loading, setLoading] = useState(true);
 
   // ví dụ 2 địa điểm (test)
-  const markers = [
-    { id: 1, lat: 21.028511, lng: 105.804817, title: 'Quán A' },
-    { id: 2, lat: 21.030000, lng: 105.803000, title: 'Quán B' }, //Số 31, Đường Cầu Giấy, Ngọc Khánh, Ba Đình, Hà Nội, Hà Nội, 11109
-  ];
+  // const markers = [
+  //   { id: 1, lat: 21.028511, lng: 105.804817, title: 'Quán A' },
+  //   { id: 2, lat: 21.030000, lng: 105.803000, title: 'Quán B' }, //Số 31, Đường Cầu Giấy, Ngọc Khánh, Ba Đình, Hà Nội, Hà Nội, 11109
+  // ];
 
   useEffect(() => {
     const fetchPromotions = async () => {
@@ -90,7 +90,7 @@ export default function PromotionsPage() {
                     <img
                       src={promo.image_url}
                       alt={promo.title}
-                      className="w-full h-full object-cover object-center md:scale-150"
+                      className="w-full h-full object-cover object-center scale-75 md:scale-110"
                     />
                   </div>
 

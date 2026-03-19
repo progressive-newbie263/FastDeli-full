@@ -9,6 +9,7 @@ interface User {
   id: string;
   full_name: string;
   email: string;
+  role?: string;
   phone_number?: string;
   avatar_url?: string;
   gender?: string;
@@ -71,6 +72,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (storedToken && storedUserData) {
         try {
           const userData = JSON.parse(storedUserData);
+          if (userData?.role && userData.role !== 'customer') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userData');
+            setLoading(false);
+            return;
+          }
           setToken(storedToken);
           setCurrentUser(userData);
         } catch (error) {
@@ -90,6 +97,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (token && !currentUser) {
         try {
           const { user } = await authAPI.getCurrentUser();
+          if (user?.role && user.role !== 'customer') {
+            logout();
+            return;
+          }
           setCurrentUser(user);
           localStorage.setItem('userData', JSON.stringify(user));
         } catch (error) {
@@ -138,6 +149,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setError(null);
       
       const { token: newToken, user } = await authAPI.login(credentials);
+
+      if (user?.role && user.role !== 'customer') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('userData');
+        setToken(null);
+        setCurrentUser(null);
+        const roleError = 'Tài khoản này không thuộc cổng khách hàng.';
+        setError(roleError);
+        showErrorToast(roleError);
+        return { success: false, error: roleError };
+      }
       
       // Save token and user data in localStorage
       localStorage.setItem('token', newToken);

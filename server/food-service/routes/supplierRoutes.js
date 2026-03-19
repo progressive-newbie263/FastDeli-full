@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { supplierAuth, verifyRestaurantOwnership } = require('../middleware/supplierAuth');
+const CouponController = require('../controllers/couponController');
 const {
+  registerPartner,
   getMyRestaurant,
   getStatistics,
   getOrders,
@@ -28,6 +30,9 @@ const {
 */
 
 // Get thông tin restaurant của supplier hiện tại
+router.post('/register', registerPartner);
+
+// Get thông tin restaurant của supplier hiện tại
 router.get('/my-restaurant', supplierAuth, getMyRestaurant);
 
 // Get dashboard statistics
@@ -42,6 +47,25 @@ router.patch('/restaurants/:restaurantId',
   supplierAuth, 
   verifyRestaurantOwnership, 
   updateRestaurant
+);
+
+// Coupons (supplier scoped)
+router.get('/restaurants/:restaurantId/coupons',
+  supplierAuth,
+  verifyRestaurantOwnership,
+  CouponController.getSupplierCoupons
+);
+
+router.post('/restaurants/:restaurantId/coupons',
+  supplierAuth,
+  verifyRestaurantOwnership,
+  CouponController.createSupplierCoupon
+);
+
+router.patch('/restaurants/:restaurantId/coupons/:couponId',
+  supplierAuth,
+  verifyRestaurantOwnership,
+  CouponController.updateSupplierCoupon
 );
 
 // Get reviews

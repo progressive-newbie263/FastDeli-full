@@ -30,7 +30,7 @@ const FoodCategories: React.FC<CategoryListProps> = ({ categories }) => {
         {categories.map((category) => (
           <Link
             key={category.category_id}
-            href={`/client/food-service/categories/${category.category_id}`}
+            href={`/client/food-service/restaurants?category=${category.category_id}`}
             className="block rounded-md overflow-hidden bg-white"
           >
             <div className="relative w-full h-48">

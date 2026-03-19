@@ -17,6 +17,9 @@ export interface RestaurantGroup {
   restaurant_id: string;
   restaurant_name: string;
   restaurant_image?: string;
+  restaurant_latitude?: number | null;
+  restaurant_longitude?: number | null;
+  restaurant_delivery_fee?: number;
   items: CartItem[];
 }
 

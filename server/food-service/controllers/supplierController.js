@@ -1,5 +1,6 @@
 const { foodPool, sharedPool } = require('../config/db');
 const { getNutritionFromUSDA } = require('../utils/usdaAPI');
+const bcrypt = require('bcryptjs');
 
 const buildUsersMap = async (userIds) => {
   if (!userIds.length) {
@@ -19,6 +20,213 @@ const buildUsersMap = async (userIds) => {
   });
 
   return map;
+};
+
+const DEFAULT_AVATAR_URL = process.env.DEFAULT_AVATAR_URL || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
+
+/*
+  Đăng ký nhà hàng đối tác (public)
+*/
+const registerPartner = async (req, res) => {
+  const {
+    full_name,
+    email,
+    phone_number,
+    password,
+    restaurant_name,
+    restaurant_address,
+    restaurant_phone,
+    description,
+    image_url,
+    delivery_time_min,
+    delivery_time_max,
+    min_order_value,
+    delivery_fee,
+    latitude,
+    longitude,
+  } = req.body || {};
+
+  if (!full_name || !email || !phone_number || !password || !restaurant_name || !restaurant_address || !restaurant_phone) {
+    return res.status(400).json({
+      success: false,
+      message: 'Thiếu thông tin bắt buộc để đăng ký đối tác.',
+    });
+  }
+
+  const sharedClient = await sharedPool.connect();
+  const foodClient = await foodPool.connect();
+
+  let createdUserId = null;
+
+  try {
+    await sharedClient.query('BEGIN');
+
+    const emailCheck = await sharedClient.query('SELECT user_id FROM users WHERE email = $1 LIMIT 1', [email]);
+    if (emailCheck.rows.length > 0) {
+      await sharedClient.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: 'Email đã được sử dụng.',
+      });
+    }
+
+    const phoneCheck = await sharedClient.query('SELECT user_id FROM users WHERE phone_number = $1 LIMIT 1', [phone_number]);
+    if (phoneCheck.rows.length > 0) {
+      await sharedClient.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: 'Số điện thoại đã được sử dụng.',
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(password, salt);
+
+    const userInsert = await sharedClient.query(
+      `INSERT INTO users (
+        phone_number,
+        email,
+        password_hash,
+        full_name,
+        gender,
+        date_of_birth,
+        avatar_url,
+        role
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'restaurant_owner')
+      RETURNING user_id, full_name, email, phone_number, role`,
+      [
+        phone_number,
+        email,
+        passwordHash,
+        full_name,
+        'other',
+        '1990-01-01',
+        DEFAULT_AVATAR_URL,
+      ]
+    );
+
+    createdUserId = userInsert.rows[0].user_id;
+    await sharedClient.query('COMMIT');
+
+    await foodClient.query('BEGIN');
+
+    // Ensure SERIAL sequence is aligned with existing data to avoid duplicate PK on insert.
+    await foodClient.query(
+      `SELECT setval(
+        pg_get_serial_sequence('restaurants', 'id'),
+        COALESCE((SELECT MAX(id) FROM restaurants), 0) + 1,
+        false
+      )`
+    );
+
+    const columnResult = await foodClient.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'restaurants'`
+    );
+    const restaurantColumns = new Set((columnResult.rows || []).map((row) => row.column_name));
+    const hasRestaurantEmail = restaurantColumns.has('email');
+
+    const insertColumns = [
+      'name',
+      ...(hasRestaurantEmail ? ['email'] : []),
+      'address',
+      'phone',
+      'image_url',
+      'description',
+      'delivery_time_min',
+      'delivery_time_max',
+      'min_order_value',
+      'delivery_fee',
+      'owner_id',
+      'status',
+      'created_at',
+      'updated_at',
+    ];
+
+    const insertValues = [
+      restaurant_name,
+      ...(hasRestaurantEmail ? [email] : []),
+      restaurant_address,
+      restaurant_phone,
+      image_url || null,
+      description || null,
+      Number.isFinite(Number(delivery_time_min)) ? Number(delivery_time_min) : 30,
+      Number.isFinite(Number(delivery_time_max)) ? Number(delivery_time_max) : 45,
+      Number(min_order_value || 0),
+      Number(delivery_fee || 0),
+      createdUserId,
+      'pending',
+    ];
+
+    const placeholders = insertValues.map((_, index) => `$${index + 1}`);
+
+    const restaurantInsert = await foodClient.query(
+      `INSERT INTO restaurants (
+        ${insertColumns.join(',\n        ')}
+      )
+      VALUES (${placeholders.join(', ')}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING id, name, status, owner_id`,
+      insertValues
+    );
+
+    const restaurant = restaurantInsert.rows[0];
+
+    if (
+      latitude !== undefined &&
+      longitude !== undefined &&
+      Number.isFinite(Number(latitude)) &&
+      Number.isFinite(Number(longitude))
+    ) {
+      await foodClient.query(
+        `INSERT INTO restaurant_locations (restaurant_id, latitude, longitude)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (restaurant_id)
+         DO UPDATE SET latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude`,
+        [restaurant.id, Number(latitude), Number(longitude)]
+      );
+    }
+
+    await foodClient.query('COMMIT');
+
+    return res.status(201).json({
+      success: true,
+      message: 'Đăng ký đối tác thành công. Nhà hàng đang chờ admin duyệt.',
+      data: {
+        user: userInsert.rows[0],
+        restaurant,
+      },
+    });
+  } catch (error) {
+    try {
+      await sharedClient.query('ROLLBACK');
+    } catch (_) {
+      // no-op
+    }
+    try {
+      await foodClient.query('ROLLBACK');
+    } catch (_) {
+      // no-op
+    }
+
+    if (createdUserId) {
+      try {
+        await sharedPool.query('DELETE FROM users WHERE user_id = $1', [createdUserId]);
+      } catch (cleanupErr) {
+        console.error('Cleanup created user failed:', cleanupErr);
+      }
+    }
+
+    console.error('Register partner error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể đăng ký đối tác lúc này.',
+    });
+  } finally {
+    sharedClient.release();
+    foodClient.release();
+  }
 };
 
 /*
@@ -758,20 +966,102 @@ const toggleFoodAvailability = async (req, res) => {
   Cập nhật thông tin restaurant
 */
 const updateRestaurant = async (req, res) => {
+  const sharedClient = await sharedPool.connect();
+  const foodClient = await foodPool.connect();
+
   try {
     const restaurantId = req.restaurantId;
     const {
       name,
+      email,
       description,
       address,
       phone,
       opening_hours,
-      delivery_time,
+      delivery_time_min,
+      delivery_time_max,
       delivery_fee,
+      min_order_value,
       minimum_order,
       latitude,
       longitude
     } = req.body;
+
+    await sharedClient.query('BEGIN');
+    await foodClient.query('BEGIN');
+
+    const ownerResult = await foodClient.query(
+      'SELECT owner_id FROM restaurants WHERE id = $1 LIMIT 1',
+      [restaurantId]
+    );
+
+    if (!ownerResult.rows.length || !ownerResult.rows[0].owner_id) {
+      await sharedClient.query('ROLLBACK');
+      await foodClient.query('ROLLBACK');
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy nhà hàng hoặc owner hợp lệ.'
+      });
+    }
+
+    const ownerId = Number(ownerResult.rows[0].owner_id);
+
+    // Đồng bộ thông tin owner vào shared-db (nếu có trường thay đổi)
+    const sharedUpdates = [];
+    const sharedParams = [];
+    let sharedParamCount = 0;
+
+    const sharedColumnsResult = await sharedClient.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'users'`
+    );
+    const sharedColumns = new Set((sharedColumnsResult.rows || []).map((row) => row.column_name));
+
+    if (name !== undefined && sharedColumns.has('full_name')) {
+      sharedParamCount++;
+      sharedUpdates.push(`full_name = $${sharedParamCount}`);
+      sharedParams.push(name);
+    }
+
+    if (phone !== undefined && sharedColumns.has('phone_number')) {
+      sharedParamCount++;
+      sharedUpdates.push(`phone_number = $${sharedParamCount}`);
+      sharedParams.push(phone);
+    }
+
+    if (email !== undefined && sharedColumns.has('email')) {
+      sharedParamCount++;
+      sharedUpdates.push(`email = $${sharedParamCount}`);
+      sharedParams.push(email);
+    }
+
+    const usersAddressColumn = sharedColumns.has('address')
+      ? 'address'
+      : (sharedColumns.has('restaurant_address') ? 'restaurant_address' : null);
+    if (address !== undefined && usersAddressColumn) {
+      sharedParamCount++;
+      sharedUpdates.push(`${usersAddressColumn} = $${sharedParamCount}`);
+      sharedParams.push(address);
+    }
+
+    if (sharedUpdates.length > 0) {
+      sharedUpdates.push('updated_at = NOW()');
+      sharedParams.push(ownerId);
+      await sharedClient.query(
+        `UPDATE users
+         SET ${sharedUpdates.join(', ')}
+         WHERE user_id = $${sharedParams.length}`,
+        sharedParams
+      );
+    }
+
+    const restaurantColumnsResult = await foodClient.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_name = 'restaurants'`
+    );
+    const restaurantColumns = new Set((restaurantColumnsResult.rows || []).map((row) => row.column_name));
 
     const updates = [];
     const params = [];
@@ -781,6 +1071,11 @@ const updateRestaurant = async (req, res) => {
       paramCount++;
       updates.push(`name = $${paramCount}`);
       params.push(name);
+    }
+    if (email !== undefined && restaurantColumns.has('email')) {
+      paramCount++;
+      updates.push(`email = $${paramCount}`);
+      params.push(email);
     }
     if (description !== undefined) {
       paramCount++;
@@ -802,63 +1097,113 @@ const updateRestaurant = async (req, res) => {
       updates.push(`opening_hours = $${paramCount}`);
       params.push(opening_hours);
     }
-    if (delivery_time !== undefined) {
+    if (delivery_time_min !== undefined) {
       paramCount++;
-      updates.push(`delivery_time = $${paramCount}`);
-      params.push(delivery_time);
+      updates.push(`delivery_time_min = $${paramCount}`);
+      params.push(Number(delivery_time_min));
+    }
+    if (delivery_time_max !== undefined) {
+      paramCount++;
+      updates.push(`delivery_time_max = $${paramCount}`);
+      params.push(Number(delivery_time_max));
     }
     if (delivery_fee !== undefined) {
       paramCount++;
       updates.push(`delivery_fee = $${paramCount}`);
       params.push(delivery_fee);
     }
-    if (minimum_order !== undefined) {
+    const normalizedMinOrder = min_order_value ?? minimum_order;
+    if (normalizedMinOrder !== undefined) {
       paramCount++;
-      updates.push(`minimum_order = $${paramCount}`);
-      params.push(minimum_order);
+      updates.push(`min_order_value = $${paramCount}`);
+      params.push(Number(normalizedMinOrder));
     }
-    if (latitude !== undefined) {
-      paramCount++;
-      updates.push(`latitude = $${paramCount}`);
-      params.push(latitude);
-    }
-    if (longitude !== undefined) {
-      paramCount++;
-      updates.push(`longitude = $${paramCount}`);
-      params.push(longitude);
-    }
+    const hasLocationUpdate =
+      latitude !== undefined ||
+      longitude !== undefined;
 
-    if (updates.length === 0) {
+    if (updates.length === 0 && !hasLocationUpdate) {
+      await sharedClient.query('ROLLBACK');
+      await foodClient.query('ROLLBACK');
       return res.status(400).json({
         success: false,
         message: 'Không có thông tin nào được cập nhật.'
       });
     }
 
-    paramCount++;
-    updates.push(`updated_at = NOW()`);
-    params.push(restaurantId);
+    let updatedRestaurant = null;
 
-    const query = `
-      UPDATE restaurants 
-      SET ${updates.join(', ')}
-      WHERE id = $${paramCount}
-      RETURNING *
-    `;
+    if (updates.length > 0) {
+      paramCount++;
+      updates.push(`updated_at = NOW()`);
+      params.push(restaurantId);
 
-    const result = await foodPool.query(query, params);
+      const query = `
+        UPDATE restaurants 
+        SET ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING *
+      `;
+
+      const result = await foodClient.query(query, params);
+      updatedRestaurant = result.rows[0] || null;
+    }
+
+    if (
+      latitude !== undefined &&
+      longitude !== undefined &&
+      Number.isFinite(Number(latitude)) &&
+      Number.isFinite(Number(longitude))
+    ) {
+      await foodClient.query(
+        `INSERT INTO restaurant_locations (restaurant_id, latitude, longitude)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (restaurant_id)
+         DO UPDATE SET latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude`,
+        [restaurantId, Number(latitude), Number(longitude)]
+      );
+    }
+
+    if (!updatedRestaurant) {
+      const fresh = await foodClient.query(
+        `SELECT r.*, rl.latitude, rl.longitude
+         FROM restaurants r
+         LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
+         WHERE r.id = $1
+         LIMIT 1`,
+        [restaurantId]
+      );
+      updatedRestaurant = fresh.rows[0] || null;
+    }
+
+    await sharedClient.query('COMMIT');
+    await foodClient.query('COMMIT');
 
     res.json({
       success: true,
       message: 'Cập nhật thông tin nhà hàng thành công.',
-      data: result.rows[0]
+      data: updatedRestaurant
     });
   } catch (error) {
+    try {
+      await sharedClient.query('ROLLBACK');
+    } catch (_) {
+      // no-op
+    }
+    try {
+      await foodClient.query('ROLLBACK');
+    } catch (_) {
+      // no-op
+    }
+
     console.error('Update restaurant error:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi khi cập nhật thông tin nhà hàng.'
     });
+  } finally {
+    sharedClient.release();
+    foodClient.release();
   }
 };
 
@@ -906,7 +1251,9 @@ const getReviews = async (req, res) => {
 
     res.json({
       success: true,
-      data: enrichedReviews,
+      data: {
+        reviews: enrichedReviews,
+      },
       pagination: {
         currentPage: parseInt(page),
         totalPages: Math.ceil(totalReviews / limit),
@@ -1104,6 +1451,7 @@ const calculateNutritionFromName = async (req, res) => {
 };
 
 module.exports = {
+  registerPartner,
   getMyRestaurant,
   getStatistics,
   getOrders,
