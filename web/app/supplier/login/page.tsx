@@ -153,11 +153,11 @@ export default function SupplierLoginPage() {
 
           {/* Divider */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
-              Chưa có tài khoản?{' '}
+            <p className="text-sm text-gray-600"> 
               <a href="/supplier/register" className="text-orange-600 hover:text-orange-700 font-medium">
-                Đăng ký ngay
+                Đăng ký
               </a>
+              {' '}làm đối tác của FastDeli
             </p>
           </div>
         </div>

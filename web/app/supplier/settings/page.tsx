@@ -178,15 +178,21 @@ export default function SettingsPage() {
     }
   };
 
+  const handleCouponSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await handleCreateCoupon();
+  };
+
   return (
     <SupplierLayout title="Cài đặt nhà hàng" subtitle="Cập nhật thông tin và cấu hình">
-      <form onSubmit={handleSubmit} className="max-w-4xl">
-        {/* Success message */}
+      <div className="max-w-4xl">
         {success && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700">
             Cập nhật thông tin thành công!
           </div>
         )}
+
+        <form onSubmit={handleSubmit}>
 
         {/* Basic Information */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -424,7 +430,50 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Coupon settings */}
+        {/* Submit button */}
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <Save size={20} />
+            {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFormData(restaurant || {})}
+            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Hủy
+          </button>
+        </div>
+
+        {/* Restaurant Status */}
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="font-semibold text-blue-900 mb-2">Trạng thái nhà hàng</h3>
+          <p className="text-sm text-blue-700">
+            Trạng thái hiện tại:{' '}
+            <span className="font-bold">
+              {restaurant?.status === 'active'
+                ? 'Đang hoạt động'
+                : restaurant?.status === 'pending'
+                ? 'Chờ duyệt'
+                : restaurant?.status === 'rejected'
+                ? 'Bị từ chối'
+                : 'Tạm dừng'}
+            </span>
+          </p>
+          {restaurant?.status !== 'active' && (
+            <p className="text-xs text-blue-600 mt-1">
+              Liên hệ admin để kích hoạt hoặc thay đổi trạng thái nhà hàng
+            </p>
+          )}
+        </div>
+        </form>
+
+        <form onSubmit={handleCouponSubmit} className="mt-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Coupon của nhà hàng</h2>
           <p className="text-sm text-gray-600 mb-4">
@@ -501,8 +550,7 @@ export default function SettingsPage() {
 
             <div className="md:col-span-2 flex gap-2">
               <button
-                type="button"
-                onClick={handleCreateCoupon}
+                type="submit"
                 disabled={creatingCoupon}
                 className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
               >
@@ -552,49 +600,8 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-
-        {/* Submit button */}
-        <div className="flex gap-4">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <Save size={20} />
-            {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setFormData(restaurant || {})}
-            className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-          >
-            Hủy
-          </button>
-        </div>
-
-        {/* Restaurant Status */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">Trạng thái nhà hàng</h3>
-          <p className="text-sm text-blue-700">
-            Trạng thái hiện tại:{' '}
-            <span className="font-bold">
-              {restaurant?.status === 'active'
-                ? 'Đang hoạt động'
-                : restaurant?.status === 'pending'
-                ? 'Chờ duyệt'
-                : restaurant?.status === 'rejected'
-                ? 'Bị từ chối'
-                : 'Tạm dừng'}
-            </span>
-          </p>
-          {restaurant?.status !== 'active' && (
-            <p className="text-xs text-blue-600 mt-1">
-              Liên hệ admin để kích hoạt hoặc thay đổi trạng thái nhà hàng
-            </p>
-          )}
-        </div>
-      </form>
+        </form>
+      </div>
     </SupplierLayout>
   );
 }

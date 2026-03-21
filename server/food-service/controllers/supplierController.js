@@ -24,6 +24,45 @@ const buildUsersMap = async (userIds) => {
 
 const DEFAULT_AVATAR_URL = process.env.DEFAULT_AVATAR_URL || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
 
+const geocodeAddress = async (address) => {
+  const normalized = String(address || '').trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const endpoint = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(normalized)}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      headers: {
+        'User-Agent': 'FastDeli/1.0 (supplier-registration geocode)',
+        'Accept-Language': 'vi',
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = await response.json();
+    const first = Array.isArray(data) ? data[0] : null;
+    if (!first) {
+      return null;
+    }
+
+    const latitude = Number(first.lat);
+    const longitude = Number(first.lon);
+
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return null;
+    }
+
+    return { latitude, longitude };
+  } catch (_) {
+    return null;
+  }
+};
+
 /*
   Đăng ký nhà hàng đối tác (public)
 */
@@ -173,18 +212,20 @@ const registerPartner = async (req, res) => {
 
     const restaurant = restaurantInsert.rows[0];
 
-    if (
-      latitude !== undefined &&
-      longitude !== undefined &&
-      Number.isFinite(Number(latitude)) &&
-      Number.isFinite(Number(longitude))
-    ) {
+    const normalizedLat = Number(latitude);
+    const normalizedLng = Number(longitude);
+    const hasManualCoords = Number.isFinite(normalizedLat) && Number.isFinite(normalizedLng);
+    const geocoded = hasManualCoords ? null : await geocodeAddress(restaurant_address);
+    const finalLat = hasManualCoords ? normalizedLat : geocoded?.latitude;
+    const finalLng = hasManualCoords ? normalizedLng : geocoded?.longitude;
+
+    if (Number.isFinite(finalLat) && Number.isFinite(finalLng)) {
       await foodClient.query(
         `INSERT INTO restaurant_locations (restaurant_id, latitude, longitude)
          VALUES ($1, $2, $3)
          ON CONFLICT (restaurant_id)
          DO UPDATE SET latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude`,
-        [restaurant.id, Number(latitude), Number(longitude)]
+        [restaurant.id, Number(finalLat), Number(finalLng)]
       );
     }
 

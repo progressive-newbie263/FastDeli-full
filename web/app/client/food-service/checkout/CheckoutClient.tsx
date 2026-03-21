@@ -41,7 +41,37 @@ interface CouponItem {
   discount_value: number;
   min_order_value: number;
   max_discount?: number | null;
+  is_active?: boolean;
+  start_date?: string;
+  end_date?: string;
 }
+
+const getCouponInvalidReason = (coupon: CouponItem, orderTotal: number): string | null => {
+  if (coupon.is_active === false) {
+    return 'Mã giảm giá đã tắt';
+  }
+
+  const minOrder = Number(coupon.min_order_value || 0);
+  if (orderTotal < minOrder) {
+    return `Đơn chưa đủ ${minOrder.toLocaleString('vi-VN')}đ`;
+  }
+
+  if (coupon.start_date) {
+    const startDate = new Date(coupon.start_date);
+    if (!Number.isNaN(startDate.getTime()) && new Date() < startDate) {
+      return 'Mã giảm giá chưa đến thời gian áp dụng';
+    }
+  }
+
+  if (coupon.end_date) {
+    const endDate = new Date(coupon.end_date);
+    if (!Number.isNaN(endDate.getTime()) && new Date() > endDate) {
+      return 'Mã giảm giá đã hết hạn';
+    }
+  }
+
+  return null;
+};
 
 const parseToNumber = (value: unknown): number | null => {
   const parsed = Number(value);
@@ -313,6 +343,15 @@ const CheckoutClient = () => {
       return;
     }
 
+    const localCoupon = availableCoupons.find((item) => item.code?.toUpperCase() === searchCode.toUpperCase());
+    if (localCoupon) {
+      const localReason = getCouponInvalidReason(localCoupon, originalTotal);
+      if (localReason) {
+        toast.warning(`Mã giảm giá này không phù hợp: ${localReason}`);
+        return;
+      }
+    }
+
     try {
       setIsCouponLoading(true);
       const restaurantId = Number(selectedRestaurantId || cartData?.[0]?.restaurant_id);
@@ -331,7 +370,7 @@ const CheckoutClient = () => {
       if (!res.ok || !data?.success) {
         setAppliedCoupon(null);
         setValidatedDiscount(0);
-        toast.error(data?.message || 'Mã giảm giá không hợp lệ');
+        toast.warning(data?.message || 'Mã giảm giá này không phù hợp');
         return;
       }
 
@@ -374,6 +413,15 @@ const CheckoutClient = () => {
     }
 
     const group = targetGroups[0];
+
+    if (appliedCoupon) {
+      const reason = getCouponInvalidReason(appliedCoupon, originalTotal);
+      if (reason) {
+        toast.warning(`Mã giảm giá này không phù hợp: ${reason}`);
+        return;
+      }
+    }
+
     const orderPayload = {
       orderData: {
         user_id: Number(userInfos.id) || null,
@@ -782,18 +830,31 @@ const CheckoutClient = () => {
                         {availableCoupons.length === 0 && (
                           <p className="text-xs text-gray-500 px-1 py-2">Chưa có coupon khả dụng</p>
                         )}
-                        {availableCoupons.map(coupon => (
-                          <button
-                            key={coupon.id}
-                            onClick={() => handleApplyCoupon(coupon.code)}
-                            className="w-full p-2 border border-orange-200 rounded-lg hover:border-orange-400 hover:bg-orange-50 transition-all text-left text-xs"
-                          >
-                            <p className="font-semibold text-gray-800">{coupon.code}</p>
-                            <p className="text-xs font-semibold text-gray-700">{coupon.title || 'Coupon ưu đãi'}</p>
-                            <p className="text-xs text-green-700">{formatCouponBenefit(coupon)}</p>
-                            <p className="text-xs text-gray-600">{coupon.description || 'Áp dụng theo điều kiện coupon'}</p>
-                          </button>
-                        ))}
+                        {availableCoupons.map(coupon => {
+                          const invalidReason = getCouponInvalidReason(coupon, originalTotal);
+                          const disabled = Boolean(invalidReason);
+
+                          return (
+                            <button
+                              key={coupon.id}
+                              onClick={() => handleApplyCoupon(coupon.code)}
+                              disabled={disabled}
+                              className={`w-full p-2 border rounded-lg transition-all text-left text-xs ${
+                                disabled
+                                  ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                                  : 'border-orange-200 hover:border-orange-400 hover:bg-orange-50'
+                              }`}
+                            >
+                              <p className="font-semibold text-gray-800">{coupon.code}</p>
+                              <p className="text-xs font-semibold text-gray-700">{coupon.title || 'Coupon ưu đãi'}</p>
+                              <p className="text-xs text-green-700">{formatCouponBenefit(coupon)}</p>
+                              <p className="text-xs text-gray-600">{coupon.description || 'Áp dụng theo điều kiện coupon'}</p>
+                              {invalidReason && (
+                                <p className="text-xs text-red-500 mt-1">Không áp dụng: {invalidReason}</p>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

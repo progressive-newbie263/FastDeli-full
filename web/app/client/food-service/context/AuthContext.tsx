@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (storedToken && storedUserData) {
         try {
           const userData = JSON.parse(storedUserData);
-          if (userData?.role && userData.role !== 'customer') {
+          if (userData?.role !== 'customer') {
             localStorage.removeItem('token');
             localStorage.removeItem('userData');
             setLoading(false);
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (token && !currentUser) {
         try {
           const { user } = await authAPI.getCurrentUser();
-          if (user?.role && user.role !== 'customer') {
+          if (user?.role !== 'customer') {
             logout();
             return;
           }
@@ -142,7 +142,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // Login user
+  // đăng nhập (khách)
   const login = async (credentials: any) => {
     try {
       setLoading(true);
@@ -150,22 +150,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       const { token: newToken, user } = await authAPI.login(credentials);
 
-      if (user?.role && user.role !== 'customer') {
+      if (user?.role !== 'customer') {
         localStorage.removeItem('token');
         localStorage.removeItem('userData');
         setToken(null);
         setCurrentUser(null);
-        const roleError = 'Tài khoản này không thuộc cổng khách hàng.';
+        
+        // nếu tài khoản role "restaurant_owner" hoặc "admin" 
+        // thì sẽ không cho đăng nhập vào app khách hàng, mà sẽ hiển thị lỗi và yêu cầu đăng nhập lại
+        const roleError = 'Tài khoản không hợp lệ, vui lòng đăng nhập lại.';
         setError(roleError);
         showErrorToast(roleError);
         return { success: false, error: roleError };
       }
       
-      // Save token and user data in localStorage
       localStorage.setItem('token', newToken);
       localStorage.setItem('userData', JSON.stringify(user));
       
-      // Update state
       setToken(newToken);
       setCurrentUser(user);
       
@@ -182,11 +183,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Logout user
   const logout = () => {
-    // Remove token and user data from localStorage
+    // xóa token, userData khỏi localStorage khi đăng xuất
     localStorage.removeItem('token');
     localStorage.removeItem('userData');
     
-    // Update state
+    // cập nhật các state trong local storage
     setToken(null);
     setCurrentUser(null);
     setError(null);
