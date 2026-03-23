@@ -313,8 +313,15 @@ ko cho chọn mã giảm giá đó luôn.
 
 5. Hoàn thiện logic xử lí bằng tiền mặt
 
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 23-03-2026-----------------------------
+
+1. hotfix tính năng reviews. người dùng có thể đánh giá + bình luận 1 lần duy nhất mỗi 
+nhà hàng. Được phép đánh giá lại sao của nhà hàng đó, cũng như thay đổi nội dung bình luận, 
+mỗi lần như vậy sẽ phải chờ 24 tiếng. (done)
+
 # note cần làm:
-1. reviews của khách hàng => nhà hàng
 2. Chuyển cái "flow giao hàng" sang biểu đồ dạng timeline
 3. Xử lí tab "featured" của dịch vụ food
 4. (quan trọng) chuẩn bị khởi tạo "driver"

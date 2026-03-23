@@ -2,39 +2,76 @@ const Restaurant = require('../models/Restaurants');
 const { successResponse, errorResponse } = require('../utils/response');
 const { foodPool, sharedPool } = require('../config/db');
 
-let reviewsColumnsCache = null;
+let ensureReviewsTablePromise = null;
 
 const ensureReviewsTable = async () => {
-  await foodPool.query(
-    `CREATE TABLE IF NOT EXISTS reviews (
-      review_id SERIAL PRIMARY KEY,
-      restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
-      user_id INTEGER NOT NULL,
-      order_id INTEGER,
-      rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-      comment TEXT,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`
-  );
-
-  await foodPool.query('CREATE INDEX IF NOT EXISTS idx_reviews_restaurant ON reviews(restaurant_id)');
-  await foodPool.query('CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC)');
-};
-
-const getReviewsColumns = async () => {
-  if (reviewsColumnsCache) {
-    return reviewsColumnsCache;
+  if (ensureReviewsTablePromise) {
+    return ensureReviewsTablePromise;
   }
 
-  const result = await foodPool.query(
-    `SELECT column_name, is_nullable
-     FROM information_schema.columns
-     WHERE table_name = 'reviews'`
-  );
+  ensureReviewsTablePromise = (async () => {
+    await foodPool.query(
+      `CREATE TABLE IF NOT EXISTS reviews (
+        review_id SERIAL PRIMARY KEY,
+        restaurant_id INTEGER NOT NULL REFERENCES restaurants(id) ON DELETE CASCADE,
+        user_id INTEGER NOT NULL,
+        rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+        comment TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )`
+    );
 
-  reviewsColumnsCache = new Map((result.rows || []).map((row) => [row.column_name, row]));
-  return reviewsColumnsCache;
+    await foodPool.query('ALTER TABLE reviews ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+    await foodPool.query('UPDATE reviews SET updated_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP) WHERE updated_at IS NULL');
+
+    await foodPool.query('DROP INDEX IF EXISTS uq_reviews_user_order_restaurant');
+    await foodPool.query('DROP INDEX IF EXISTS idx_reviews_order');
+    await foodPool.query('ALTER TABLE reviews DROP COLUMN IF EXISTS order_id');
+
+    await foodPool.query(
+      `DELETE FROM reviews r
+       USING reviews newer
+       WHERE r.restaurant_id = newer.restaurant_id
+         AND r.user_id = newer.user_id
+         AND (
+           r.created_at < newer.created_at
+           OR (r.created_at = newer.created_at AND r.review_id < newer.review_id)
+         )`
+    );
+
+    await foodPool.query('CREATE INDEX IF NOT EXISTS idx_reviews_restaurant ON reviews(restaurant_id)');
+    await foodPool.query('CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id)');
+    await foodPool.query('CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC)');
+    await foodPool.query(
+      'CREATE UNIQUE INDEX IF NOT EXISTS uq_reviews_user_restaurant ON reviews(user_id, restaurant_id)'
+    );
+  })().catch((error) => {
+    ensureReviewsTablePromise = null;
+    throw error;
+  });
+
+  return ensureReviewsTablePromise;
+};
+
+const updateRestaurantRatingAggregate = async (restaurantId, client = foodPool) => {
+  await client.query(
+    `UPDATE restaurants r
+     SET
+       rating = stats.avg_rating,
+       total_reviews = stats.total_reviews,
+       updated_at = CURRENT_TIMESTAMP
+     FROM (
+       SELECT
+         $1::int AS restaurant_id,
+         COALESCE(ROUND(AVG(rw.rating)::numeric, 2), 0)::numeric(3,2) AS avg_rating,
+         COUNT(*)::int AS total_reviews
+       FROM reviews rw
+       WHERE rw.restaurant_id = $1
+     ) stats
+     WHERE r.id = stats.restaurant_id`,
+    [restaurantId]
+  );
 };
 
 class RestaurantController {
@@ -192,7 +229,7 @@ class RestaurantController {
 
       const limit = Number(req.query.limit) || 20;
       const reviewsResult = await foodPool.query(
-        `SELECT review_id, restaurant_id, user_id, order_id, rating, comment, created_at
+        `SELECT review_id, restaurant_id, user_id, rating, comment, created_at
          FROM reviews
          WHERE restaurant_id = $1
          ORDER BY created_at DESC
@@ -233,9 +270,8 @@ class RestaurantController {
   static async createRestaurantReview(req, res) {
     try {
       await ensureReviewsTable();
-      const reviewsColumns = await getReviewsColumns();
       const restaurantId = Number(req.params.id);
-      const { user_id, rating, comment, order_id } = req.body || {};
+      const { user_id, rating, comment } = req.body || {};
 
       if (!restaurantId || Number.isNaN(restaurantId)) {
         return errorResponse(res, 'restaurantId không hợp lệ', null, 400);
@@ -247,67 +283,101 @@ class RestaurantController {
       }
 
       const parsedRating = Number(rating);
-      if (!Number.isFinite(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+      if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
         return errorResponse(res, 'rating phải từ 1 đến 5', null, 400);
       }
 
-      const orderColumn = reviewsColumns.get('order_id');
-      const orderIdRequired = orderColumn && orderColumn.is_nullable === 'NO';
-      const parsedOrderId = Number(order_id);
-      let normalizedOrderId = Number.isFinite(parsedOrderId) ? parsedOrderId : null;
+      const duplicateReviewCheck = await foodPool.query(
+        `SELECT review_id
+         FROM reviews
+         WHERE user_id = $1 AND restaurant_id = $2
+         LIMIT 1`,
+        [userId, restaurantId]
+      );
 
-      if (orderIdRequired && !normalizedOrderId) {
-        const latestOrderResult = await foodPool.query(
-          `SELECT id
-           FROM orders
-           WHERE user_id = $1 AND restaurant_id = $2
-           ORDER BY created_at DESC, id DESC
-           LIMIT 1`,
-          [userId, restaurantId]
-        );
-
-        if (latestOrderResult.rows.length > 0) {
-          normalizedOrderId = Number(latestOrderResult.rows[0].id);
-        }
-      }
-
-      if (orderIdRequired && !normalizedOrderId) {
-        return errorResponse(res, 'order_id là bắt buộc để gửi đánh giá trong schema hiện tại', null, 400);
-      }
-
-      if (normalizedOrderId) {
-        const orderCheck = await foodPool.query(
-          `SELECT id
-           FROM orders
-           WHERE id = $1 AND user_id = $2 AND restaurant_id = $3
-           LIMIT 1`,
-          [normalizedOrderId, userId, restaurantId]
-        );
-
-        if (!orderCheck.rows.length) {
-          return errorResponse(res, 'order_id không hợp lệ hoặc không thuộc nhà hàng/người dùng này', null, 400);
-        }
-      }
-
-      const insertColumns = ['restaurant_id', 'user_id', 'order_id', 'rating', 'comment', 'created_at'];
-      const insertValues = [restaurantId, userId, normalizedOrderId, parsedRating, (comment || '').trim() || null];
-      const valueParts = [...insertValues.map((_, idx) => `$${idx + 1}`), 'CURRENT_TIMESTAMP'];
-
-      if (reviewsColumns.has('updated_at')) {
-        insertColumns.push('updated_at');
-        valueParts.push('CURRENT_TIMESTAMP');
+      if (duplicateReviewCheck.rows.length > 0) {
+        return errorResponse(res, 'Bạn đã đánh giá nhà hàng này rồi', null, 400);
       }
 
       const inserted = await foodPool.query(
-        `INSERT INTO reviews (${insertColumns.join(', ')})
-         VALUES (${valueParts.join(', ')})
-         RETURNING review_id, restaurant_id, user_id, order_id, rating, comment, created_at`,
-        insertValues
+        `INSERT INTO reviews (restaurant_id, user_id, rating, comment, created_at)
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+         RETURNING review_id, restaurant_id, user_id, rating, comment, created_at`,
+        [restaurantId, userId, parsedRating, (comment || '').trim() || null]
       );
+
+      await updateRestaurantRatingAggregate(restaurantId);
 
       return successResponse(res, 'Gửi đánh giá thành công', inserted.rows[0], 201);
     } catch (error) {
       return errorResponse(res, 'Lỗi khi gửi đánh giá', error);
+    }
+  }
+
+  static async updateRestaurantReview(req, res) {
+    try {
+      await ensureReviewsTable();
+      const restaurantId = Number(req.params.id);
+      const { user_id, rating, comment } = req.body || {};
+
+      if (!restaurantId || Number.isNaN(restaurantId)) {
+        return errorResponse(res, 'restaurantId không hợp lệ', null, 400);
+      }
+
+      const userId = Number(user_id);
+      if (!userId || Number.isNaN(userId)) {
+        return errorResponse(res, 'Thiếu user_id hợp lệ', null, 400);
+      }
+
+      const parsedRating = Number(rating);
+      if (!Number.isInteger(parsedRating) || parsedRating < 1 || parsedRating > 5) {
+        return errorResponse(res, 'rating phải từ 1 đến 5', null, 400);
+      }
+
+      const existingReviewResult = await foodPool.query(
+        `SELECT review_id, created_at, COALESCE(updated_at, created_at) AS last_action_at
+         FROM reviews
+         WHERE user_id = $1 AND restaurant_id = $2
+         LIMIT 1`,
+        [userId, restaurantId]
+      );
+
+      if (!existingReviewResult.rows.length) {
+        return errorResponse(res, 'Bạn chưa có đánh giá để cập nhật', null, 404);
+      }
+
+      const existingReview = existingReviewResult.rows[0];
+      const lastActionAt = new Date(existingReview.last_action_at || existingReview.created_at);
+      const now = new Date();
+      const diffMs = now.getTime() - lastActionAt.getTime();
+      const cooldownMs = 24 * 60 * 60 * 1000;
+
+      if (diffMs < cooldownMs) {
+        const remainingMs = cooldownMs - diffMs;
+        const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000));
+        return errorResponse(
+          res,
+          `Bạn chỉ có thể cập nhật lại sau ${remainingHours} giờ nữa`,
+          null,
+          429
+        );
+      }
+
+      const updated = await foodPool.query(
+        `UPDATE reviews
+         SET rating = $1,
+             comment = $2,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE review_id = $3
+         RETURNING review_id, restaurant_id, user_id, rating, comment, created_at, updated_at`,
+        [parsedRating, (comment || '').trim() || null, existingReview.review_id]
+      );
+
+      await updateRestaurantRatingAggregate(restaurantId);
+
+      return successResponse(res, 'Cập nhật đánh giá thành công', updated.rows[0]);
+    } catch (error) {
+      return errorResponse(res, 'Lỗi khi cập nhật đánh giá', error);
     }
   }
 

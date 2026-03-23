@@ -54,11 +54,10 @@ class Restaurant {
         SELECT r.*, 
           rl.latitude,
           rl.longitude,
-             COALESCE(AVG(rev.rating), 0) as avg_rating,
-             COUNT(rev.review_id) as review_count
+          COALESCE(r.rating, 0) AS avg_rating,
+          COALESCE(r.total_reviews, 0) AS review_count
       FROM restaurants r
         LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
-      LEFT JOIN reviews rev ON r.id = rev.restaurant_id
       WHERE r.status = 'active'
     `;
     
@@ -90,7 +89,7 @@ class Restaurant {
       paramIndex++;
     }
 
-    query += ` GROUP BY r.id, rl.latitude, rl.longitude ORDER BY r.created_at DESC`;
+    query += ` ORDER BY r.created_at DESC`;
 
     if (filters.limit) {
       query += ` LIMIT $${paramIndex}`;
@@ -195,8 +194,8 @@ class Restaurant {
         r.*, 
         rl.latitude,
         rl.longitude,
-        COALESCE(AVG(rev.rating), 0) as avg_rating,
-        COUNT(rev.review_id) as review_count,
+        COALESCE(r.rating, 0) as avg_rating,
+        COALESCE(r.total_reviews, 0) as review_count,
         SQRT(
           POWER(CAST(rl.latitude AS numeric) - $1, 2)
           +
@@ -204,11 +203,9 @@ class Restaurant {
         ) as euclidean_distance
       FROM restaurants r
       LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
-      LEFT JOIN reviews rev ON r.id = rev.restaurant_id
       WHERE r.status = 'active'
         AND rl.latitude IS NOT NULL
         AND rl.longitude IS NOT NULL
-      GROUP BY r.id, rl.latitude, rl.longitude
       ORDER BY euclidean_distance ASC
       LIMIT $3
     `;

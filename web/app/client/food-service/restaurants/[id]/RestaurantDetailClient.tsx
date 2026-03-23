@@ -7,7 +7,7 @@ import { Restaurant, Food } from '../../interfaces';
 import { useAuth } from '@food/context/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { MapPin, Phone, Star, Truck, Plus, AlertCircle, Loader2, Minus } from 'lucide-react';
+import { MapPin, Phone, Star, Truck, Plus, AlertCircle, Loader2, Minus, Pencil } from 'lucide-react';
 
 // Type cho cart structure
 interface CartItem {
@@ -21,6 +21,7 @@ interface Cart {
 
 interface ReviewItem {
   review_id: number;
+  user_id: number;
   rating: number;
   comment?: string | null;
   created_at: string;
@@ -85,8 +86,13 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [updatingReview, setUpdatingReview] = useState(false);
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [editRating, setEditRating] = useState(5);
+  const [editComment, setEditComment] = useState('');
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
+  const currentUserId = Number((currentUser as any)?.user_id || (currentUser as any)?.id || 0);
 
   // fix logic tiền
   const formatPrice = (price: string | number) => {
@@ -101,10 +107,11 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
     try {
       setLoading(true);
       setError(null);
+      const noCacheParam = `_=${Date.now()}`;
 
       const [restaurantRes, foodsRes] = await Promise.all([
-        fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}`),
-        fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/foods`)
+        fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}?${noCacheParam}`, { cache: 'no-store' }),
+        fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/foods?${noCacheParam}`, { cache: 'no-store' })
       ]);
 
       if (!restaurantRes.ok) {
@@ -139,7 +146,9 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
 
     try {
       setReviewLoading(true);
-      const res = await fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/reviews?limit=20`);
+      const res = await fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/reviews?limit=20&_=${Date.now()}`, {
+        cache: 'no-store',
+      });
       const data = await res.json();
       if (data?.success && Array.isArray(data?.data?.reviews)) {
         setReviews(data.data.reviews);
@@ -190,12 +199,60 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
       toast.success('Cảm ơn bạn đã gửi đánh giá!');
       setNewComment('');
       setNewRating(5);
-      await fetchReviews();
+      await Promise.all([fetchReviews(), fetchRestaurantData()]);
     } catch (err) {
       console.error('Submit review error:', err);
       toast.error('Lỗi khi gửi đánh giá');
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const startEditingReview = (review: ReviewItem) => {
+    setEditingReviewId(review.review_id);
+    setEditRating(review.rating);
+    setEditComment(review.comment || '');
+  };
+
+  const cancelEditingReview = () => {
+    setEditingReviewId(null);
+    setEditRating(5);
+    setEditComment('');
+  };
+
+  const submitReviewUpdate = async () => {
+    if (!id || !editingReviewId) return;
+    if (!isAuthenticated || !currentUserId) {
+      toast.error('Vui lòng đăng nhập để cập nhật đánh giá.');
+      return;
+    }
+
+    try {
+      setUpdatingReview(true);
+      const response = await fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/reviews`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: currentUserId,
+          rating: editRating,
+          comment: editComment,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data?.success) {
+        toast.error(data?.message || 'Không thể cập nhật đánh giá');
+        return;
+      }
+
+      toast.success('Cập nhật đánh giá thành công!');
+      cancelEditingReview();
+      await Promise.all([fetchReviews(), fetchRestaurantData()]);
+    } catch (err) {
+      console.error('Update review error:', err);
+      toast.error('Lỗi khi cập nhật đánh giá');
+    } finally {
+      setUpdatingReview(false);
     }
   };
 
@@ -557,18 +614,78 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
               <div key={review.review_id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-semibold text-gray-800">{review.customer_name || 'Khách hàng'}</p>
-                  <p className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString('vi-VN')}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-gray-500">{new Date(review.created_at).toLocaleDateString('vi-VN')}</p>
+                    {editingReviewId !== review.review_id && isAuthenticated && currentUserId > 0 && review.user_id === currentUserId && (
+                      <button
+                        type="button"
+                        onClick={() => startEditingReview(review)}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-green-200 text-green-700 transition hover:bg-green-50 hover:border-green-300"
+                        title="Chỉnh sửa đánh giá"
+                        aria-label="Chỉnh sửa đánh giá"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={`${review.review_id}-${star}`}
-                      size={14}
-                      className={star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                {editingReviewId === review.review_id ? (
+                  <>
+                    <div className="flex items-center gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={`${review.review_id}-edit-${star}`}
+                          type="button"
+                          onClick={() => setEditRating(star)}
+                          className="p-1"
+                        >
+                          <Star
+                            size={16}
+                            className={star <= editRating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <textarea
+                      value={editComment}
+                      onChange={(e) => setEditComment(e.target.value)}
+                      rows={3}
+                      maxLength={300}
+                      className="w-full border border-gray-300 rounded-lg p-3 text-sm text-gray-700"
                     />
-                  ))}
-                </div>
-                <p className="text-sm text-gray-700">{review.comment || 'Khách hàng không để lại nhận xét.'}</p>
+                    <div className="flex items-center gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={submitReviewUpdate}
+                        disabled={updatingReview}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      >
+                        {updatingReview ? 'Đang cập nhật...' : 'Cập nhật'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEditingReview}
+                        disabled={updatingReview}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50"
+                      >
+                        Hủy
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-1 mb-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={`${review.review_id}-${star}`}
+                          size={14}
+                          className={star <= review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-sm text-gray-700 mb-2">{review.comment || 'Khách hàng không để lại nhận xét.'}</p>
+                  </>
+                )}
               </div>
             ))}
           </div>

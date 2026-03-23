@@ -368,7 +368,7 @@ export default function RestaurantDetailPage() {
               <div className="bg-white rounded-xl card-shadow p-6">
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-sm font-medium text-red-800 mb-2 flex items-center gap-2">
-                    <span>⚠️</span>
+                    <span>!</span>
                     <span>Lý do từ chối</span>
                   </p>
                   <p className="text-red-700">{restaurant.rejection_reason}</p>
