@@ -321,7 +321,32 @@ ko cho chọn mã giảm giá đó luôn.
 nhà hàng. Được phép đánh giá lại sao của nhà hàng đó, cũng như thay đổi nội dung bình luận, 
 mỗi lần như vậy sẽ phải chờ 24 tiếng. (done)
 
-# note cần làm:
-2. Chuyển cái "flow giao hàng" sang biểu đồ dạng timeline
-3. Xử lí tab "featured" của dịch vụ food
-4. (quan trọng) chuẩn bị khởi tạo "driver"
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 24-03-2026-----------------------------
+
+1. Chuyển cái "flow giao hàng" sang biểu đồ dạng timeline. Tiến trình sẽ từ trái qua phải,
+bắt đầu với "Đang thực hiện" ... đến "Giao hàng thành công". Trục ngang.
+
+2. Xử lí tab "featured" của dịch vụ food ở trang chủ của food-service. 
+Nhiệm vụ của nó đại khái sẽ là giới thiệu 1 số mặt hàng phổ biến.
+Tạm thời trong database thì mọi food có "is_featured" boolean, mặc định là false.
+Tạo cho bên admin 1 phương thức để bật / tắt cái "is_featured" đó.
+Các nhà hàng có các food có thuộc tính "is_featured" là true sẽ hiển thị ở 
+section "featured" tại trang chủ luôn 
+
+3. Tạo trang /about cho bên khách hàng. Tạo text bừa đi, tôi chỉnh sau.
+
+# note: 
+- mã giảm giá "customized" cho bên nhà hàng.
+- (quan trọng) chuẩn bị khởi tạo "driver"
+- Trang "Phân tích" /supplier/analytics đang dùng data ảo (text cứng).
+Bắt đầu import thẳng dữ liệu thật vào (best seller)
+- "Tạo coupon". Hãy tách nó ra 1 đoạn khác trong trang "settings". 
+có thể hiển thị dưới dạng pop up, tạo xong đảm bảo hiển thị được nó ra, cả bên
+supplier, admin, customer. Và tạo thêm label cho các input.
+- Thử làm gì đó với "thông báo đơn hang". icon chuông trên header trang supplier.
+Đại khái có đơn hang mới thì nó sẽ báo về. Thay đổi luôn nội dung tiêu đề ở route /supplier.
+từ FastDeli - vận chuyển hỏa tốc thành ${tên nhà hàng} | FastDeli, khi có tin nhắn thì 
+nội dung tiêu đề nhấp nháy sang "Đơn hang mới".

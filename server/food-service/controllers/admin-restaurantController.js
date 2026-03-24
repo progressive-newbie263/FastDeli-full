@@ -169,6 +169,7 @@ class AdminRestaurantController {
           f.price,
           f.image_url,
           f.is_available,
+          f.is_featured,
           f.created_at,
           fc1.category_id AS primary_category_id,
           fc1.category_name AS primary_category_name,
@@ -229,6 +230,7 @@ class AdminRestaurantController {
         image_url: row.image_url || null,
         price: row.price,
         is_available: row.is_available,
+        is_featured: row.is_featured,
         primary_category: {
           id: row.primary_category_id,
           name: row.primary_category_name
@@ -249,6 +251,51 @@ class AdminRestaurantController {
       return successResponse(res, 'Lấy danh sách món ăn thành công', data);
     } catch (error) {
       return errorResponse(res, 'Lỗi khi lấy danh sách món ăn', error);
+    }
+  }
+
+  /**
+   * Bật/tắt featured cho món ăn của nhà hàng
+   * PATCH /api/admin/restaurants/:id/foods/:foodId/featured
+   */
+  static async toggleFoodFeatured(req, res) {
+    try {
+      const restaurantId = Number(req.params.id);
+      const foodId = Number(req.params.foodId);
+      const { is_featured } = req.body || {};
+
+      if (!Number.isFinite(restaurantId) || restaurantId <= 0) {
+        return errorResponse(res, 'restaurantId không hợp lệ', null, 400);
+      }
+
+      if (!Number.isFinite(foodId) || foodId <= 0) {
+        return errorResponse(res, 'foodId không hợp lệ', null, 400);
+      }
+
+      if (typeof is_featured !== 'boolean') {
+        return errorResponse(res, 'is_featured phải là boolean', null, 400);
+      }
+
+      const result = await foodPool.query(
+        `UPDATE foods
+         SET is_featured = $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE food_id = $2 AND restaurant_id = $3
+         RETURNING food_id, restaurant_id, food_name, is_featured, updated_at`,
+        [is_featured, foodId, restaurantId]
+      );
+
+      if (!result.rows.length) {
+        return errorResponse(res, 'Không tìm thấy món ăn thuộc nhà hàng này', null, 404);
+      }
+
+      return successResponse(
+        res,
+        is_featured ? 'Đã bật featured cho món ăn' : 'Đã tắt featured cho món ăn',
+        result.rows[0]
+      );
+    } catch (error) {
+      return errorResponse(res, 'Lỗi khi cập nhật featured cho món ăn', error);
     }
   }
 }

@@ -7,6 +7,8 @@ import ApiService from '@/lib/api';
 import type { Restaurant } from '@/app/types/admin';
 import { useRouter } from 'next/navigation';
 
+import { Locate, Phone } from 'lucide-react';
+
 export default function RestaurantsPage() {
   const router = useRouter();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -363,7 +365,10 @@ export default function RestaurantsPage() {
 
               <div className="p-4 space-y-3">
                 <div className="flex items-start gap-2">
-                  <span className="text-gray-400 text-sm mt-0.5">📍</span>
+                  <span className="text-gray-400 text-sm mt-0.5">
+                    <Locate /> 
+                  </span>
+                  
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-500 mb-0.5">Địa chỉ</p>
                     <p className="text-sm text-gray-900">{restaurant.address}</p>
@@ -371,7 +376,10 @@ export default function RestaurantsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400 text-sm">📞</span>
+                  <span className="text-gray-400 text-sm">
+                    <Phone />
+                  </span>
+                  
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-500 mb-0.5">Liên hệ</p>
                     <p className="text-sm text-gray-900">{restaurant.phone}</p>

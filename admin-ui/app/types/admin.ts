@@ -174,6 +174,7 @@ export interface Food {
   price: number;
   image_url?: string;
   is_available: boolean;
+  is_featured?: boolean;
   created_at: string;
   updated_at: string;
 

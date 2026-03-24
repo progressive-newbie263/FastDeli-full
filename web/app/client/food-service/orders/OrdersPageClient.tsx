@@ -476,28 +476,61 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
                         Đơn hàng đã bị hủy. Luồng chuẩn bị và giao hàng được dừng.
                       </div>
                     ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {ORDER_FLOW_STAGES.map((stage, index) => {
-                          const state = getStageState(order, index);
-                          return (
-                            <div key={`${order.id}-${stage.key}`} className={`rounded-xl border p-3 ${getStageStyle(state)}`}>
-                              <div className="flex gap-3">
-                                <img
-                                  src={stage.image}
-                                  alt={stage.title}
-                                  className="w-16 h-16 rounded-md object-cover bg-white"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs uppercase tracking-wide font-semibold mb-1">
-                                    {state === 'done' ? 'Hoàn tất' : state === 'current' ? 'Đang thực hiện' : 'Đang chờ'}
-                                  </p>
-                                  <p className="text-sm font-semibold leading-5">{stage.title}</p>
-                                  <p className="text-xs mt-1 opacity-90">{stage.description}</p>
+                      <div className="overflow-x-auto pb-2">
+                        <div className="min-w-[720px]">
+                          <div className="flex items-start">
+                            {ORDER_FLOW_STAGES.map((stage, index) => {
+                              const state = getStageState(order, index);
+                              const label = state === 'done' ? 'Hoàn tất' : state === 'current' ? 'Đang thực hiện' : 'Đang chờ';
+
+                              return (
+                                <div key={`${order.id}-${stage.key}`} className="flex items-start flex-1">
+                                  <div className="flex-1">
+                                    <div className="flex items-center">
+                                      <div
+                                        className={`w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold ${
+                                          state === 'done'
+                                            ? 'bg-emerald-500 border-emerald-500 text-white'
+                                            : state === 'current'
+                                            ? 'bg-blue-500 border-blue-500 text-white'
+                                            : 'bg-white border-gray-300 text-gray-500'
+                                        }`}
+                                      >
+                                        {index + 1}
+                                      </div>
+
+                                      {index < ORDER_FLOW_STAGES.length - 1 && (
+                                        <div className="flex-1 h-[2px] mx-2 bg-gray-200 relative">
+                                          <div
+                                            className={`absolute left-0 top-0 h-full ${
+                                              state === 'done' ? 'bg-emerald-500 w-full' : state === 'current' ? 'bg-blue-500 w-1/2' : 'w-0'
+                                            }`}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="mt-3 pr-2">
+                                      <p
+                                        className={`text-xs uppercase tracking-wide font-semibold mb-1 ${
+                                          state === 'done'
+                                            ? 'text-emerald-700'
+                                            : state === 'current'
+                                            ? 'text-blue-700'
+                                            : 'text-gray-500'
+                                        }`}
+                                      >
+                                        {label}
+                                      </p>
+                                      <p className="text-sm font-semibold text-gray-800 leading-5">{stage.title}</p>
+                                      <p className="text-xs text-gray-500 mt-1 leading-5">{stage.description}</p>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                              );
+                            })}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>

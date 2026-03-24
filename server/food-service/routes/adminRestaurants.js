@@ -28,6 +28,7 @@ router.get('/statistics', AdminRestaurantController.getStatistics); // 1. get st
 router.get('/', AdminRestaurantController.getAllRestaurants); // 2, get all with pagination
 router.get('/:id', AdminRestaurantController.getRestaurantById); // 3. get restaurant by id
 router.get('/:id/foods', AdminRestaurantController.getFoodsByRestaurantId); 
+router.patch('/:id/foods/:foodId/featured', AdminRestaurantController.toggleFoodFeatured);
 router.patch('/:id/status', AdminRestaurantController.updateStatus); // 4. update status
 router.post('/:id/approve', AdminRestaurantController.approveRestaurant); // 5. approve restaurant
 router.post('/:id/reject', AdminRestaurantController.rejectRestaurant); // 6. reject restaurant

@@ -8,7 +8,7 @@ class FoodController {
       
       const filters = {};
       if (search) filters.search = search;
-      if (is_featured) filters.is_featured = is_featured === 'true';
+      if (is_featured !== undefined) filters.is_featured = is_featured === 'true';
       if (limit) filters.limit = parseInt(limit);
 
       const foods = await Food.getAll(filters);
@@ -51,7 +51,7 @@ class FoodController {
       const { id } = req.params;
       const food = await Food.update(id, req.body);
 
-      if (!restaurant) {
+      if (!food) {
         return errorResponse(res, 'Không tìm thấy món ăn', null, 404);
       }
 

@@ -14,7 +14,13 @@ export default function ReviewsPage() {
   const [stats, setStats] = useState({
     averageRating: 0,
     totalReviews: 0,
-    distribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+    distribution: { 
+      5: 0, 
+      4: 0, 
+      3: 0, 
+      2: 0, 
+      1: 0 
+    }
   });
   const [filter, setFilter] = useState<'all' | 1 | 2 | 3 | 4 | 5>('all');
 
@@ -42,7 +48,14 @@ export default function ReviewsPage() {
         const avg = total > 0 ? sum / total : 0;
 
         // Calculate distribution
-        const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        const dist = { 
+          5: 0, 
+          4: 0, 
+          3: 0, 
+          2: 0, 
+          1: 0 
+        };
+        
         reviewsData.forEach((r: Review) => {
           dist[r.rating as keyof typeof dist]++;
         });

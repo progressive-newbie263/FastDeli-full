@@ -1,17 +1,53 @@
 const { foodPool } = require('../config/db');
 
+let categoryColumnPromise = null;
+
+const resolveFoodCategoryColumn = async () => {
+  if (!categoryColumnPromise) {
+    categoryColumnPromise = (async () => {
+      const result = await foodPool.query(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = 'foods'
+           AND column_name IN ('primary_category_id', 'category_id')`
+      );
+
+      const columns = (result.rows || []).map((row) => row.column_name);
+      if (columns.includes('primary_category_id')) {
+        return 'primary_category_id';
+      }
+      if (columns.includes('category_id')) {
+        return 'category_id';
+      }
+
+      return null;
+    })().catch((error) => {
+      categoryColumnPromise = null;
+      throw error;
+    });
+  }
+
+  return categoryColumnPromise;
+};
+
 class Food {
   // Lấy tất cả món ăn với filters
   // do có khá nhiều trường hợp cần lọc, nên có thể đặt sẵn 1 query gốc trước. 
   // phần sau (AND x) sẽ trám vào từ từ sau, tùy vào các trường hợp cần lọc.
   static async getAll(filters = {}) {
+    const categoryColumn = await resolveFoodCategoryColumn();
+    const categoryJoinClause = categoryColumn
+      ? `LEFT JOIN food_categories fc ON f.${categoryColumn} = fc.category_id`
+      : `LEFT JOIN food_categories fc ON 1 = 0`;
+
     let query = `
       SELECT f.*, 
-             r.restaurant_name,
+             r.name AS restaurant_name,
              fc.category_name
       FROM foods f
-      LEFT JOIN restaurants r ON f.restaurant_id = r.restaurant_id
-      LEFT JOIN food_categories fc ON f.category_id = fc.category_id
+      LEFT JOIN restaurants r ON f.restaurant_id = r.id
+      ${categoryJoinClause}
       WHERE f.is_available = true AND r.status = 'active'
     `;
     
@@ -52,6 +88,12 @@ class Food {
       paramIndex++;
     }
 
+    if (typeof filters.is_featured === 'boolean') {
+      query += ` AND f.is_featured = $${paramIndex}`;
+      params.push(filters.is_featured);
+      paramIndex++;
+    }
+
     query += ` ORDER BY f.created_at DESC`;
 
     if (filters.limit) {
@@ -66,15 +108,20 @@ class Food {
 
   // Lấy món ăn theo ID
   static async getById(id) {
+    const categoryColumn = await resolveFoodCategoryColumn();
+    const categoryJoinClause = categoryColumn
+      ? `LEFT JOIN food_categories fc ON f.${categoryColumn} = fc.category_id`
+      : `LEFT JOIN food_categories fc ON 1 = 0`;
+
     const query = `
       SELECT f.*, 
-             r.restaurant_name,
+             r.name AS restaurant_name,
              r.address as restaurant_address,
              r.phone as restaurant_phone,
              fc.category_name
       FROM foods f
-      LEFT JOIN restaurants r ON f.restaurant_id = r.restaurant_id
-      LEFT JOIN food_categories fc ON f.category_id = fc.category_id
+      LEFT JOIN restaurants r ON f.restaurant_id = r.id
+      ${categoryJoinClause}
       WHERE f.food_id = $1 AND f.is_available = true AND r.status = 'active'
     `;
     

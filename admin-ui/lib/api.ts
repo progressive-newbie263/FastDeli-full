@@ -146,6 +146,18 @@ class ApiService {
     return response.json();
   }
 
+  static async updateFoodFeatured(restaurantId: string, foodId: string, isFeatured: boolean) {
+    const response = await fetch(
+      `${ADMIN_FOOD_URL}/api/admin/restaurants/${restaurantId}/foods/${foodId}/featured`,
+      {
+        method: 'PATCH',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ is_featured: isFeatured }),
+      }
+    );
+    return response.json();
+  }
+
 
   /*
     ============================================================ 

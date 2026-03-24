@@ -7,6 +7,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import ApiService from '@/lib/api';
 import type { Restaurant } from '@/app/types/admin';
 import { Food } from '@/app/types/admin';
+import { Locate, Phone } from 'lucide-react';
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -143,6 +144,26 @@ export default function RestaurantDetailPage() {
       alert('Có lỗi xảy ra khi cập nhật trạng thái');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleToggleFeaturedFood = async (foodId: number, currentFeatured: boolean) => {
+    try {
+      const response = await ApiService.updateFoodFeatured(
+        String(params.id),
+        String(foodId),
+        !currentFeatured
+      );
+
+      if (response.success) {
+        fetchRestaurantFoods();
+        return;
+      }
+
+      alert(response?.message || 'Không thể cập nhật featured cho món ăn');
+    } catch (error) {
+      console.error('Error toggling featured food:', error);
+      alert('Có lỗi khi cập nhật featured cho món ăn');
     }
   };
 
@@ -292,10 +313,8 @@ export default function RestaurantDetailPage() {
 
         {/* 2-Column Grid for Details */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
           {/* Left Column */}
           <div className="space-y-6">
-            
             {/* Basic Information */}
             <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
@@ -303,19 +322,30 @@ export default function RestaurantDetailPage() {
                 <span>Thông tin cơ bản</span>
               </h2>
 
-              <div className="space-y-4">
+              <div className="space-y-4 text-sm font-medium">
+                {/* mô tả thức ăn */}
                 <div>
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Mô tả</p>
                   <p className="text-gray-900 dark:text-gray-100">{restaurant.description || 'Chưa có mô tả'}</p>
                 </div>
 
+                {/* Địa chỉ quán */}
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">📍 Địa chỉ</p>
+                  <p className="flex text-gray-500 dark:text-gray-400 mb-2">
+                    <Locate /> 
+                    <span className='ml-2'>Địa chỉ</span>
+                  </p>
+                  
                   <p className="text-gray-900 dark:text-gray-100">{restaurant.address}</p>
                 </div>
 
+                {/* SĐT quán */}
                 <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">📞 Liên hệ</p>
+                  <p className="flex text-gray-500 dark:text-gray-400 mb-2">
+                    <Phone /> 
+                    <span className='ml-2'>Liên hệ</span>
+                  </p>
+
                   <p className="text-gray-900 dark:text-gray-100">{restaurant.phone}</p>
                 </div>
               </div>
@@ -362,19 +392,6 @@ export default function RestaurantDetailPage() {
                 </div>
               </div>
             </div>
-
-            {/* Rejection Reason */}
-            {/* {restaurant.rejection_reason && (
-              <div className="bg-white rounded-xl card-shadow p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-red-800 mb-2 flex items-center gap-2">
-                    <span>!</span>
-                    <span>Lý do từ chối</span>
-                  </p>
-                  <p className="text-red-700">{restaurant.rejection_reason}</p>
-                </div>
-              </div>
-            )} */}
           </div>
 
           <div className="space-y-6">            
@@ -506,6 +523,30 @@ export default function RestaurantDetailPage() {
                         {food.is_available ? 'Còn hàng' : 'Hết hàng'}
                       </span>
                     </div>
+
+                    <div className="mt-2">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium w-full justify-center ${
+                          food.is_featured
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
+                        }`}
+                      >
+                        {food.is_featured ? 'Featured: Bật' : 'Featured: Tắt'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleFeaturedFood(food.food_id, Boolean(food.is_featured))}
+                      className={`mt-2 w-full px-3 py-2 rounded text-xs font-semibold transition-colors ${
+                        food.is_featured
+                          ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                          : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                      }`}
+                    >
+                      {food.is_featured ? 'Tắt Featured' : 'Bật Featured'}
+                    </button>
                   </div>
                 </div>
               ))}
