@@ -9,7 +9,6 @@ import {
   DollarSign,
   ShoppingBag,
   Clock,
-  Calendar,
   BarChart3,
   PieChart,
   Activity,
@@ -29,6 +28,13 @@ interface AnalyticsStats {
   ordersGrowth: number;
 }
 
+interface BestSeller {
+  food_name: string;
+  sold_quantity: number;
+  orders_count: number;
+  total_revenue: number;
+}
+
 export default function AnalyticsPage() {
   const { restaurant, isLoading: authLoading } = useSupplierAuth();
   const [loading, setLoading] = useState(true);
@@ -40,6 +46,7 @@ export default function AnalyticsPage() {
     revenueGrowth: 0,
     ordersGrowth: 0,
   });
+  const [bestSellers, setBestSellers] = useState<BestSeller[]>([]);
   const [timeRange, setTimeRange] = useState<7 | 14 | 30>(7);
 
   useEffect(() => {
@@ -56,7 +63,7 @@ export default function AnalyticsPage() {
       setLoading(true);
 
       // Load statistics
-      const statsResponse = await SupplierAPI.getStatistics(restaurant.id);
+      const statsResponse = await SupplierAPI.getStatistics(restaurant.id, timeRange);
       if (statsResponse.success && statsResponse.data) {
         const data = statsResponse.data;
         
@@ -77,6 +84,8 @@ export default function AnalyticsPage() {
         if (data.revenueChart) {
           setChartData(data.revenueChart);
         }
+
+        setBestSellers(Array.isArray(data.best_sellers) ? data.best_sellers : []);
       }
     } catch (error) {
       console.error('Failed to load analytics:', error);
@@ -309,36 +318,29 @@ export default function AnalyticsPage() {
             <PieChart size={20} />
             Món ăn bán chạy
           </h2>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-orange-600">1</span>
-                <span className="text-gray-700">Phở Bò</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">245 đơn</span>
+          {bestSellers.length === 0 ? (
+            <p className="text-sm text-gray-500">Chưa có dữ liệu món bán chạy trong {timeRange} ngày qua.</p>
+          ) : (
+            <div className="space-y-3">
+              {bestSellers.map((item, index) => (
+                <div
+                  key={`${item.food_name}-${index}`}
+                  className={`flex justify-between items-center py-2 ${
+                    index !== bestSellers.length - 1 ? 'border-b border-gray-100' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-bold text-orange-600">{index + 1}</span>
+                    <span className="text-gray-700">{item.food_name}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-medium text-gray-900">{item.sold_quantity} suất</span>
+                    <p className="text-xs text-gray-500">{item.orders_count} đơn</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-orange-600">2</span>
-                <span className="text-gray-700">Cơm Tấm</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">198 đơn</span>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-orange-600">3</span>
-                <span className="text-gray-700">Bánh Mì</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">167 đơn</span>
-            </div>
-            <div className="flex justify-between items-center py-2">
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-bold text-orange-600">4</span>
-                <span className="text-gray-700">Bún Chả</span>
-              </div>
-              <span className="text-sm font-medium text-gray-900">142 đơn</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </SupplierLayout>

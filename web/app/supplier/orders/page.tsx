@@ -5,15 +5,17 @@ import SupplierLayout from '../components/SupplierLayout';
 import { useSupplierAuth } from '../contexts/SupplierAuthContext';
 import SupplierAPI from '../lib/api';
 import type { Order } from '../types';
-import { Search, Filter, Eye, CheckCircle, XCircle, Clock, Truck, X } from 'lucide-react';
+import { Search, Filter, Eye, CheckCircle, XCircle, Clock, Truck, X, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function OrdersPage() {
   const { restaurant, isLoading: authLoading } = useSupplierAuth();
+  const ORDERS_PER_PAGE = 5;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     // Chờ auth loading xong trước
@@ -55,6 +57,7 @@ export default function OrdersPage() {
 
       if (response.success && response.data) {
         setOrders(response.data.orders || []);
+        setCurrentPage(1);
       }
     } catch (error) {
       console.error('Failed to load orders:', error);
@@ -143,6 +146,25 @@ export default function OrdersPage() {
     return matchesSearch;
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedStatus]);
+
+  const totalPages = Math.max(Math.ceil(filteredOrders.length / ORDERS_PER_PAGE), 1);
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * ORDERS_PER_PAGE;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
+  const emptySlots = Math.max(ORDERS_PER_PAGE - paginatedOrders.length, 0);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1).slice(
+    Math.max(0, safeCurrentPage - 3),
+    Math.max(0, safeCurrentPage - 3) + 5
+  );
+
   return (
     <SupplierLayout title="Quản lý đơn hàng" subtitle="Xem và xử lý đơn hàng từ khách hàng">
       {/* Filters */}
@@ -196,8 +218,8 @@ export default function OrdersPage() {
             <p className="text-lg">Không có đơn hàng nào</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
-            {filteredOrders.map((order) => (
+          <div className="divide-y divide-gray-200 min-h-[760px]">
+            {paginatedOrders.map((order) => (
               <div 
                 key={order.order_id || order.order_code} 
                 className="p-6 hover:bg-gray-50 transition-colors"
@@ -292,9 +314,66 @@ export default function OrdersPage() {
                 </div>
               </div>
             ))}
+
+            {Array.from({ length: emptySlots }).map((_, index) => (
+              <div key={`empty-slot-${index}`} className="p-6 opacity-0 pointer-events-none select-none">
+                <div className="h-[118px]">placeholder</div>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      {!loading && filteredOrders.length > 0 && (
+        <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <p className="text-sm text-gray-600">
+            Hiển thị {startIndex + 1}-{Math.min(startIndex + ORDERS_PER_PAGE, filteredOrders.length)} / {filteredOrders.length} đơn
+          </p>
+
+          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-2 py-2 shadow-sm">
+            <button
+              type="button"
+              onClick={() => handlePageChange(Math.max(safeCurrentPage - 1, 1))}
+              disabled={safeCurrentPage === 1}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              <ChevronLeft size={16} />
+              Trước
+            </button>
+
+            <div className="flex items-center gap-1 px-1">
+              {pageNumbers.map((pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => handlePageChange(pageNumber)}
+                  className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                    pageNumber === safeCurrentPage
+                      ? 'bg-orange-600 text-white shadow'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              ))}
+            </div>
+
+            <span className="text-xs text-gray-500 px-1 hidden sm:inline">
+              {safeCurrentPage}/{totalPages}
+            </span>
+
+            <button
+              type="button"
+              onClick={() => handlePageChange(Math.min(safeCurrentPage + 1, totalPages))}
+              disabled={safeCurrentPage === totalPages}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              Sau
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedOrder && (
         <OrderDetailModal

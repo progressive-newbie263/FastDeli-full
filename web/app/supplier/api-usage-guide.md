@@ -243,7 +243,7 @@ Các tính năng có thể thêm sau:
 - [ ] Push notifications
 - [ ] Export reports (PDF/Excel)
 - [ ] Advanced analytics (revenue forecast)
-- [ ] Promotions & discounts management
+- [ ] Coupons & discounts management
 - [ ] Opening hours scheduler
 - [ ] Multi-language support
 - [ ] Dark mode

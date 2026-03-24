@@ -32,7 +32,7 @@ const Footer = () => {
               </li>
               
               <li>
-                <ClientLink href="/promotions" className="text-gray-400 hover:text-white">
+                <ClientLink href="/coupons" className="text-gray-400 hover:text-white">
                   Khuyến mãi
                 </ClientLink>
               </li>

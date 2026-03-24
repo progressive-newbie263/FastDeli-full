@@ -103,7 +103,7 @@ const verifyRestaurantOwnership = async (req, res, next) => {
 
     const restaurant = result.rows[0];
 
-    if (restaurant.owner_id !== userId) {
+    if (Number(restaurant.owner_id) !== Number(userId)) {
       return res.status(403).json({
         success: false,
         message: 'Bạn không có quyền truy cập nhà hàng này.'

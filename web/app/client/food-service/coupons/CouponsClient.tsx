@@ -4,24 +4,20 @@ import React, { useEffect, useState } from 'react';
 import { Loader2, Tag } from 'lucide-react';
 import dayjs from 'dayjs';
 
-//test map
-import dynamic from 'next/dynamic';
-import MapClient from '../components/MapClient';
-
-interface Promotion {
+interface Coupon {
   id: number;
+  code: string;
   title: string;
-  description: string;
-  discount_type: string;
+  description?: string;
+  discount_type: 'percentage' | 'fixed_amount' | string;
   discount_value: number;
   start_date: string;
   end_date: string;
-  status: string;
-  image_url: string;
+  image_url?: string;
 }
 
-export default function PromotionsPage() {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+export default function CouponsPage() {
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
 
   // ví dụ 2 địa điểm (test)
@@ -31,24 +27,24 @@ export default function PromotionsPage() {
   // ];
 
   useEffect(() => {
-    const fetchPromotions = async () => {
+    const fetchCoupons = async () => {
       try {
-        const res = await fetch('http://localhost:5001/api/promotions');
+        const res = await fetch('http://localhost:5001/api/coupons');
         const data = await res.json();
 
-        if (data?.success && Array.isArray(data.data.promotions)) {
-          setPromotions(data.data.promotions);
+        if (data?.success && Array.isArray(data?.data?.coupons)) {
+          setCoupons(data.data.coupons);
         } else {
-          console.error('Lỗi khi lấy dữ liệu khuyến mãi:', data);
+          console.error('Lỗi khi lấy dữ liệu coupon:', data);
         }
       } catch (err) {
-        console.error('Lỗi fetch khuyến mãi:', err);
+        console.error('Lỗi fetch coupon:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPromotions();
+    fetchCoupons();
   }, []);
 
   if (loading) {
@@ -66,19 +62,19 @@ export default function PromotionsPage() {
         <Tag className="text-orange-500" /> Mã Khuyến Mãi
       </h1>
 
-      {promotions.length === 0 ? (
+      {coupons.length === 0 ? (
         <p className="text-gray-500 text-center text-lg">
           Hiện không có khuyến mãi nào.
         </p>
       ) : (
         <div className="grid gap-6 grid-cols-1 lg:w-[750px] mx-auto pb-16">
-          {promotions.map((promo) => {
-            const isExpired = dayjs().isAfter(dayjs(promo.end_date));
+          {coupons.map((coupon) => {
+            const isExpired = dayjs().isAfter(dayjs(coupon.end_date));
 
             return (
               
                 <div
-                  key={promo.id}
+                  key={coupon.id}
                   className={`
                     flex flex-col md:flex-row rounded-2xl p-5 shadow-md hover:shadow-xl 
                     transition-all hover:-translate-y-1 gap-4 cursor-pointer duration-150 
@@ -88,8 +84,8 @@ export default function PromotionsPage() {
                   {/* Hình ảnh */}
                   <div className="w-full md:w-36 h-36 rounded-xl overflow-hidden flex-shrink-0 mx-auto md:mx-0">
                     <img
-                      src={promo.image_url}
-                      alt={promo.title}
+                      src={coupon.image_url || '/assets/foods/default-food.jpg'}
+                      alt={coupon.title}
                       className="w-full h-full object-cover object-center scale-75 md:scale-110"
                     />
                   </div>
@@ -98,7 +94,7 @@ export default function PromotionsPage() {
                   <div className="flex-1 text-left">
                     <div className="flex flex-col-reverse justify-between items-start md:items-center md:flex-row">
                       <h3 className="text-lg md:text-xl font-bold tracking-wide md:w-[70%]">
-                        {promo.title}
+                        {coupon.title}
                       </h3>
 
                       <span
@@ -112,15 +108,16 @@ export default function PromotionsPage() {
                       </span>
                     </div>
 
-                    <p className="text-gray-600 mt-2 md:w-[70%]">{promo.description}</p>
+                    <p className="text-gray-600 mt-2 md:w-[70%]">{coupon.description}</p>
 
                     <p className="text-orange-600 font-bold text-lg mt-3">
-                      Giảm {Number(promo.discount_value)}
-                      {promo.discount_type === 'percent' ? '%' : ' VNĐ'}
+                      [{coupon.code}] {' '}
+                      Giảm {Number(coupon.discount_value)}
+                      {coupon.discount_type === 'percentage' ? '%' : ' VNĐ'}
                     </p>
 
                     <p className="text-sm text-gray-500 mt-1">
-                      Hết hạn: {dayjs(promo.end_date).format('DD/MM/YYYY HH:mm')}
+                      Hết hạn: {dayjs(coupon.end_date).format('DD/MM/YYYY HH:mm')}
                     </p>
                   </div>
                 </div>

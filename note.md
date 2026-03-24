@@ -118,12 +118,12 @@ file food_deli_db mới sẽ là 1 bản gọn gàng, tinh giản, đảm bảo 
 ------------------------------GITPUSH, 2-10-2025-----------------------------
 
 + trước hết, trong mỗi orders sẽ có thể áp dụng 1 mã khuyến mãi (nếu có). Giới hạn hiện tại là 1 đơn chỉ áp dụng 1 mã.
-+ ý tưởng sẽ là: Ở giao diện thanh toán (payment page). Sẽ cho phép người dùng chọn giữa các phương thức promotions.
-+ Sẽ đan xen giữa : promotions từ chính FoodDeli (nên để nó phèn phèn tí, mặc định phải có) để nếu nhà hàng có ưu đãi thì
++ ý tưởng sẽ là: Ở giao diện thanh toán (payment page). Sẽ cho phép người dùng chọn giữa các phương thức coupons.
++ Sẽ đan xen giữa : coupons từ chính FoodDeli (nên để nó phèn phèn tí, mặc định phải có) để nếu nhà hàng có ưu đãi thì
 ăn ưu đãi từ nhà hàng. Nếu ko có ưu đãi thì để cái ưu đãi phèn này gánh 1 tí tiền 
 + Có lẽ trước hết chỉ nên làm 1 phương thức thanh toán ảo. Tương đối khó làm 2 cái qr với momo, vì kể cả có chuyển xèng thành công thì nó vẫn là liên quan đến tiền thật, việc thật.
 + Bản vá thử nghiệm (mini patch)
-+ Hiển thị các promotions ra bên người dùng.
++ Hiển thị các coupons ra bên người dùng.
 + Có thể rollback lại sau cái push hôm 23/9/2025 nếu bị lỗi. Bản vá nhỏ, ko cần lo quá
 
 
@@ -338,15 +338,37 @@ section "featured" tại trang chủ luôn
 
 3. Tạo trang /about cho bên khách hàng. Tạo text bừa đi, tôi chỉnh sau.
 
-# note: 
-- mã giảm giá "customized" cho bên nhà hàng.
-- (quan trọng) chuẩn bị khởi tạo "driver"
-- Trang "Phân tích" /supplier/analytics đang dùng data ảo (text cứng).
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 24-03-2026-----------------------------
+1. Trang "Phân tích" /supplier/analytics đang dùng data ảo (text cứng).
 Bắt đầu import thẳng dữ liệu thật vào (best seller)
-- "Tạo coupon". Hãy tách nó ra 1 đoạn khác trong trang "settings". 
-có thể hiển thị dưới dạng pop up, tạo xong đảm bảo hiển thị được nó ra, cả bên
-supplier, admin, customer. Và tạo thêm label cho các input.
-- Thử làm gì đó với "thông báo đơn hang". icon chuông trên header trang supplier.
-Đại khái có đơn hang mới thì nó sẽ báo về. Thay đổi luôn nội dung tiêu đề ở route /supplier.
-từ FastDeli - vận chuyển hỏa tốc thành ${tên nhà hàng} | FastDeli, khi có tin nhắn thì 
+
+2. "Tạo coupon". Đã tách nó ra 1 đoạn khác trong trang "settings". Có thể hiển thị 
+dưới dạng pop up, tạo xong đảm bảo hiển thị được nó ra, cả bên supplier, admin, customer. 
+- Và tạo thêm label cho các input (customized)
+
+3. Tạo "thông báo đơn hàng" (notification bell). 
+- icon chuông trên header trang supplier.
+- Đại khái có đơn hàng mới thì nó sẽ báo về. 
+- Thay đổi luôn nội dung tiêu đề ở route /supplier.
+- Từ FastDeli - vận chuyển hỏa tốc thành "${tên nhà hàng} | FastDeli", khi có tin nhắn thì 
 nội dung tiêu đề nhấp nháy sang "Đơn hang mới".
+
+4. 
+- Xóa bỏ 2 bảng, promotions và promotion_restaurants. Lẽ ra đã phải xóa sớm hơn.
+- Xóa bảng promotion_restaurants trước rồi xóa bảng promotions (do có fkey).
+- Xóa hết tàn dư liên quan đến promotions. Chuyển hết sang "coupons".
+
+# note:
+- "tạo coupon mới của riêng nhà hàng" còn đang lỗi, khi mà dù đã tạo nhưng chưa có "key"
+để nó thành độc bản. Đây là bước cuối cùng cần làm trước khi chuyển sang khởi tạo driver
+(khả năng driver sẽ là mobile device).
+- áp dung light/dark theme cho cả mobile/tablet UI (admin-ui/restaurants/page.tsx)	
+- (quan trọng) chuẩn bị khởi tạo "driver"
+
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, -03-2026-----------------------------

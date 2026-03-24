@@ -10,7 +10,6 @@ import type {
   OrdersResponse,
   FoodsResponse,
   FoodCategory,
-  Promotion,
   Review,
   ApiResponse,
   FoodNutrition,
@@ -535,7 +534,7 @@ class SupplierAPI {
   /*
     Lấy thống kê dashboard
   */
-  static async getStatistics(restaurantId: number): Promise<ApiResponse<SupplierStats>> {
+  static async getStatistics(restaurantId: number, days = 7): Promise<ApiResponse<SupplierStats>> {
     if (USE_MOCK_DATA) {
       await new Promise(resolve => setTimeout(resolve, 400)); // Simulate delay
       return {
@@ -546,7 +545,7 @@ class SupplierAPI {
     }
 
     try {
-      const response = await fetch(`${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/statistics`, {
+      const response = await fetch(`${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/statistics?days=${days}`, {
         headers: this.getAuthHeaders(),
       });
 

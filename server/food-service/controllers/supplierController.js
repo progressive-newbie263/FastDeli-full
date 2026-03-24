@@ -316,6 +316,10 @@ const getMyRestaurant = async (req, res) => {
 const getStatistics = async (req, res) => {
   try {
     const restaurantId = req.restaurantId;
+    const requestedDays = Number(req.query?.days || 7);
+    const chartDays = Number.isFinite(requestedDays)
+      ? Math.min(Math.max(Math.floor(requestedDays), 1), 90)
+      : 7;
 
     // Tổng doanh thu
     const revenueResult = await foodPool.query(
@@ -369,10 +373,27 @@ const getStatistics = async (req, res) => {
        FROM orders
        WHERE restaurant_id = $1 
          AND order_status = 'delivered'
-         AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+         AND created_at >= CURRENT_DATE - ($2::int * INTERVAL '1 day')
        GROUP BY DATE(created_at)
        ORDER BY date ASC`,
-      [restaurantId]
+      [restaurantId, chartDays]
+    );
+
+    const bestSellerResult = await foodPool.query(
+      `SELECT
+        oi.food_name,
+        COALESCE(SUM(oi.quantity), 0) AS sold_quantity,
+        COUNT(DISTINCT o.id) AS orders_count,
+        COALESCE(SUM(oi.quantity * oi.food_price), 0) AS total_revenue
+      FROM order_items oi
+      INNER JOIN orders o ON o.id = oi.order_id
+      WHERE o.restaurant_id = $1
+        AND o.order_status = 'delivered'
+        AND o.created_at >= CURRENT_DATE - ($2::int * INTERVAL '1 day')
+      GROUP BY oi.food_name
+      ORDER BY sold_quantity DESC, orders_count DESC, total_revenue DESC
+      LIMIT 8`,
+      [restaurantId, chartDays]
     );
 
     res.json({
@@ -388,7 +409,13 @@ const getStatistics = async (req, res) => {
           average: parseFloat(ratingResult.rows[0].avg_rating).toFixed(1),
           total_reviews: parseInt(ratingResult.rows[0].total_reviews)
         },
-        revenueChart: revenueChartResult.rows
+        revenueChart: revenueChartResult.rows,
+        best_sellers: (bestSellerResult.rows || []).map((row) => ({
+          food_name: row.food_name,
+          sold_quantity: Number(row.sold_quantity || 0),
+          orders_count: Number(row.orders_count || 0),
+          total_revenue: Number(row.total_revenue || 0),
+        }))
       }
     });
   } catch (error) {

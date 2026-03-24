@@ -108,21 +108,18 @@ export interface SupplierStats {
     revenue: number;
     orders_count: number;
   }>;
+  best_sellers?: Array<{
+    food_name: string;
+    sold_quantity: number;
+    orders_count: number;
+    total_revenue: number;
+  }>;
 }
 
 export interface FoodCategory {
   category_id: number;
   category_name: string;
   description?: string;
-}
-
-export interface Promotion {
-  promotion_id: number;
-  promotion_name: string;
-  discount_percent: number;
-  start_date: string;
-  end_date: string;
-  is_active: boolean;
 }
 
 export interface Review {

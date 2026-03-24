@@ -85,6 +85,15 @@ export const adminAPI = {
     return fetchAPI(`/api/admin/analytics${qs ? `?${qs}` : ''}`);
   },
 
+  getAvailableCoupons: (restaurantId?: number) => {
+    const query = new URLSearchParams();
+    if (restaurantId) {
+      query.append('restaurant_id', restaurantId.toString());
+    }
+    const qs = query.toString();
+    return fetchAPI(`/api/coupons${qs ? `?${qs}` : ''}`);
+  },
+
   /* 
     thu thập restaurants 
   */

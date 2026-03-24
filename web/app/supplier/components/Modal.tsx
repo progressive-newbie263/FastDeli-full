@@ -13,8 +13,6 @@ interface ModalProps {
 }
 
 export default function Modal({ isOpen, onClose, title, children, size = 'md', footer }: ModalProps) {
-  if (!isOpen) return null;
-
   const getSizeClass = () => {
     const sizes = {
       sm: 'max-w-md',
@@ -37,10 +35,12 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
     };
   }, [isOpen]);
 
+  if (!isOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={onClose}></div>
+      <div className="fixed inset-0 backdrop-blur-sm bg-black/40 transition-all" onClick={onClose}></div>
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">

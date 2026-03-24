@@ -28,6 +28,12 @@ export default function SupplierHeader() {
   const [pendingOrders, setPendingOrders] = React.useState(0);
   const [newOrdersAlert, setNewOrdersAlert] = React.useState(0);
   const prevPendingOrdersRef = React.useRef<number | null>(null);
+  const hasUnreadOrderAlert = newOrdersAlert > 0;
+
+  const getSupplierTitle = React.useCallback(() => {
+    const restaurantName = restaurant?.name?.trim();
+    return restaurantName ? `${restaurantName} | FastDeli` : 'FastDeli | Supplier';
+  }, [restaurant?.name]);
 
   // Fetch real pending orders count from API
   React.useEffect(() => {
@@ -58,6 +64,38 @@ export default function SupplierHeader() {
     const interval = setInterval(fetchPendingOrders, 30000);
     return () => clearInterval(interval);
   }, [restaurant?.id]);
+
+  React.useEffect(() => {
+    const isSupplierRoute = pathname.startsWith('/supplier')
+      && pathname !== '/supplier/login'
+      && pathname !== '/supplier/register';
+
+    if (!isSupplierRoute) return;
+
+    if (!hasUnreadOrderAlert) {
+      document.title = getSupplierTitle();
+      return;
+    }
+
+    let showAlertTitle = true;
+    document.title = 'Đơn hàng mới';
+
+    const interval = setInterval(() => {
+      document.title = showAlertTitle ? 'Đơn hàng mới' : getSupplierTitle();
+      showAlertTitle = !showAlertTitle;
+    }, 900);
+
+    return () => {
+      clearInterval(interval);
+      document.title = getSupplierTitle();
+    };
+  }, [pathname, hasUnreadOrderAlert, getSupplierTitle]);
+
+  React.useEffect(() => {
+    if (pathname.startsWith('/supplier/orders') && newOrdersAlert > 0) {
+      setNewOrdersAlert(0);
+    }
+  }, [pathname, newOrdersAlert]);
 
   const navItems = [
     { id: 'dashboard', href: '/supplier/dashboard', icon: LayoutDashboard, label: 'Tổng quan' },
@@ -147,8 +185,10 @@ export default function SupplierHeader() {
               title="Thông báo đơn hàng"
             >
               <Bell size={20} />
-              {pendingOrders > 0 && (
-                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
+              {(pendingOrders > 0 || hasUnreadOrderAlert) && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {hasUnreadOrderAlert ? newOrdersAlert : pendingOrders}
+                </span>
               )}
             </button>
 

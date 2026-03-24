@@ -111,7 +111,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
     /* 
       "exact" ở đây sẽ chỉ bao gồm "/" (tức là trang chủ)
 
-      startsWith sẽ bao gồm cả "/restaurants", "/promotions", "/orders". 
+      startsWith sẽ bao gồm cả "/restaurants", "/coupons", "/orders". 
       Vì "/" đã bao gồm cả trang chủ, nên phải ép thẳng nó ra "exact".
       Nếu ko nó ghi đè lên, thì trang chủ sẽ vĩnh viễn tỉnh là active.
     */
@@ -138,7 +138,7 @@ const Header = ({ isAuthenticated: propIsAuthenticated }: HeaderProps) => {
           <Link href="/client/food-service" className={getLinkClass('/client/food-service', true)}>Trang chủ</Link>
 
           <Link href="/client/food-service/restaurants" className={getLinkClass('/client/food-service/restaurants')}>Nhà hàng</Link>
-          <Link href="/client/food-service/promotions" className={getLinkClass('/client/food-service/promotions')}>Khuyến mãi</Link>
+          <Link href="/client/food-service/coupons" className={getLinkClass('/client/food-service/coupons')}>Khuyến mãi</Link>
           <Link href="/client/food-service/orders" className={getLinkClass('/client/food-service/orders')}>Đơn hàng</Link>
         </nav>
 

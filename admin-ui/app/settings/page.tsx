@@ -1,12 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdminLayout from '@/components/layout/AdminLayout';
+import { adminAPI } from '../utils/api';
 
 interface SettingSection {
   id: string;
   title: string;
   description: string;
+}
+
+interface CouponItem {
+  id: number;
+  code: string;
+  title?: string;
+  description?: string;
+  discount_type: 'percentage' | 'fixed_amount';
+  discount_value: number;
+  min_order_value?: number;
+  is_platform?: boolean;
+  restaurant_id?: number | null;
 }
 
 const settingSections: SettingSection[] = [
@@ -39,6 +52,8 @@ const settingSections: SettingSection[] = [
 
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState('general');
+  const [coupons, setCoupons] = useState<CouponItem[]>([]);
+  const [couponLoading, setCouponLoading] = useState(false);
   const [settings, setSettings] = useState({
     // General Settings
     systemName: 'FoodDeli',
@@ -79,6 +94,24 @@ export default function SettingsPage() {
       [key]: value
     }));
   };
+
+  useEffect(() => {
+    const loadCoupons = async () => {
+      try {
+        setCouponLoading(true);
+        const response = await adminAPI.getAvailableCoupons();
+        if (response?.success && Array.isArray(response?.data?.coupons)) {
+          setCoupons(response.data.coupons);
+        }
+      } catch (error) {
+        console.error('Load coupons error:', error);
+      } finally {
+        setCouponLoading(false);
+      }
+    };
+
+    void loadCoupons();
+  }, []);
 
   const handleSave = () => {
     // In a real app, this would save to backend
@@ -480,6 +513,36 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Coupon khả dụng toàn hệ thống</h3>
+          <span className="text-sm text-gray-500 dark:text-gray-400">Dùng cho admin kiểm tra coupon từ supplier/customer</span>
+        </div>
+
+        {couponLoading ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Đang tải coupon...</p>
+        ) : coupons.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400">Chưa có coupon nào đang khả dụng.</p>
+        ) : (
+          <div className="space-y-2">
+            {coupons.slice(0, 10).map((coupon) => (
+              <div key={coupon.id} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{coupon.code} {coupon.title ? `- ${coupon.title}` : ''}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {coupon.discount_type === 'percentage'
+                    ? `Giảm ${Number(coupon.discount_value).toLocaleString('vi-VN')}%`
+                    : `Giảm ${Number(coupon.discount_value).toLocaleString('vi-VN')}đ`}
+                  {' '}| Đơn tối thiểu {Number(coupon.min_order_value || 0).toLocaleString('vi-VN')}đ
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  {coupon.is_platform ? 'Coupon platform' : `Coupon nhà hàng #${coupon.restaurant_id || 'N/A'}`}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
