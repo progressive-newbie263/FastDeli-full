@@ -64,15 +64,7 @@ Supplier Portal là một hệ thống quản lý đầy đủ cho các nhà hà
   - Tên món ăn được đánh giá (nếu có)
 
 ### 6. 👤 Profile (`/supplier/profile`)
-- **Mô tả**: Chỉnh sửa thông tin nhà hàng
-- **Tính năng**:
-  - Cập nhật thông tin cơ bản (tên, địa chỉ, phone, email)
-  - Upload/thay đổi hình ảnh nhà hàng
-  - Mô tả về nhà hàng
-  - Giờ hoạt động (opening/closing time)
-  - Cài đặt giao hàng (phí ship, thời gian, đơn tối thiểu)
-  - Thông báo thành công/lỗi khi lưu
-  - Auto-refresh data sau khi cập nhật
+- Bỏ
 
 ### 7. ⚙️ Settings (`/supplier/settings`)
 - **Mô tả**: Cài đặt tổng quát cho nhà hàng

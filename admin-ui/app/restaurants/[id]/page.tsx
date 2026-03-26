@@ -7,7 +7,11 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import ApiService from '@/lib/api';
 import type { Restaurant } from '@/app/types/admin';
 import { Food } from '@/app/types/admin';
-import { Locate, Phone } from 'lucide-react';
+import { 
+  ArrowLeft, CheckCircle2, ClipboardList, Locate, 
+  PauseCircle, Phone, PlayCircle, Star, XCircle,
+  ChartColumnDecreasing, Truck, Settings, Utensils
+} from 'lucide-react';
 
 export default function RestaurantDetailPage() {
   const params = useParams();
@@ -203,7 +207,7 @@ export default function RestaurantDetailPage() {
         onClick={() => router.push('/restaurants')}
         className="mb-6 flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
       >
-        <span>←</span>
+        <ArrowLeft className="w-4 h-4" />
         <span>Quay lại danh sách</span>
       </button>
 
@@ -243,7 +247,7 @@ export default function RestaurantDetailPage() {
               </h1>
               <div className="flex items-center gap-4 text-white/90">
                 <div className="flex items-center gap-2">
-                  <span className="text-yellow-400 text-xl">⭐</span>
+                  <Star className="w-5 h-5 text-yellow-400" fill="currentColor" />
                   <span className="font-semibold text-lg">{restaurant.rating || 0}</span>
                   <span className="text-sm">({restaurant.total_reviews || 0} đánh giá)</span>
                 </div>
@@ -262,7 +266,7 @@ export default function RestaurantDetailPage() {
                   disabled={isUpdating}
                   className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
                 >
-                  <span>OK</span>
+                  <CheckCircle2 className="w-4 h-4" />
                   <span>{isUpdating ? 'Đang xử lý...' : 'Phê duyệt nhà hàng'}</span>
                 </button>
                 <button
@@ -270,7 +274,7 @@ export default function RestaurantDetailPage() {
                   disabled={isUpdating}
                   className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
                 >
-                  <span>No</span>
+                  <XCircle className="w-4 h-4" />
                   <span>Từ chối nhà hàng</span>
                 </button>
               </>
@@ -282,7 +286,7 @@ export default function RestaurantDetailPage() {
                 disabled={isUpdating}
                 className="px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
               >
-                <span>⏸</span>
+                <PauseCircle className="w-4 h-4" />
                 <span>{isUpdating ? 'Đang xử lý...' : 'Tạm dừng hoạt động'}</span>
               </button>
             )}
@@ -293,7 +297,7 @@ export default function RestaurantDetailPage() {
                 disabled={isUpdating}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
               >
-                <span>▶</span>
+                <PlayCircle className="w-4 h-4" />
                 <span>{isUpdating ? 'Đang xử lý...' : 'Kích hoạt lại'}</span>
               </button>
             )}
@@ -304,7 +308,7 @@ export default function RestaurantDetailPage() {
                 disabled={isUpdating}
                 className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors flex items-center gap-2"
               >
-                <span>OK</span>
+                <CheckCircle2 className="w-4 h-4" />
                 <span>{isUpdating ? 'Đang xử lý...' : 'Phê duyệt lại'}</span>
               </button>
             )}
@@ -318,7 +322,7 @@ export default function RestaurantDetailPage() {
             {/* Basic Information */}
             <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <span>📋</span>
+                <ClipboardList className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <span>Thông tin cơ bản</span>
               </h2>
 
@@ -353,8 +357,8 @@ export default function RestaurantDetailPage() {
 
             {/* Delivery & Operating Info */}
             <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <span>🚚</span>
+              <h2 className="flex text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 items-center gap-2">
+                <Truck className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <span>Thông tin giao hàng</span>
               </h2>
 
@@ -397,8 +401,8 @@ export default function RestaurantDetailPage() {
           <div className="space-y-6">            
             {/* Statistics */}
             <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <span>📊</span>
+              <h2 className="flex text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 items-center gap-2">
+                <ChartColumnDecreasing className="w-5 h-5 text-blue-600 dark:text-blue-400"/>
                 <span>Thống kê</span>
               </h2>
 
@@ -435,8 +439,8 @@ export default function RestaurantDetailPage() {
 
             {/* tt hệ thống */}
             <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                <span>⚙️</span>
+              <h2 className="flex text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 items-center gap-2">
+                <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <span>Thông tin hệ thống</span>
               </h2>
 
@@ -472,8 +476,8 @@ export default function RestaurantDetailPage() {
 
         {/* Danh sách món ăn */}
         <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <span>🍽️</span>
+          <h2 className="flex text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 items-center gap-2">
+            <Utensils className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <span>Danh sách món ăn ({foods.length})</span>
           </h2>
 
@@ -582,7 +586,7 @@ export default function RestaurantDetailPage() {
                 disabled={isUpdating}
                 className="w-full px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors"
               >
-                {isUpdating ? 'Đang xử lý...' : '⏸ Tạm dừng hoạt động'}
+                {isUpdating ? 'Đang xử lý...' : 'Tạm dừng hoạt động'}
               </button>
             )}
 
@@ -592,7 +596,7 @@ export default function RestaurantDetailPage() {
                 disabled={isUpdating}
                 className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed font-medium transition-colors"
               >
-                {isUpdating ? 'Đang xử lý...' : '▶ Kích hoạt lại'}
+                {isUpdating ? 'Đang xử lý...' : 'Kích hoạt lại'}
               </button>
             )}
 

@@ -83,6 +83,42 @@ const uploadRestaurantImage = (filePath, restaurantId) => {
 };
 
 /**
+ * Upload ảnh coupon lên Cloudinary
+ * @param {string} filePath - Đường dẫn file tạm
+ * @param {number} couponId - ID của coupon
+ * @returns {Promise} Cloudinary result
+ */
+const uploadCouponImage = (filePath, couponId) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader.upload(
+      filePath,
+      {
+        folder: 'coupons',
+        public_id: `coupon_${couponId}`,
+        overwrite: true,
+        use_filename: true,
+        unique_filename: false,
+        transformation: [
+          { width: 1200, height: 600, crop: 'limit' },
+          { quality: 'auto' },
+          { fetch_format: 'auto' }
+        ]
+      },
+      (err, result) => {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (unlinkErr) {
+          console.warn('Lỗi khi xoá file tạm:', unlinkErr);
+        }
+
+        if (err) return reject(err);
+        resolve(result);
+      }
+    );
+  });
+};
+
+/**
  * Xóa ảnh trên Cloudinary
  * @param {string} publicId - Public ID của ảnh (e.g., "foods/food_123")
  * @returns {Promise} Cloudinary result
@@ -99,5 +135,6 @@ const deleteImage = (publicId) => {
 module.exports = {
   uploadFoodImage,
   uploadRestaurantImage,
+  uploadCouponImage,
   deleteImage
 };

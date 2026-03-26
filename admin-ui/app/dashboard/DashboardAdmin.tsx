@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { formatCurrency, getRelativeTime } from '@/lib/utils';
 import { adminAPI, APIError } from '@/app/utils/api';
 import type { DashboardStats, RecentOrder } from '@/app/types/admin';
+import { DollarSign, Hourglass, Package, Store, Users } from 'lucide-react';
 
 /* 
   note: component quan trọng
@@ -172,7 +173,7 @@ export default function DashboardAdmin() {
         {error && stats && (
           <div className="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 dark:border-yellow-500 p-4 rounded">
             <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-              ⚠️ Không thể tải dữ liệu mới nhất. Hiển thị dữ liệu cache.
+              Không thể tải dữ liệu mới nhất. Hiển thị dữ liệu cache.
             </p>
           </div>
         )}
@@ -183,25 +184,28 @@ export default function DashboardAdmin() {
             title="Tổng đơn hàng"
             value={stats.totalOrders?.toLocaleString() || '0'}
             trend={stats.ordersTrend ? `${stats.ordersTrend > 0 ? '+' : ''}${stats.ordersTrend}%` : undefined}
-            icon="📦"
+            icon={<Package />}
             color="blue"
           />
+
           <StatsCard
             title="Doanh thu"
             value={formatCurrency(stats.totalRevenue || 0)}
-            icon="💰"
+            icon={<DollarSign />}
             color="green"
           />
+
           <StatsCard
             title="Nhà hàng hoạt động"
             value={stats.activeRestaurants?.toString() || 'N/A'}
-            icon="🏪"
+            icon={<Store />}
             color="purple"
           />
+
           <StatsCard
             title="Người dùng"
             value={stats.totalUsers?.toLocaleString() || '0'}
-            icon="👥"
+            icon={<Users />}
             color="orange"
           />
         </div>
@@ -222,8 +226,10 @@ export default function DashboardAdmin() {
                 </p>
               </div>
 
-              <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
-                <span className="text-2xl">💵</span>
+              <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 p-3 rounded-full">
+                <span className="text-2xl">
+                  <DollarSign />
+                </span>
               </div>
             </div>
           </div>
@@ -243,8 +249,10 @@ export default function DashboardAdmin() {
                 </p>
               </div>
               
-              <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-full">
-                <span className="text-2xl">⏳</span>
+              <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 p-3 rounded-full">
+                <span className="text-2xl">
+                  <Hourglass />
+                </span>
               </div>
             </div>
           </div>
@@ -259,7 +267,7 @@ export default function DashboardAdmin() {
                 Đơn hàng gần đây
               </h2>
               <a href="/orders" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium">
-                Xem tất cả →
+                Xem tất cả
               </a>
             </div>
           </div>

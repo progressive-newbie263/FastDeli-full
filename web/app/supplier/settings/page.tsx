@@ -8,6 +8,8 @@ import SupplierAPI from '../lib/api';
 import type { Restaurant } from '../types';
 import { Save, MapPin, Phone, Mail, Clock, DollarSign, Upload } from 'lucide-react';
 
+const DEFAULT_COUPON_IMAGE_URL = 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474917/discount-default-thumbnail.png';
+
 export default function SettingsPage() {
   const { restaurant, refreshRestaurantData } = useSupplierAuth();
   const [formData, setFormData] = useState<Partial<Restaurant>>({});
@@ -21,6 +23,7 @@ export default function SettingsPage() {
     code: '',
     title: '',
     description: '',
+    image_url: DEFAULT_COUPON_IMAGE_URL,
     discount_type: 'fixed_amount' as 'fixed_amount' | 'percentage',
     discount_value: 10000,
     min_order_value: 0,
@@ -31,7 +34,9 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingCouponImage, setUploadingCouponImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const couponImageInputRef = useRef<HTMLInputElement>(null);
 
   const normalizeCouponDateForInput = (rawDate: unknown) => {
     if (!rawDate) return '';
@@ -44,6 +49,12 @@ export default function SettingsPage() {
   const toCouponApiDateTime = (date: string, endOfDay: boolean) => {
     if (!date) return '';
     return `${date}T${endOfDay ? '23:59:59' : '00:00:00'}`;
+  };
+
+  const getCouponKey = (coupon: any) => {
+    if (coupon?.coupon_key) return String(coupon.coupon_key);
+    if (coupon?.id && coupon?.restaurant_id) return `R${coupon.restaurant_id}-CP${coupon.id}`;
+    return null;
   };
 
   useEffect(() => {
@@ -91,6 +102,7 @@ export default function SettingsPage() {
         code: '',
         title: '',
         description: '',
+        image_url: DEFAULT_COUPON_IMAGE_URL,
         discount_type: 'fixed_amount',
         discount_value: 10000,
         min_order_value: 0,
@@ -100,7 +112,13 @@ export default function SettingsPage() {
       });
       setEditingCouponId(null);
       await loadCoupons(restaurant.id);
-      setCouponFeedback(editingCouponId ? 'Cập nhật coupon thành công' : 'Tạo coupon thành công');
+      const savedCoupon = response?.data || null;
+      const couponKey = getCouponKey(savedCoupon);
+      setCouponFeedback(
+        editingCouponId
+          ? `Cập nhật coupon thành công${couponKey ? ` (Key: ${couponKey})` : ''}`
+          : `Tạo coupon thành công${couponKey ? ` (Key: ${couponKey})` : ''}`
+      );
       setIsCouponModalOpen(false);
     } catch (error) {
       setCouponFeedback(editingCouponId ? 'Lỗi khi cập nhật coupon' : 'Lỗi khi tạo coupon');
@@ -116,6 +134,7 @@ export default function SettingsPage() {
       code: String(coupon.code || ''),
       title: String(coupon.title || ''),
       description: String(coupon.description || ''),
+      image_url: String(coupon.image_url || DEFAULT_COUPON_IMAGE_URL),
       discount_type: coupon.discount_type === 'percentage' ? 'percentage' : 'fixed_amount',
       discount_value: Number(coupon.discount_value || 0),
       min_order_value: Number(coupon.min_order_value || 0),
@@ -133,6 +152,7 @@ export default function SettingsPage() {
       code: '',
       title: '',
       description: '',
+      image_url: DEFAULT_COUPON_IMAGE_URL,
       discount_type: 'fixed_amount',
       discount_value: 10000,
       min_order_value: 0,
@@ -145,6 +165,48 @@ export default function SettingsPage() {
   const openCreateCouponModal = () => {
     resetCouponForm();
     setIsCouponModalOpen(true);
+  };
+
+  const handleCouponImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    if (!restaurant?.id) {
+      alert('Không tìm thấy thông tin nhà hàng');
+      return;
+    }
+
+    try {
+      setUploadingCouponImage(true);
+      const file = e.target.files[0];
+
+      if (editingCouponId) {
+        const response = await SupplierAPI.uploadCouponImage(editingCouponId, file);
+        const imageUrl = response.data?.url || (response as unknown as { url?: string }).url;
+
+        if (response.success && imageUrl) {
+          setCouponForm((prev) => ({ ...prev, image_url: imageUrl }));
+          await loadCoupons(restaurant.id);
+          return;
+        }
+
+        alert(response.message || 'Upload ảnh coupon thất bại');
+        return;
+      }
+
+      // Chưa có coupon ID (đang tạo mới): tạm dùng upload ảnh nhà hàng để lấy URL Cloudinary.
+      const response = await SupplierAPI.uploadRestaurantImage(restaurant.id, file);
+      const imageUrl = response.data?.url || (response as unknown as { url?: string }).url;
+
+      if (response.success && imageUrl) {
+        setCouponForm((prev) => ({ ...prev, image_url: imageUrl }));
+      } else {
+        alert(response.message || 'Upload ảnh coupon thất bại');
+      }
+    } catch (error) {
+      alert('Lỗi khi upload ảnh coupon');
+    } finally {
+      setUploadingCouponImage(false);
+      e.target.value = '';
+    }
   };
 
   const handleRestaurantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -531,26 +593,52 @@ export default function SettingsPage() {
             ) : coupons.length === 0 ? (
               <p className="text-sm text-gray-500">Chưa có coupon nào.</p>
             ) : (
-              coupons.map((coupon) => (
-                <div key={coupon.id} className="rounded-lg border border-gray-200 p-3">
-                  <p className="font-semibold text-gray-900">{coupon.code} {coupon.title ? `- ${coupon.title}` : ''}</p>
-                  <p className="text-sm text-gray-600">
-                    {coupon.discount_type === 'percentage'
-                      ? `Giảm ${coupon.discount_value}%`
-                      : `Giảm ${Number(coupon.discount_value).toLocaleString('vi-VN')}đ`}
-                    {' '}| Đơn tối thiểu {Number(coupon.min_order_value || 0).toLocaleString('vi-VN')}đ
-                  </p>
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleEditCoupon(coupon)}
-                      className="text-sm text-blue-600 hover:text-blue-700"
-                    >
-                      Chỉnh sửa
-                    </button>
+              coupons.map((coupon) => {
+                const imageUrl = coupon.image_url || DEFAULT_COUPON_IMAGE_URL;
+                return (
+                  <div key={coupon.id} className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={imageUrl}
+                        alt={coupon.title || coupon.code}
+                        className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+                      />
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-gray-900 truncate max-w-[70%]">
+                            {coupon.code} {coupon.title ? `- ${coupon.title}` : ''}
+                          </p>
+                          <span className={`text-xs px-2 py-1 rounded-full border ${coupon.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
+                            {coupon.is_active ? 'Bật' : 'Tắt'}
+                          </span>
+                        </div>
+
+                        <div className="mt-1 text-sm text-gray-700 truncate">
+                          {coupon.discount_type === 'percentage'
+                            ? `Giảm ${coupon.discount_value}%`
+                            : `Giảm ${Number(coupon.discount_value).toLocaleString('vi-VN')}đ`}
+                          {' '}| Min {Number(coupon.min_order_value || 0).toLocaleString('vi-VN')}đ
+                        </div>
+
+                        {getCouponKey(coupon) && (
+                          <p className="text-[11px] text-gray-500 mt-1 truncate">Key: {getCouponKey(coupon)}</p>
+                        )}
+
+                        <div className="mt-1.5 flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleEditCoupon(coupon)}
+                            className="text-sm text-blue-600 hover:text-blue-700"
+                          >
+                            Chỉnh sửa
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
@@ -661,6 +749,43 @@ export default function SettingsPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-black"
                 rows={3}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ảnh coupon</label>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={couponImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCouponImageUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => couponImageInputRef.current?.click()}
+                  disabled={uploadingCouponImage}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                >
+                  <Upload size={16} />
+                  {uploadingCouponImage ? 'Đang upload...' : 'Tải ảnh lên'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCouponForm((p) => ({ ...p, image_url: DEFAULT_COUPON_IMAGE_URL }))}
+                  className="px-3 py-2 text-sm bg-gray-100 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-200"
+                >
+                  Dùng ảnh mặc định
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Ảnh sẽ được đính kèm vào coupon khi lưu.</p>
+              <div className="mt-2 w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                <img
+                  src={couponForm.image_url || DEFAULT_COUPON_IMAGE_URL}
+                  alt="Coupon preview"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
 
             <div className="flex gap-2 justify-end pt-2">

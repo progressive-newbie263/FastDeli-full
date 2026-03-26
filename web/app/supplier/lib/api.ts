@@ -130,23 +130,6 @@ class SupplierAPI {
     }
   }
 
-  /*
-    Lấy hồ sơ thông tin supplier
-  */
-  static async getProfile(): Promise<ApiResponse> {
-    try {
-      const response = await fetch(`${AUTH_API_URL}/api/auth/profile`, {
-        headers: this.getAuthHeaders(),
-      });
-      return response.json();
-    } catch (error) {
-      return {
-        success: false,
-        message: 'Không thể lấy thông tin người dùng',
-      };
-    }
-  }
-
   // ============================================
   // RESTAURANT APIs
   // ============================================
@@ -653,6 +636,7 @@ class SupplierAPI {
       code: string;
       title?: string;
       description?: string;
+      image_url?: string;
       discount_type: 'percentage' | 'fixed_amount';
       discount_value: number;
       min_order_value?: number;
@@ -687,6 +671,7 @@ class SupplierAPI {
       code?: string;
       title?: string;
       description?: string;
+      image_url?: string;
       discount_type?: 'percentage' | 'fixed_amount';
       discount_value?: number;
       min_order_value?: number;
@@ -822,6 +807,26 @@ class SupplierAPI {
       return {
         success: false,
         message: 'Không thể upload ảnh',
+      };
+    }
+  }
+
+  static async uploadCouponImage(couponId: number, imageFile: File): Promise<ApiResponse<{url: string}>> {
+    try {
+      const formData = new FormData();
+      formData.append('image', imageFile);
+
+      const response = await fetch(`${FOOD_API_URL}/api/food-upload/coupons/${couponId}`, {
+        method: 'POST',
+        headers: this.getAuthOnlyHeaders(),
+        body: formData,
+      });
+
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể upload ảnh coupon',
       };
     }
   }

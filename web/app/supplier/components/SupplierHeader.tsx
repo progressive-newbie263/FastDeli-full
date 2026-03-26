@@ -103,7 +103,6 @@ export default function SupplierHeader() {
     { id: 'menu', href: '/supplier/menu', icon: UtensilsCrossed, label: 'Thực đơn' },
     { id: 'analytics', href: '/supplier/analytics', icon: BarChart3, label: 'Phân tích' },
     { id: 'reviews', href: '/supplier/reviews', icon: Star, label: 'Đánh giá' },
-    { id: 'profile', href: '/supplier/profile', icon: User, label: 'Hồ sơ' },
     { id: 'settings', href: '/supplier/settings', icon: Settings, label: 'Cài đặt' },
   ];
 

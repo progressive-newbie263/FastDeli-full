@@ -365,10 +365,13 @@ nội dung tiêu đề nhấp nháy sang "Đơn hang mới".
 - "tạo coupon mới của riêng nhà hàng" còn đang lỗi, khi mà dù đã tạo nhưng chưa có "key"
 để nó thành độc bản. Đây là bước cuối cùng cần làm trước khi chuyển sang khởi tạo driver
 (khả năng driver sẽ là mobile device).
+
 - áp dung light/dark theme cho cả mobile/tablet UI (admin-ui/restaurants/page.tsx)	
+
+- nên fix lại "dark theme" admin-ui, còn nhiều lỗi vặt. Cụ thể là màu sắc các icon ở file
+DashboardAdmin.tsx , StatsCard.tsx và analytics/page.tsx.
+
 - (quan trọng) chuẩn bị khởi tạo "driver"
-
-
 
 -------------------------------------------------------------------------------------
 ------------------------------GITPUSH + NOTE, -03-2026-----------------------------

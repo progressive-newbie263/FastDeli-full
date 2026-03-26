@@ -245,7 +245,7 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
         return;
       }
 
-      toast.success('Cập nhật đánh giá thành công!');
+      toast.success('Chỉnh sửa đánh giá thành công');
       cancelEditingReview();
       await Promise.all([fetchReviews(), fetchRestaurantData()]);
     } catch (err) {

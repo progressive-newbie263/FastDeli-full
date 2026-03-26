@@ -1,11 +1,12 @@
 import { cn } from '@/lib/utils';
+import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 
 interface StatsCardProps {
   title: string;
   value: string | number;
   trend?: string;
   trendType?: 'up' | 'down' | 'neutral';
-  icon?: string;
+  icon?: React.ReactNode;
   color?: 'green' | 'blue' | 'purple' | 'orange';
 }
 
@@ -14,6 +15,13 @@ const colorStyles = {
   blue: 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400',
   purple: 'border-l-purple-500 bg-purple-50 dark:bg-purple-900/20 dark:border-purple-400',
   orange: 'border-l-orange-500 bg-orange-50 dark:bg-orange-900/20 dark:border-orange-400',
+};
+
+const iconColorStyles = {
+  green: 'text-green-600 dark:text-green-300',
+  blue: 'text-blue-600 dark:text-blue-300',
+  purple: 'text-purple-600 dark:text-purple-300',
+  orange: 'text-orange-600 dark:text-orange-300',
 };
 
 const trendStyles = {
@@ -41,7 +49,7 @@ export default function StatsCard({
       <div className="relative">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400">{title}</h3>
-          {icon && <span className="text-2xl">{icon}</span>}
+          {icon && <span className={cn('text-2xl', iconColorStyles[color])}>{icon}</span>}
         </div>
         
         <div className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
@@ -53,8 +61,9 @@ export default function StatsCard({
             'inline-flex items-center px-2 py-1 rounded-md text-xs font-medium',
             trendStyles[trendType]
           )}>
-            {trendType === 'up' && '↗'}
-            {trendType === 'down' && '↘'}
+            {trendType === 'up' && <ArrowUpRight className="w-3.5 h-3.5 mr-1" />}
+            {trendType === 'down' && <ArrowDownRight className="w-3.5 h-3.5 mr-1" />}
+            {trendType === 'neutral' && <Minus className="w-3.5 h-3.5 mr-1" />}
             {trend}
           </div>
         )}

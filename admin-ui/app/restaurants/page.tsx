@@ -7,7 +7,7 @@ import ApiService from '@/lib/api';
 import type { Restaurant } from '@/app/types/admin';
 import { useRouter } from 'next/navigation';
 
-import { Locate, Phone } from 'lucide-react';
+import { Locate, Phone, Star } from 'lucide-react';
 
 export default function RestaurantsPage() {
   const router = useRouter();
@@ -246,7 +246,7 @@ export default function RestaurantsPage() {
                     <td className="px-3 py-4">
                       <div className="text-sm text-gray-900 dark:text-gray-100">
                         <div className="flex items-center gap-1">
-                          <span>⭐</span>
+                          <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />
                           <span className="font-medium">{restaurant.rating || 0}</span>
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -323,17 +323,17 @@ export default function RestaurantsPage() {
       {/* Mobile/Tablet UI */}
       <div className="lg:hidden space-y-4">
         {isLoading ? (
-          <div className="bg-white rounded-xl card-shadow p-8 text-center text-gray-500">
+          <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-8 text-center text-gray-500 dark:text-gray-400 border border-transparent dark:border-gray-700">
             Đang tải...
           </div>
         ) : restaurants.length === 0 ? (
-          <div className="bg-white rounded-xl card-shadow p-8 text-center text-gray-500">
+          <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-8 text-center text-gray-500 dark:text-gray-400 border border-transparent dark:border-gray-700">
             Không có nhà hàng nào
           </div>
         ) : (
           restaurants.map((restaurant) => (
-            <div key={restaurant.id} className="bg-white rounded-xl card-shadow overflow-hidden">
-              <div className="p-4 border-b border-gray-100">
+            <div key={restaurant.id} className="bg-white dark:bg-gray-800 rounded-xl card-shadow overflow-hidden border border-transparent dark:border-gray-700">
+              <div className="p-4 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-start gap-3">
                   <img
                     className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
@@ -341,10 +341,10 @@ export default function RestaurantsPage() {
                     alt={restaurant.name}
                   />
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-semibold text-gray-900 mb-1">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
                       {restaurant.name}
                     </h3>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
                       {restaurant.description}
                     </p>
                     <StatusBadge 
@@ -365,61 +365,61 @@ export default function RestaurantsPage() {
 
               <div className="p-4 space-y-3">
                 <div className="flex items-start gap-2">
-                  <span className="text-gray-400 text-sm mt-0.5">
+                  <span className="text-gray-400 dark:text-gray-500 text-sm mt-0.5">
                     <Locate /> 
                   </span>
                   
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-500 mb-0.5">Địa chỉ</p>
-                    <p className="text-sm text-gray-900">{restaurant.address}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5">Địa chỉ</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{restaurant.address}</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400 text-sm">
+                  <span className="text-gray-400 dark:text-gray-500 text-sm">
                     <Phone />
                   </span>
                   
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-500 mb-0.5">Liên hệ</p>
-                    <p className="text-sm text-gray-900">{restaurant.phone}</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-0.5">Liên hệ</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">{restaurant.phone}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Đánh giá</p>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Đánh giá</p>
                     <div className="flex items-center gap-1">
-                      <span>⭐</span>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <Star className="w-4 h-4 text-yellow-500" fill="currentColor" />
+                      <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                         {restaurant.rating || 0}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
                         ({restaurant.total_reviews || 0})
                       </span>
                     </div>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500 mb-1">Ngày tạo</p>
-                    <p className="text-sm text-gray-900">
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Ngày tạo</p>
+                    <p className="text-sm text-gray-900 dark:text-gray-100">
                       {new Date(restaurant.created_at).toLocaleDateString('vi-VN')}
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex gap-2">
+              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700 flex gap-2">
                 {restaurant.status === 'pending' ? (
                   <>
                     <button
                       onClick={() => handleApproveSupplier(restaurant.id)}
-                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-green-50 dark:bg-green-900/25 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/35 transition-colors"
                     >
                       Duyệt
                     </button>
                     <button
                       onClick={() => handleRejectSupplier(restaurant.id)}
-                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+                      className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-red-50 dark:bg-red-900/25 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/35 transition-colors"
                     >
                       Từ chối
                     </button>
@@ -429,14 +429,17 @@ export default function RestaurantsPage() {
                     onClick={() => handleToggleActive(restaurant.id, restaurant.status)}
                     className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       restaurant.status === "active"
-                        ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                        : 'bg-green-50 text-green-700 hover:bg-green-100'
+                        ? 'bg-red-50 dark:bg-red-900/25 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/35'
+                        : 'bg-green-50 dark:bg-green-900/25 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/35'
                     }`}
                   >
                     {restaurant.status === "active" ? 'Tạm dừng' : 'Kích hoạt'}
                   </button>
                 )}
-                <button className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors">
+                <button
+                  onClick={() => handleViewRestaurantDetails(restaurant.id)}
+                  className="flex-1 px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/35 transition-colors"
+                >
                   Xem chi tiết
                 </button>
               </div>
@@ -447,8 +450,8 @@ export default function RestaurantsPage() {
 
       {/* Phân trang */}
       {!isLoading && totalPages > 1 && (
-        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl card-shadow p-4">
-          <div className="text-sm text-gray-700">
+        <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-gray-800 rounded-xl card-shadow p-4 border border-transparent dark:border-gray-700">
+          <div className="text-sm text-gray-700 dark:text-gray-200">
             Hiển thị <span className="font-medium">{(currentPage - 1) * perPage + 1}</span> đến{' '}
             <span className="font-medium">
               {Math.min(currentPage * perPage, totalItems)}
@@ -462,8 +465,8 @@ export default function RestaurantsPage() {
               disabled={currentPage === 1}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600'
               }`}
             >
               Trước
@@ -483,7 +486,7 @@ export default function RestaurantsPage() {
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                         currentPage === page
                           ? 'bg-primary-600 text-white'
-                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                          : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600'
                       }`}
                     >
                       {page}
@@ -505,8 +508,8 @@ export default function RestaurantsPage() {
               disabled={currentPage === totalPages}
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 border border-gray-300 dark:border-gray-600'
               }`}
             >
               Sau

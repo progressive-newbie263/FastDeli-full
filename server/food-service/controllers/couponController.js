@@ -2,6 +2,8 @@ const Coupon = require('../models/Coupons');
 const { successResponse, errorResponse } = require('../utils/response');
 
 class CouponController {
+  static DEFAULT_COUPON_IMAGE_URL = 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474917/discount-default-thumbnail.png';
+
   static async getAvailableCoupons(req, res) {
     try {
       const restaurantId = req.query.restaurant_id ? Number(req.query.restaurant_id) : null;
@@ -88,6 +90,7 @@ class CouponController {
         start_date,
         end_date,
         is_active,
+        image_url,
       } = req.body || {};
 
       if (!code || !discount_type || discount_value === undefined || !start_date || !end_date) {
@@ -115,6 +118,7 @@ class CouponController {
         startDate: start_date,
         endDate: end_date,
         isActive: is_active !== undefined ? Boolean(is_active) : true,
+        imageUrl: image_url || CouponController.DEFAULT_COUPON_IMAGE_URL,
       });
 
       return successResponse(res, 'Tạo coupon nhà hàng thành công', createdCoupon, 201);
@@ -149,6 +153,7 @@ class CouponController {
         start_date,
         end_date,
         is_active,
+        image_url,
       } = req.body || {};
 
       if (discount_type && !['percentage', 'fixed_amount'].includes(discount_type)) {
@@ -176,6 +181,7 @@ class CouponController {
           start_date,
           end_date,
           is_active,
+          image_url,
         },
       });
 

@@ -485,7 +485,7 @@ async function fetchNutritionCached(queryName: string): Promise<NutrientPer100g 
     let calories  = raw.calories || 0;
     if (calories === 0 && (protein > 0 || fat > 0)) {
       calories = Math.round(protein * 4 + fat * 9 + sugar * 4);
-      console.warn(`⚠️ Atwater fallback for "${cacheKey}": ${calories} kcal`);
+      console.warn(`! Atwater fallback for "${cacheKey}": ${calories} kcal`);
     }
     const data: NutrientPer100g = { calories, protein, fat, sugar };
     nutritionCache.set(cacheKey, data);
@@ -569,7 +569,7 @@ function NutritionModal({ foodId, foodName, onClose }: {
     const RE = /^(\d+(?:[.,]\d+)?)\s*(g|gram|grams|kg|kilogram|ml|l)?\s+(.+)$/i;
     return text.split(',').map(s => s.trim()).filter(Boolean).flatMap(item => {
       const match = item.match(RE);
-      if (!match) { console.warn(`⚠️ Cannot parse: "${item}"`); return []; }
+      if (!match) { console.warn(`! Cannot parse: "${item}"`); return []; }
       const [, rawQty, unit = '', rawName] = match;
       let quantity = parseFloat(rawQty.replace(',', '.'));
       const unitLower = unit.toLowerCase();
@@ -593,7 +593,7 @@ function NutritionModal({ foodId, foodName, onClose }: {
       setCalculating(true);
       const ingredients = parseIngredients(text);
       if (!ingredients.length) {
-        alert('⚠️ Không thể phân tích.\nFormat: "100g thịt bò" hoặc "2 trứng"');
+        alert('! Không thể phân tích.\nFormat: "100g thịt bò" hoặc "2 trứng"');
         return;
       }
       let totalCal = 0, totalPro = 0, totalFat = 0, totalSug = 0, ok = 0;
@@ -618,7 +618,7 @@ function NutritionModal({ foodId, foodName, onClose }: {
         sugar:    Math.round(totalSug * 10) / 10,
       }));
       let msg = `Thành công ${ok}/${ingredients.length} thành phần\n\nKết quả:\n• Calories: ${Math.round(totalCal)} kcal\n• Protein: ${Math.round(totalPro*10)/10}g\n• Fat: ${Math.round(totalFat*10)/10}g\n• Sugar: ${Math.round(totalSug*10)/10}g`;
-      if (failed.length) msg += `\n\n⚠️ Không tìm thấy: ${failed.join(', ')}`;
+      if (failed.length) msg += `\n\n ! Không tìm thấy: ${failed.join(', ')}`;
       alert(msg);
     } catch { alert('Lỗi khi tính toán'); }
     finally { setCalculating(false); }

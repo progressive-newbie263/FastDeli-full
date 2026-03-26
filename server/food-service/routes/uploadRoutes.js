@@ -1,6 +1,6 @@
 const express = require('express');
 const multer = require('multer');
-const { uploadFoodImage, uploadRestaurantImage } = require('../utils/cloudinary');
+const { uploadFoodImage, uploadRestaurantImage, uploadCouponImage } = require('../utils/cloudinary');
 const { supplierAuth, verifyRestaurantOwnership } = require('../middleware/supplierAuth');
 const router = express.Router();
 const { foodPool } = require('../config/db');
@@ -33,6 +33,36 @@ const verifyFoodOwnership = async (req, res, next) => {
     return res.status(500).json({
       success: false,
       message: 'Lỗi xác thực quyền sở hữu món ăn.'
+    });
+  }
+};
+
+const verifyCouponOwnership = async (req, res, next) => {
+  try {
+    const { couponId } = req.params;
+    const userId = req.user.userId;
+
+    const result = await foodPool.query(
+      `SELECT c.id
+       FROM coupons c
+       JOIN restaurants r ON c.restaurant_id = r.id
+       WHERE c.id = $1 AND r.owner_id = $2`,
+      [couponId, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'Bạn không có quyền cập nhật ảnh coupon này.'
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Verify coupon ownership error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi xác thực quyền sở hữu coupon.'
     });
   }
 };
@@ -111,6 +141,45 @@ router.post('/restaurants/:restaurantId', supplierAuth, verifyRestaurantOwnershi
     });
   } catch (err) {
     console.error('Upload restaurant image error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Upload thất bại',
+      error: err.message
+    });
+  }
+});
+
+/**
+ * Upload ảnh coupon
+ * POST /api/food-upload/coupons/:couponId
+ */
+router.post('/coupons/:couponId', supplierAuth, verifyCouponOwnership, upload.single('image'), async (req, res) => {
+  try {
+    const file = req.file;
+    const { couponId } = req.params;
+
+    if (!file || !couponId) {
+      return res.status(400).json({
+        success: false,
+        message: 'File hoặc coupon ID không hợp lệ'
+      });
+    }
+
+    const result = await uploadCouponImage(file.path, couponId);
+    const imageUrl = result.secure_url;
+
+    await foodPool.query(
+      'UPDATE coupons SET image_url = $1 WHERE id = $2',
+      [imageUrl, couponId]
+    );
+
+    return res.json({
+      success: true,
+      message: 'Upload ảnh coupon thành công',
+      url: imageUrl
+    });
+  } catch (err) {
+    console.error('Upload coupon image error:', err);
     return res.status(500).json({
       success: false,
       message: 'Upload thất bại',

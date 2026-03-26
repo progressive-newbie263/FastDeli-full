@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Loader2, Tag } from 'lucide-react';
 import dayjs from 'dayjs';
+import { useRouter } from 'next/navigation';
 
 interface Coupon {
   id: number;
@@ -14,9 +15,13 @@ interface Coupon {
   start_date: string;
   end_date: string;
   image_url?: string;
+  is_platform?: boolean;
+  restaurant_id?: number | null;
+  restaurant_name?: string | null;
 }
 
 export default function CouponsPage() {
+  const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -70,11 +75,18 @@ export default function CouponsPage() {
         <div className="grid gap-6 grid-cols-1 lg:w-[750px] mx-auto pb-16">
           {coupons.map((coupon) => {
             const isExpired = dayjs().isAfter(dayjs(coupon.end_date));
+            const isRestaurantCoupon = !coupon.is_platform && !!coupon.restaurant_id;
+
+            const goToRestaurant = () => {
+              if (!isRestaurantCoupon || !coupon.restaurant_id) return;
+              router.push(`/client/food-service/restaurants/${coupon.restaurant_id}`);
+            };
 
             return (
               
                 <div
                   key={coupon.id}
+                  onClick={goToRestaurant}
                   className={`
                     flex flex-col md:flex-row rounded-2xl p-5 shadow-md hover:shadow-xl 
                     transition-all hover:-translate-y-1 gap-4 cursor-pointer duration-150 
@@ -97,24 +109,29 @@ export default function CouponsPage() {
                         {coupon.title}
                       </h3>
 
-                      <span
-                        className={`px-3 py-1 text-xs rounded-full font-semibold mt-2 md:mt-0 ${
-                          isExpired
-                            ? 'bg-gray-200 text-gray-500'
-                            : 'bg-green-100 text-green-700'
-                        }`}
-                      >
-                        {isExpired ? 'Hết hạn' : 'Còn hiệu lực'}
-                      </span>
+                      <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
+                        <span className={`px-3 py-1 text-xs rounded-full font-semibold ${isExpired ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}>
+                          {isExpired ? 'Hết hạn' : 'Còn hiệu lực'}
+                        </span>
+                        <span className={`px-3 py-1 text-xs rounded-full font-semibold ${coupon.is_platform ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
+                          {coupon.is_platform ? 'Hệ thống' : 'Nhà hàng'}
+                        </span>
+                      </div>
                     </div>
 
-                    <p className="text-gray-600 mt-2 md:w-[70%]">{coupon.description}</p>
+                    <p className="text-gray-600 mt-2 md:w-[70%] line-clamp-1">{coupon.description}</p>
 
                     <p className="text-orange-600 font-bold text-lg mt-3">
                       [{coupon.code}] {' '}
                       Giảm {Number(coupon.discount_value)}
                       {coupon.discount_type === 'percentage' ? '%' : ' VNĐ'}
                     </p>
+
+                    {isRestaurantCoupon && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        {coupon.restaurant_name || `Nhà hàng #${coupon.restaurant_id}`} - Nhấn để xem
+                      </p>
+                    )}
 
                     <p className="text-sm text-gray-500 mt-1">
                       Hết hạn: {dayjs(coupon.end_date).format('DD/MM/YYYY HH:mm')}

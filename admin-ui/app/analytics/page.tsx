@@ -6,6 +6,7 @@ import StatsCard from '@/components/ui/StatsCard';
 import { formatCurrency } from '@/lib/utils';
 import { adminAPI } from '@/app/utils/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { BarChart3, DollarSign, Package, Store, TrendingUp, Wallet } from 'lucide-react';
 
 // sẽ chỉ sử dụng 3 giá trị để lọc. Theo ngày, tuần, tháng
 type Period = 'today' | 'week' | 'month';
@@ -136,7 +137,7 @@ export default function AnalyticsPage() {
           border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm 
           text-yellow-800 dark:text-yellow-200
         ">
-          ⚠️ Không thể tải dữ liệu thống kê: {error}
+          Không thể tải dữ liệu thống kê: {error}
         </div>
       )}
 
@@ -146,31 +147,34 @@ export default function AnalyticsPage() {
           value={formatCurrency(metrics?.monthRevenue || 0)}
           trend={metrics ? formatTrend(metrics.monthRevenueTrend) : undefined}
           trendType={metrics && metrics.monthRevenueTrend >= 0 ? 'up' : 'down'}
-          icon="💰"
+          icon={<DollarSign />}
           color="green"
         />
+
         <StatsCard
           title="Đơn hàng tháng này"
           value={(metrics?.monthOrders || 0).toLocaleString('vi-VN')}
           trend={metrics ? formatTrend(metrics.monthOrdersTrend) : undefined}
           trendType={metrics && metrics.monthOrdersTrend >= 0 ? 'up' : 'down'}
-          icon="📦"
+          icon={<Package />}
           color="blue"
         />
+
         <StatsCard
           title="Đơn hàng trung bình/ngày"
           value={(metrics?.avgOrdersPerDay || 0).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}
           trend={metrics ? formatTrend(metrics.avgOrdersPerDayTrend) : undefined}
           trendType={metrics && metrics.avgOrdersPerDayTrend >= 0 ? 'up' : 'down'}
-          icon="📊"
+          icon={<BarChart3 />}
           color="purple"
         />
+
         <StatsCard
           title="Giá trị đơn hàng TB"
           value={formatCurrency(metrics?.avgOrderValue || 0)}
           trend={metrics ? formatTrend(metrics.avgOrderValueTrend) : undefined}
           trendType={metrics && metrics.avgOrderValueTrend >= 0 ? 'up' : 'down'}
-          icon="💵"
+          icon={<Wallet />}
           color="orange"
         />
       </div>
@@ -440,30 +444,29 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             recentActivity.slice(0, 5).map((item, idx) => {
-              const style =
-                item.kind === 'revenue' ? { 
-                  bg: 'bg-green-50 dark:bg-green-900/20', 
-                  iconBg: 'bg-green-100 dark:bg-green-900/30', 
-                  icon: '📈', 
-                  iconText: 'text-green-600 dark:text-green-400' 
-                }
-                  : item.kind === 'restaurants' ? { 
-                    bg: 'bg-purple-50 dark:bg-purple-900/20', 
-                    iconBg: 'bg-purple-100 dark:bg-purple-900/30', 
-                    icon: '🏪', 
-                    iconText: 'text-purple-600 dark:text-purple-400' 
-                  }
-                    : { 
-                      bg: 'bg-blue-50 dark:bg-blue-900/20', 
-                      iconBg: 'bg-blue-100 dark:bg-blue-900/30', 
-                      icon: '📊', 
-                      iconText: 'text-blue-600 dark:text-blue-400' 
-                    };
+              const style = item.kind === 'revenue' ? { 
+                bg: 'bg-green-50 dark:bg-green-900/20', 
+                iconBg: 'bg-green-100 dark:bg-green-900/30', 
+                icon: TrendingUp, 
+                iconText: 'text-green-600 dark:text-green-400' 
+              } : item.kind === 'restaurants' ? { 
+                bg: 'bg-purple-50 dark:bg-purple-900/20', 
+                iconBg: 'bg-purple-100 dark:bg-purple-900/30', 
+                icon: Store, 
+                iconText: 'text-purple-600 dark:text-purple-400' 
+              } : { 
+                bg: 'bg-blue-50 dark:bg-blue-900/20', 
+                iconBg: 'bg-blue-100 dark:bg-blue-900/30', 
+                icon: BarChart3, 
+                iconText: 'text-blue-600 dark:text-blue-400' 
+              };
+              
+              const Icon = style.icon;
 
               return (
                 <div key={idx} className={`flex items-center p-4 ${style.bg} rounded-lg hover:shadow-sm transition-shadow`}>
                   <div className={`flex-shrink-0 w-10 h-10 ${style.iconBg} rounded-full flex items-center justify-center mr-4`}>
-                    <span className={`${style.iconText} text-lg`}>{style.icon}</span>
+                    <Icon className={`${style.iconText} w-5 h-5`} />
                   </div>
                   
                   <div className="flex-1">

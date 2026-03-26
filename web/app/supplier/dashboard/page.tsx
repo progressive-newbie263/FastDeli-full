@@ -113,7 +113,7 @@ export default function SupplierDashboard() {
     return (
       <SupplierLayout title="Dashboard" subtitle="Tổng quan hoạt động nhà hàng">
         <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
-          <div className="text-red-400 mb-4">⚠️</div>
+          <div className="text-red-400 mb-4">!</div>
           <h3 className="text-lg font-semibold text-red-900 mb-2">Không thể tải dữ liệu</h3>
           <p className="text-red-700 mb-4">{error}</p>
           <button

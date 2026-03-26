@@ -2,6 +2,44 @@ const { foodPool } = require('../config/db');
 
 class Coupon {
   static _columns = null;
+  static DEFAULT_COUPON_IMAGE_URL = 'https://res.cloudinary.com/dpldznnma/image/upload/v1759474917/discount-default-thumbnail.png';
+
+  static async getColumnsEnsuring(requiredColumns = []) {
+    let columns = await this.getColumns();
+
+    const missingRequired = requiredColumns.some((column) => !columns.has(column));
+    if (!missingRequired) {
+      return columns;
+    }
+
+    // Schema may have changed while process is running; reload once.
+    this._columns = null;
+    columns = await this.getColumns();
+    return columns;
+  }
+
+  static buildCouponKey(coupon) {
+    const couponId = Number(coupon?.id);
+    const restaurantId = Number(coupon?.restaurant_id);
+
+    if (!couponId || !restaurantId || Number.isNaN(couponId) || Number.isNaN(restaurantId)) {
+      return null;
+    }
+
+    return `R${restaurantId}-CP${couponId}`;
+  }
+
+  static attachCouponKey(coupon) {
+    if (!coupon) return coupon;
+    return {
+      ...coupon,
+      coupon_key: this.buildCouponKey(coupon),
+    };
+  }
+
+  static attachCouponKeys(coupons = []) {
+    return coupons.map((coupon) => this.attachCouponKey(coupon));
+  }
 
   static async getColumns() {
     if (this._columns !== null) {
@@ -27,7 +65,9 @@ class Coupon {
     const hasUsedCountColumn = columns.has('used_count');
     const hasCreatedAtColumn = columns.has('created_at');
 
-    const restaurantSelect = hasRestaurantIdColumn ? 'c.restaurant_id' : 'NULL::integer AS restaurant_id';
+    const restaurantSelect = hasRestaurantIdColumn
+      ? 'c.restaurant_id, r.name AS restaurant_name'
+      : 'NULL::integer AS restaurant_id, NULL::text AS restaurant_name';
     const restaurantFilter = hasRestaurantIdColumn
       ? 'AND (c.is_platform = true OR c.restaurant_id = $1)'
       : '';
@@ -54,6 +94,7 @@ class Coupon {
         c.image_url,
         ${restaurantSelect}
       FROM coupons c
+      ${hasRestaurantIdColumn ? 'LEFT JOIN restaurants r ON c.restaurant_id = r.id' : ''}
       WHERE c.is_active = true
         AND CURRENT_TIMESTAMP BETWEEN c.start_date AND c.end_date
         ${usageFilter}
@@ -63,7 +104,7 @@ class Coupon {
 
     const params = hasRestaurantIdColumn ? [restaurantId] : [];
     const result = await foodPool.query(query, params);
-    return result.rows;
+    return this.attachCouponKeys(result.rows);
   }
 
   static async getByCode({ code, restaurantId = null }) {
@@ -72,7 +113,9 @@ class Coupon {
     const hasUsageLimitColumn = columns.has('usage_limit');
     const hasUsedCountColumn = columns.has('used_count');
 
-    const restaurantSelect = hasRestaurantIdColumn ? 'c.restaurant_id' : 'NULL::integer AS restaurant_id';
+    const restaurantSelect = hasRestaurantIdColumn
+      ? 'c.restaurant_id, r.name AS restaurant_name'
+      : 'NULL::integer AS restaurant_id, NULL::text AS restaurant_name';
     const restaurantFilter = hasRestaurantIdColumn
       ? 'AND (c.is_platform = true OR c.restaurant_id = $2)'
       : '';
@@ -96,6 +139,7 @@ class Coupon {
         c.image_url,
         ${restaurantSelect}
       FROM coupons c
+      ${hasRestaurantIdColumn ? 'LEFT JOIN restaurants r ON c.restaurant_id = r.id' : ''}
       WHERE UPPER(c.code) = UPPER($1)
         AND c.is_active = true
         AND CURRENT_TIMESTAMP BETWEEN c.start_date AND c.end_date
@@ -106,11 +150,11 @@ class Coupon {
 
     const params = hasRestaurantIdColumn ? [code, restaurantId] : [code];
     const result = await foodPool.query(query, params);
-    return result.rows[0] || null;
+    return this.attachCouponKey(result.rows[0] || null);
   }
 
   static async getByRestaurant(restaurantId) {
-    const columns = await this.getColumns();
+    const columns = await this.getColumnsEnsuring(['restaurant_id']);
     const hasRestaurantIdColumn = columns.has('restaurant_id');
     const hasCreatedAtColumn = columns.has('created_at');
 
@@ -143,7 +187,7 @@ class Coupon {
       [restaurantId]
     );
 
-    return result.rows;
+    return this.attachCouponKeys(result.rows);
   }
 
   static async createForRestaurant({
@@ -160,7 +204,7 @@ class Coupon {
     isActive = true,
     imageUrl,
   }) {
-    const columns = await this.getColumns();
+    const columns = await this.getColumnsEnsuring(['restaurant_id']);
     const fields = [];
     const placeholders = [];
     const values = [];
@@ -183,7 +227,7 @@ class Coupon {
     if (columns.has('is_active')) pushField('is_active', Boolean(isActive));
     if (columns.has('is_platform')) pushField('is_platform', false);
     if (columns.has('restaurant_id')) pushField('restaurant_id', Number(restaurantId));
-    if (columns.has('image_url')) pushField('image_url', imageUrl || null);
+    if (columns.has('image_url')) pushField('image_url', imageUrl || Coupon.DEFAULT_COUPON_IMAGE_URL);
 
     const query = `
       INSERT INTO coupons (${fields.join(', ')})
@@ -192,11 +236,11 @@ class Coupon {
     `;
 
     const result = await foodPool.query(query, values);
-    return result.rows[0];
+    return this.attachCouponKey(result.rows[0]);
   }
 
   static async updateForRestaurant({ couponId, restaurantId, updates }) {
-    const columns = await this.getColumns();
+    const columns = await this.getColumnsEnsuring(['restaurant_id']);
     const setClauses = [];
     const values = [];
 
@@ -231,7 +275,7 @@ class Coupon {
         `,
         [couponId, restaurantId]
       );
-      return result.rows[0] || null;
+      return this.attachCouponKey(result.rows[0] || null);
     }
 
     if (columns.has('updated_at')) {
@@ -250,7 +294,7 @@ class Coupon {
     `;
 
     const result = await foodPool.query(query, values);
-    return result.rows[0] || null;
+    return this.attachCouponKey(result.rows[0] || null);
   }
 
   static calculateDiscount(coupon, orderTotal) {
