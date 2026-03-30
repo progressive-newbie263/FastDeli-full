@@ -41,7 +41,7 @@ CREATE TABLE public.users (
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     role character varying(50) DEFAULT 'customer'::character varying NOT NULL,
-    CONSTRAINT check_user_role CHECK (((role)::text = ANY ((ARRAY['customer'::character varying, 'restaurant_owner'::character varying, 'admin'::character varying, 'shipper'::character varying])::text[])))
+    CONSTRAINT check_user_role CHECK (((role)::text = ANY ((ARRAY['customer'::character varying, 'restaurant_owner'::character varying, 'admin'::character varying, 'driver'::character varying])::text[])))
 );
 
 

@@ -10,7 +10,7 @@ export function getOptimizedCloudinaryUrl(
 ): string {
   // Nếu không có URL, trả về placeholder
   if (!url) {
-    return '/placeholder-restaurant.jpg';
+    return 'https://res.cloudinary.com/dpldznnma/image/upload/v1751874870/main.jpg';
   }
   
   // Nếu không phải Cloudinary, trả về URL gốc

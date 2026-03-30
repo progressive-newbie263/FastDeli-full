@@ -23,6 +23,7 @@ const buildUsersMap = async (userIds) => {
 };
 
 const DEFAULT_AVATAR_URL = process.env.DEFAULT_AVATAR_URL || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
+const DEFAULT_RESTAURANT_IMAGE_URL = process.env.DEFAULT_RESTAURANT_IMAGE_URL || 'https://res.cloudinary.com/dpldznnma/image/upload/v1751874870/main.jpg';
 
 const geocodeAddress = async (address) => {
   const normalized = String(address || '').trim();
@@ -166,6 +167,13 @@ const registerPartner = async (req, res) => {
     );
     const restaurantColumns = new Set((columnResult.rows || []).map((row) => row.column_name));
     const hasRestaurantEmail = restaurantColumns.has('email');
+    const normalizedRestaurantImage =
+      typeof image_url === 'string' &&
+      image_url.trim().length > 0 &&
+      image_url.trim().toLowerCase() !== 'null' &&
+      image_url.trim().toLowerCase() !== 'undefined'
+        ? image_url.trim()
+        : DEFAULT_RESTAURANT_IMAGE_URL;
 
     const insertColumns = [
       'name',
@@ -189,7 +197,7 @@ const registerPartner = async (req, res) => {
       ...(hasRestaurantEmail ? [email] : []),
       restaurant_address,
       restaurant_phone,
-      image_url || null,
+      normalizedRestaurantImage,
       description || null,
       Number.isFinite(Number(delivery_time_min)) ? Number(delivery_time_min) : 30,
       Number.isFinite(Number(delivery_time_max)) ? Number(delivery_time_max) : 45,
@@ -206,11 +214,22 @@ const registerPartner = async (req, res) => {
         ${insertColumns.join(',\n        ')}
       )
       VALUES (${placeholders.join(', ')}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      RETURNING id, name, status, owner_id`,
+      RETURNING id, name, status, owner_id, image_url`,
       insertValues
     );
 
-    const restaurant = restaurantInsert.rows[0];
+    let restaurant = restaurantInsert.rows[0];
+
+    // Extra safety: ensure newly registered restaurant never stores null/empty image.
+    const ensuredRestaurantResult = await foodClient.query(
+      `UPDATE restaurants
+       SET image_url = COALESCE(NULLIF(TRIM(image_url), ''), $2)
+       WHERE id = $1
+       RETURNING id, name, status, owner_id, image_url`,
+      [restaurant.id, DEFAULT_RESTAURANT_IMAGE_URL]
+    );
+
+    restaurant = ensuredRestaurantResult.rows[0] || restaurant;
 
     const normalizedLat = Number(latitude);
     const normalizedLng = Number(longitude);

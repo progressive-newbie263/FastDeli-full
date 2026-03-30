@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import AdminLayout from '@/components/layout/AdminLayout';
 import StatsCard from '@/components/ui/StatsCard';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -104,9 +105,9 @@ export default function DashboardAdmin() {
                       {refreshing ? 'Đang thử lại...' : 'Thử lại'}
                     </button>
 
-                    <a href="/" className="px-4 py-2 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition">
+                    <Link href="/" className="px-4 py-2 bg-white dark:bg-gray-800 text-red-600 dark:text-red-400 border border-red-600 dark:border-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition">
                       Về trang chủ
-                    </a>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -266,9 +267,9 @@ export default function DashboardAdmin() {
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                 Đơn hàng gần đây
               </h2>
-              <a href="/orders" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium">
+              <Link href="/orders" className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium">
                 Xem tất cả
-              </a>
+              </Link>
             </div>
           </div>
 

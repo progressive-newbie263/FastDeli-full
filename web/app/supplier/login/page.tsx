@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSupplierAuth } from '../contexts/SupplierAuthContext';
 import { Store, Mail, Lock, Eye, EyeOff } from 'lucide-react';
@@ -154,9 +155,9 @@ export default function SupplierLoginPage() {
           {/* Divider */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600"> 
-              <a href="/supplier/register" className="text-orange-600 hover:text-orange-700 font-medium">
+              <Link href="/supplier/register" className="text-orange-600 hover:text-orange-700 font-medium">
                 Đăng ký
-              </a>
+              </Link>
               {' '}làm đối tác của FastDeli
             </p>
           </div>
@@ -166,9 +167,9 @@ export default function SupplierLoginPage() {
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-600">
             Dành cho khách hàng?{' '}
-            <a href="/client/food-service/home" className="text-orange-600 hover:text-orange-700 font-medium">
+            <Link href="/client/food-service/home" className="text-orange-600 hover:text-orange-700 font-medium">
               Đặt món tại đây
-            </a>
+            </Link>
           </p>
           <p className="text-xs text-gray-500 mt-2">© 2026 FastDeli. All rights reserved.</p>
         </div>

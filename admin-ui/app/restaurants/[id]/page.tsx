@@ -218,7 +218,7 @@ export default function RestaurantDetailPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow overflow-hidden">
           <div className="relative h-64 md:h-80 bg-gray-200 dark:bg-gray-700">
             <img
-              src={restaurant.image_url || '/placeholder-restaurant.jpg'}
+              src={restaurant.image_url || 'https://res.cloudinary.com/dpldznnma/image/upload/v1751874870/main.jpg'}
               alt={restaurant.name}
               className="w-full h-full object-cover"
             />

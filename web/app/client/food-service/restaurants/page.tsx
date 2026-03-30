@@ -1,13 +1,24 @@
 'use client'
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Filter, MapPin, Search, SlidersHorizontal, Star, Truck } from 'lucide-react';
 import RestaurantList from './Restaurants';
 import { Restaurant } from '../interfaces';
 
 type Category = {
   category_id: number;
   category_name: string;
+};
+
+type BannerItem = {
+  id: number;
+  title: string;
+  subtitle: string;
+  image: string;
+  href: string;
 };
 
 // Constants cho cache
@@ -86,6 +97,30 @@ const withDistance = (restaurants: Restaurant[], userLat: number, userLng: numbe
     });
 };
 
+const PROMO_BANNERS: BannerItem[] = [
+  {
+    id: 1,
+    title: 'Giảm 30% cho đơn hàng đầu tiên',
+    subtitle: 'Nhận ưu đãi cho nhà hàng bạn yêu thích ngày hôm nay.',
+    image: '/assets/food-images/intro-1.png',
+    href: '/client/food-service/restaurants?sort=popular',
+  },
+  {
+    id: 2,
+    title: 'Freeship tới 20K',
+    subtitle: 'Đặt món tiết kiệm hơn với các quán có phí giao hàng 0đ.',
+    image: '/assets/food-images/intro-2.png',
+    href: '/client/food-service/restaurants?freeship=1',
+  },
+  {
+    id: 3,
+    title: 'Quán mới đang lên sàn',
+    subtitle: 'Khám phá nhà hàng mới, review thật và menu đang hot.',
+    image: '/assets/food-images/shared-food-image.jpg',
+    href: '/client/food-service/restaurants',
+  },
+];
+
 const RestaurantClient = () => {
   const searchParams = useSearchParams();
   const searchKeyword = (searchParams.get('search') || '').trim();
@@ -97,6 +132,12 @@ const RestaurantClient = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNearbyMode, setIsNearbyMode] = useState(false);
+  const [activeBanner, setActiveBanner] = useState(0);
+  const [localSearch, setLocalSearch] = useState(searchKeyword);
+  const [sortBy, setSortBy] = useState<'default' | 'rating' | 'reviews' | 'deliveryFee'>('default');
+  const [onlyFreeShip, setOnlyFreeShip] = useState(false);
+  const [minRating, setMinRating] = useState(0);
+  const [onlyFeatured, setOnlyFeatured] = useState(false);
 
   const resolveUserCoordinates = async (): Promise<{ latitude: number; longitude: number } | null> => {
     const raw = localStorage.getItem('userLocation');
@@ -271,6 +312,18 @@ const RestaurantClient = () => {
   }, [searchKeyword, forceNearby, selectedCategory]);
 
   useEffect(() => {
+    setLocalSearch(searchKeyword);
+  }, [searchKeyword]);
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setActiveBanner((prev) => (prev + 1) % PROMO_BANNERS.length);
+    }, 10000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
     const handleLocationUpdated = () => {
       sessionStorage.removeItem(CACHE_KEY);
       sessionStorage.removeItem(CACHE_TIME_KEY);
@@ -280,6 +333,57 @@ const RestaurantClient = () => {
     window.addEventListener('user-location-updated', handleLocationUpdated);
     return () => window.removeEventListener('user-location-updated', handleLocationUpdated);
   }, []);
+
+  const filteredRestaurants = useMemo(() => {
+    const keyword = localSearch.trim().toLowerCase();
+
+    let next = restaurants.filter((restaurant) => {
+      const matchedKeyword =
+        keyword.length === 0 ||
+        restaurant.name.toLowerCase().includes(keyword) ||
+        restaurant.address.toLowerCase().includes(keyword);
+
+      const deliveryFee = parseNumber(restaurant.delivery_fee) ?? 0;
+      const matchedFreeShip = !onlyFreeShip || deliveryFee <= 0;
+
+      const rating = parseNumber(restaurant.rating) ?? 0;
+      const matchedRating = minRating <= 0 || rating >= minRating;
+
+      const matchedFeatured = !onlyFeatured || restaurant.is_featured;
+
+      return matchedKeyword && matchedFreeShip && matchedRating && matchedFeatured;
+    });
+
+    if (sortBy === 'default') {
+      next = [...next].sort((a, b) => {
+        const aDistance = parseNumber(a.distance_km) ?? Number.MAX_SAFE_INTEGER;
+        const bDistance = parseNumber(b.distance_km) ?? Number.MAX_SAFE_INTEGER;
+        return aDistance - bDistance;
+      });
+    }
+
+    if (sortBy === 'rating') {
+      next = [...next].sort((a, b) => {
+        const aRating = parseNumber(a.rating) ?? 0;
+        const bRating = parseNumber(b.rating) ?? 0;
+        return bRating - aRating;
+      });
+    }
+
+    if (sortBy === 'reviews') {
+      next = [...next].sort((a, b) => b.total_reviews - a.total_reviews);
+    }
+
+    if (sortBy === 'deliveryFee') {
+      next = [...next].sort((a, b) => {
+        const aFee = parseNumber(a.delivery_fee) ?? Number.MAX_SAFE_INTEGER;
+        const bFee = parseNumber(b.delivery_fee) ?? Number.MAX_SAFE_INTEGER;
+        return aFee - bFee;
+      });
+    }
+
+    return next;
+  }, [restaurants, localSearch, onlyFreeShip, minRating, onlyFeatured, sortBy]);
 
   // Loading state
   if (loading) {
@@ -317,12 +421,59 @@ const RestaurantClient = () => {
   }
 
   return (
-    <main className="w-full max-w-screen-2xl mx-auto py-24 lg:px-32 md:px-18 px-12">
-      <h1 className="text-3xl font-bold">Danh sách nhà hàng</h1>
+    <main className="w-full max-w-screen-2xl mx-auto py-16 lg:px-32 md:px-18 px-12">
+      <section className="mt-4 relative rounded-3xl overflow-hidden border border-green-100 bg-green-50">
+        <div className="relative h-44 sm:h-52 md:h-56">
+          {PROMO_BANNERS.map((banner, index) => (
+            <div
+              key={banner.id}
+              className={`absolute inset-0 transition-opacity duration-700 ${
+                activeBanner === index ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <Image
+                src={banner.image}
+                alt={banner.title}
+                fill
+                className="object-cover"
+                priority={index === 0}
+                sizes="(max-width: 768px) 100vw, 1200px"
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-black/20 to-transparent" />
+              <div className="absolute left-4 top-4 sm:left-8 sm:top-8 max-w-[75%] text-white">
+                <p className="text-xl sm:text-3xl font-semibold leading-tight">{banner.title}</p>
+                <p className="text-xs sm:text-sm mt-2 text-white/90">{banner.subtitle}</p>
+                <Link
+                  href={banner.href}
+                  className="inline-flex mt-4 items-center gap-2 rounded-full bg-white text-green-700 px-4 py-1.5 text-sm font-medium hover:bg-green-50 transition"
+                >
+                  Xem ưu đãi
+                </Link>
+              </div>
+            </div>
+          ))}
+
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+            {PROMO_BANNERS.map((banner, index) => (
+              <button
+                key={banner.id}
+                type="button"
+                onClick={() => setActiveBanner(index)}
+                aria-label={`Chuyen den banner ${index + 1}`}
+                className={`h-2.5 rounded-full transition-all ${
+                  activeBanner === index ? 'w-6 bg-white' : 'w-2.5 bg-white/65 hover:bg-white/80'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {categories.length > 0 && (
         <div className="mt-4 flex gap-2 flex-wrap">
-          <a
+          <Link
             href="/client/food-service/restaurants"
+            scroll={false}
             className={`px-3 py-1.5 rounded-full text-sm border transition ${
               selectedCategory <= 0
                 ? 'bg-green-600 text-white border-green-600'
@@ -330,11 +481,13 @@ const RestaurantClient = () => {
             }`}
           >
             Tất cả
-          </a>
+          </Link>
+
           {categories.map((category) => (
-            <a
+            <Link
               key={category.category_id}
               href={`/client/food-service/restaurants?category=${category.category_id}`}
+              scroll={false}
               className={`px-3 py-1.5 rounded-full text-sm border transition ${
                 selectedCategory === category.category_id
                   ? 'bg-green-600 text-white border-green-600'
@@ -342,22 +495,114 @@ const RestaurantClient = () => {
               }`}
             >
               {category.category_name}
-            </a>
+            </Link>
           ))}
         </div>
       )}
+
+      <section className="mt-4 space-y-3">
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => setOnlyFeatured((prev) => !prev)}
+            className={`inline-flex items-center gap-1 rounded-full border px-4 py-2 text-sm transition ${
+              onlyFeatured
+                ? 'bg-green-600 text-white border-green-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            Nổi bật
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setOnlyFreeShip((prev) => !prev)}
+            className={`inline-flex items-center gap-1 rounded-full border px-4 py-2 text-sm transition ${
+              onlyFreeShip
+                ? 'bg-green-600 text-white border-green-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
+            }`}
+          >
+            <Truck className="w-4 h-4" />
+            Free ship
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMinRating((prev) => (prev >= 4.5 ? 0 : 4.5))}
+            className={`inline-flex items-center gap-1 rounded-full border px-4 py-2 text-sm transition ${
+              minRating >= 4.5
+                ? 'bg-green-600 text-white border-green-600'
+                : 'bg-white text-gray-700 border-gray-300 hover:border-green-400'
+            }`}
+          >
+            4.5
+            <Star className="w-4 h-4" />
+            +
+          </button>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-3">
+          <label className="flex-1 h-12 rounded-2xl border border-gray-300 bg-white flex items-center px-4 gap-2">
+            <Search className="w-5 h-5 text-gray-400" />
+            <input
+              value={localSearch}
+              onChange={(event) => setLocalSearch(event.target.value)}
+              placeholder="Tìm nhà hàng, món ăn..."
+              className="w-full outline-none text-sm text-gray-700 placeholder:text-gray-400"
+            />
+          </label>
+
+          <div className="h-12 rounded-2xl border border-gray-300 bg-white px-3 flex items-center gap-2 min-w-[170px]">
+            <MapPin className="w-4 h-4 text-gray-500" />
+            <select
+              value={sortBy}
+              onChange={(event) => setSortBy(event.target.value as 'default' | 'rating' | 'reviews' | 'deliveryFee')}
+              className="w-full bg-transparent outline-none text-sm text-gray-700"
+            >
+              <option value="default">Gan nhat</option>
+              <option value="rating">Danh gia cao</option>
+              <option value="reviews">Nhieu danh gia</option>
+              <option value="deliveryFee">Phi giao thap</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOnlyFeatured(false);
+              setOnlyFreeShip(false);
+              setMinRating(0);
+              setSortBy('default');
+              setLocalSearch(searchKeyword);
+            }}
+            className="h-12 rounded-2xl border border-gray-300 bg-white px-4 inline-flex items-center 
+              gap-2 text-sm text-gray-700 hover:border-green-400 transition
+            "
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Đặt lại
+          </button>
+        </div>
+      </section>
+
+      <h1 className="text-3xl font-bold mt-10">
+        Danh sách nhà hàng ({filteredRestaurants.length})
+      </h1>
+
       {isNearbyMode && (
         <p className="text-sm text-blue-700 mt-2">
           Hệ thống đang ưu tiên gợi ý các nhà hàng gần vị trí hiện tại của bạn.
         </p>
       )}
       
-      {restaurants.length === 0 ? (
+      {filteredRestaurants.length === 0 ? (
         <div className="text-center py-20">
           <p className="text-gray-500">Không có nhà hàng nào.</p>
         </div>
       ) : (
-        <RestaurantList restaurants={restaurants} />
+        <RestaurantList restaurants={filteredRestaurants} />
       )}
     </main>
   );

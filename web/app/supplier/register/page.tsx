@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Store, User, Mail, Phone, Lock, MapPin, FileText } from 'lucide-react';
 import SupplierAPI from '../lib/api';
@@ -122,7 +123,7 @@ export default function SupplierRegisterPage() {
           </button>
 
           <p className="text-sm text-gray-600 text-center">
-            Đã có tài khoản? <a href="/supplier/login" className="text-orange-600 font-medium hover:text-orange-700">Đăng nhập</a>
+            Đã có tài khoản? <Link href="/supplier/login" className="text-orange-600 font-medium hover:text-orange-700">Đăng nhập</Link>
           </p>
         </form>
       </div>

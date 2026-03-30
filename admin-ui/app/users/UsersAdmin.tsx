@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import AdminLayout from '@/components/layout/AdminLayout';
 import { adminAPI } from '@/app/utils/api';
 import type { User, UsersResponse } from '@/app/types/admin';
@@ -160,12 +161,13 @@ export default function UsersAdmin() {
                   {/* Fix cột Thao tác */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-4">
-                      <a
+                      {/* tạm ẩn Link này đi, chưa dùng đến */}
+                      <Link
                         href={`/users/${user.user_id}`}
-                        className="text-primary-600 hover:underline dark:text-primary-400 font-medium text-sm"
+                        className="text-primary-600 hover:underline dark:text-primary-400 font-medium text-sm hidden"
                       >
                         Chi tiết
-                      </a>
+                      </Link>
                       <button
                         onClick={() => handleToggleActive(user.user_id, user.is_active)}
                         className={`text-sm font-medium hover:underline ${

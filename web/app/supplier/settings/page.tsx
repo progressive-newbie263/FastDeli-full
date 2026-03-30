@@ -19,6 +19,8 @@ export default function SettingsPage() {
   const [editingCouponId, setEditingCouponId] = useState<number | null>(null);
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
   const [couponFeedback, setCouponFeedback] = useState<string | null>(null);
+  const [pendingCouponImageFile, setPendingCouponImageFile] = useState<File | null>(null);
+  const [couponPreviewUrl, setCouponPreviewUrl] = useState<string | null>(null);
   const [couponForm, setCouponForm] = useState({
     code: '',
     title: '',
@@ -78,12 +80,29 @@ export default function SettingsPage() {
     }
   };
 
+  const clearPendingCouponImage = () => {
+    if (couponPreviewUrl) {
+      URL.revokeObjectURL(couponPreviewUrl);
+    }
+    setCouponPreviewUrl(null);
+    setPendingCouponImageFile(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (couponPreviewUrl) {
+        URL.revokeObjectURL(couponPreviewUrl);
+      }
+    };
+  }, [couponPreviewUrl]);
+
   const handleCreateCoupon = async () => {
     if (!restaurant?.id) return;
 
     try {
       setCreatingCoupon(true);
       setCouponFeedback(null);
+      const wasEditing = editingCouponId !== null;
       const payload = {
         ...couponForm,
         start_date: toCouponApiDateTime(couponForm.start_date, false),
@@ -96,6 +115,15 @@ export default function SettingsPage() {
       if (!response.success) {
         setCouponFeedback(response.message || (editingCouponId ? 'Cập nhật coupon thất bại' : 'Tạo coupon thất bại'));
         return;
+      }
+
+      let uploadedCouponImage = false;
+      if (!wasEditing && pendingCouponImageFile) {
+        const createdCouponId = Number(response?.data?.id);
+        if (Number.isFinite(createdCouponId) && createdCouponId > 0) {
+          const uploadResponse = await SupplierAPI.uploadCouponImage(createdCouponId, pendingCouponImageFile);
+          uploadedCouponImage = Boolean(uploadResponse.success);
+        }
       }
 
       setCouponForm({
@@ -111,13 +139,14 @@ export default function SettingsPage() {
         end_date: '',
       });
       setEditingCouponId(null);
+      clearPendingCouponImage();
       await loadCoupons(restaurant.id);
       const savedCoupon = response?.data || null;
       const couponKey = getCouponKey(savedCoupon);
       setCouponFeedback(
-        editingCouponId
+        wasEditing
           ? `Cập nhật coupon thành công${couponKey ? ` (Key: ${couponKey})` : ''}`
-          : `Tạo coupon thành công${couponKey ? ` (Key: ${couponKey})` : ''}`
+          : `Tạo coupon thành công${couponKey ? ` (Key: ${couponKey})` : ''}${pendingCouponImageFile ? (uploadedCouponImage ? ' + ảnh coupon' : ' (ảnh coupon chưa upload được)') : ''}`
       );
       setIsCouponModalOpen(false);
     } catch (error) {
@@ -128,6 +157,7 @@ export default function SettingsPage() {
   };
 
   const handleEditCoupon = (coupon: any) => {
+    clearPendingCouponImage();
     setEditingCouponId(Number(coupon.id));
     setCouponFeedback(null);
     setCouponForm({
@@ -146,6 +176,7 @@ export default function SettingsPage() {
   };
 
   const resetCouponForm = () => {
+    clearPendingCouponImage();
     setEditingCouponId(null);
     setCouponFeedback(null);
     setCouponForm({
@@ -192,15 +223,13 @@ export default function SettingsPage() {
         return;
       }
 
-      // Chưa có coupon ID (đang tạo mới): tạm dùng upload ảnh nhà hàng để lấy URL Cloudinary.
-      const response = await SupplierAPI.uploadRestaurantImage(restaurant.id, file);
-      const imageUrl = response.data?.url || (response as unknown as { url?: string }).url;
-
-      if (response.success && imageUrl) {
-        setCouponForm((prev) => ({ ...prev, image_url: imageUrl }));
-      } else {
-        alert(response.message || 'Upload ảnh coupon thất bại');
+      if (couponPreviewUrl) {
+        URL.revokeObjectURL(couponPreviewUrl);
       }
+      const previewUrl = URL.createObjectURL(file);
+      setCouponPreviewUrl(previewUrl);
+      setPendingCouponImageFile(file);
+      setCouponFeedback('Ảnh coupon sẽ được upload sau khi tạo coupon thành công.');
     } catch (error) {
       alert('Lỗi khi upload ảnh coupon');
     } finally {
@@ -615,10 +644,24 @@ export default function SettingsPage() {
                         </div>
 
                         <div className="mt-1 text-sm text-gray-700 truncate">
-                          {coupon.discount_type === 'percentage'
+                          {
+                            coupon.discount_type === 'percentage'
                             ? `Giảm ${coupon.discount_value}%`
-                            : `Giảm ${Number(coupon.discount_value).toLocaleString('vi-VN')}đ`}
-                          {' '}| Min {Number(coupon.min_order_value || 0).toLocaleString('vi-VN')}đ
+                            : `Giảm ${Number(coupon.discount_value).toLocaleString('vi-VN')}đ`
+                          } 
+                          
+                          {/* 
+                            note: 
+                            - min_order_value có thể là null, undefined, 0 hoặc số dương. 
+                            - Hiển thị khi có giá trị > 0
+                          */}
+
+                          {
+                            coupon.min_order_value !== null 
+                            && coupon.min_order_value !== undefined 
+                            && coupon.min_order_value > 0 
+                            && ` | Tối thiểu ${Number(coupon.min_order_value || 0).toLocaleString('vi-VN')}đ`
+                          }
                         </div>
 
                         {getCouponKey(coupon) && (
@@ -781,7 +824,7 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-500 mt-1">Ảnh sẽ được đính kèm vào coupon khi lưu.</p>
               <div className="mt-2 w-24 h-24 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                 <img
-                  src={couponForm.image_url || DEFAULT_COUPON_IMAGE_URL}
+                  src={couponPreviewUrl || couponForm.image_url || DEFAULT_COUPON_IMAGE_URL}
                   alt="Coupon preview"
                   className="w-full h-full object-cover"
                 />

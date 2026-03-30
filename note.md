@@ -374,4 +374,22 @@ DashboardAdmin.tsx , StatsCard.tsx và analytics/page.tsx.
 - (quan trọng) chuẩn bị khởi tạo "driver"
 
 -------------------------------------------------------------------------------------
-------------------------------GITPUSH + NOTE, -03-2026-----------------------------
+------------------------------GITPUSH + NOTE, 30-03-2026-----------------------------
+
+- Hoàn thiện "tạo coupon mới của riêng nhà hàng" .
+- áp dung light/dark theme cho cả mobile/tablet UI (admin-ui/restaurants/page.tsx)	
+- fix lại "dark theme" admin-ui, còn nhiều lỗi vặt. 
+- thêm 1 toast "Chỉnh sửa đánh giá thành công" tại mục đánh giá ở trang /food-service/restaurants/:id
+- tái tạo lại trang "Coupons". Chủ yếu là cải thiện UI, composition, font chữ, ...
+- Cải thiện UI trang food-service/coupons. Thêm banner và 1 vài bộ lọc.
+- trang admin-ui , mục "Xem chi tiết đơn hàng" tự nhiên đang bị lỗi (http://localhost:4000/orders).
+- fix lỗi hình ảnh mặc định cho các nhà hàng mới (ảnh lỗi dẫn đến xem chi tiết nhà hàng cũng lỗi)
+- cập nhật giao diện mới cho food-service/restaurants (trang hiển thị nhà hàng)
+- fix lỗi khi tạo coupon thì bị chuyển ảnh coupon sang ảnh đại diện nhà hàng 
+(lỗi fallback).
+- khi tạo nhà hàng mới, trang restaurants (food-service) đang có set cache time 5p
+nên load lâu ko xong là bình thường, đúng chủ đích (tránh ăn brute force)
+
+# note:
+- bắt đầu khởi tạo "/driver".
+- dự kiến: React Native + expo go.

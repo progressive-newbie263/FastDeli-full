@@ -429,6 +429,8 @@ const CheckoutClient = () => {
         user_name: userInfos.name,
         user_phone: userInfos.phone,
         delivery_address: userLocation.location,
+        delivery_latitude: userLocation.latitude ?? null,
+        delivery_longitude: userLocation.longitude ?? null,
         notes: userInfos.note,
         delivery_fee: deliveryFee,
         original_total: originalTotal,

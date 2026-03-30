@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Loader2, Tag } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ArrowLeft, Bookmark, BookmarkCheck, Loader2, Search } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useRouter } from 'next/navigation';
 
@@ -20,10 +20,39 @@ interface Coupon {
   restaurant_name?: string | null;
 }
 
+type SourceFilter = 'all' | 'system' | 'restaurant';
+const SAVED_COUPONS_KEY = 'fooddeli_saved_coupons';
+
+const toVnd = (value: number) => `${Number(value || 0).toLocaleString('vi-VN')}đ`;
+
+const hasRestaurantSource = (coupon: Coupon) => Number(coupon.restaurant_id || 0) > 0;
+
+const isRestaurantCoupon = (coupon: Coupon) => hasRestaurantSource(coupon);
+
+const isSystemCoupon = (coupon: Coupon) => !hasRestaurantSource(coupon);
+
+const getDiscountLabel = (coupon: Coupon) => {
+  if (coupon.discount_type === 'percentage') {
+    return `Giảm ${Number(coupon.discount_value)}%`;
+  }
+  return `Giảm ${toVnd(coupon.discount_value)}`;
+};
+
+const getSubtitle = (coupon: Coupon) => {
+  if (isRestaurantCoupon(coupon)) {
+    return coupon.restaurant_name || `Nhà hàng #${coupon.restaurant_id}`;
+  }
+  return 'Áp dụng toàn hệ thống FoodDeli';
+};
+
 export default function CouponsPage() {
   const router = useRouter();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('system');
+  const [searchText, setSearchText] = useState('');
+  const [savedCouponIds, setSavedCouponIds] = useState<number[]>([]);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // ví dụ 2 địa điểm (test)
   // const markers = [
@@ -52,100 +81,245 @@ export default function CouponsPage() {
     fetchCoupons();
   }, []);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVED_COUPONS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        setSavedCouponIds(parsed.map((id) => Number(id)).filter((id) => Number.isFinite(id)));
+      }
+    } catch (error) {
+      console.error('Không thể đọc danh sách mã đã lưu:', error);
+    }
+  }, []);
+
+  const persistSavedCoupons = (ids: number[]) => {
+    setSavedCouponIds(ids);
+    localStorage.setItem(SAVED_COUPONS_KEY, JSON.stringify(ids));
+  };
+
+  const toggleSaveCoupon = (couponId: number) => {
+    if (savedCouponIds.includes(couponId)) {
+      persistSavedCoupons(savedCouponIds.filter((id) => id !== couponId));
+      return;
+    }
+    persistSavedCoupons([...savedCouponIds, couponId]);
+  };
+
+  const copyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      window.setTimeout(() => setCopiedCode(null), 1500);
+    } catch (error) {
+      console.error('Không thể copy mã:', error);
+    }
+  };
+
+  const couponStats = useMemo(() => {
+    const system = coupons.filter((coupon) => isSystemCoupon(coupon)).length;
+    const restaurant = coupons.filter((coupon) => isRestaurantCoupon(coupon)).length;
+    return { total: coupons.length, system, restaurant };
+  }, [coupons]);
+
+  const displayedCoupons = useMemo(() => {
+    const normalizedSearch = searchText.trim().toLowerCase();
+
+    return coupons.filter((coupon) => {
+      const matchesSource =
+        sourceFilter === 'all'
+          ? true
+          : sourceFilter === 'system'
+            ? isSystemCoupon(coupon)
+            : isRestaurantCoupon(coupon);
+
+      if (!matchesSource) return false;
+      if (!normalizedSearch) return true;
+
+      const haystack = [
+        coupon.code,
+        coupon.title,
+        coupon.description,
+        coupon.restaurant_name,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      return haystack.includes(normalizedSearch);
+    });
+  }, [coupons, sourceFilter, searchText]);
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-20 text-gray-600">
+      <div className="flex justify-center items-center py-24 text-gray-600 mt-16">
         <Loader2 className="animate-spin text-3xl" />
       </div>
     );
   }
 
   return (
-    <>
-    <div className="container mx-auto px-16 md:px-20 py-8 mt-20">
-      <h1 className="text-3xl font-extrabold mb-6 text-gray-800 flex items-center gap-3">
-        <Tag className="text-orange-500" /> Mã Khuyến Mãi
-      </h1>
+    <main className="font-inter min-h-screen bg-[#f3f7f5] pt-16 pb-10">
+      <section className="relative text-white px-4 sm:px-6 lg:px-8 pt-6 pb-12 overflow-hidden">
 
-      {coupons.length === 0 ? (
-        <p className="text-gray-500 text-center text-lg">
-          Hiện không có khuyến mãi nào.
-        </p>
-      ) : (
-        <div className="grid gap-6 grid-cols-1 lg:w-[750px] mx-auto pb-16">
-          {coupons.map((coupon) => {
-            const isExpired = dayjs().isAfter(dayjs(coupon.end_date));
-            const isRestaurantCoupon = !coupon.is_platform && !!coupon.restaurant_id;
+        {/* Gradient (LOWEST) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0f8b4c]/80 to-[#30a86a]/80 z-0" />
 
-            const goToRestaurant = () => {
-              if (!isRestaurantCoupon || !coupon.restaurant_id) return;
-              router.push(`/client/food-service/restaurants/${coupon.restaurant_id}`);
-            };
+        {/* 
+          Promotion (ảnh background) 
+            - sm:w-[250px] sm:top-1/4
+            - md:w-[300px] md:top-1/3 
+            - lg:w-[375px]
+        */}
+        <div
+          className="
+            absolute right-10 -translate-y-1/2 
+            sm:w-[400px] sm:top-2/5
+            w-[300px] top-1/3
+            h-full bg-no-repeat bg-contain bg-right opacity-40 z-[1]"
+          style={{
+            backgroundImage:
+              "url('https://res.cloudinary.com/dpldznnma/image/upload/v1774510903/khuyen-mai-background.png')",
+          }}
+        />
 
-            return (
-              
-                <div
+        <div className="relative z-10 max-w-5xl mx-auto">
+          <button 
+            type="button" 
+            onClick={() => router.back()}
+            className="inline-flex items-center gap-2 text-sm text-white/90 hover:text-white"
+          >
+            <ArrowLeft size={16} /> Quay lại
+          </button>
+
+          <div className="mt-4 flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+                Kho mã khuyến mãi
+              </h1>
+              <p className="text-sm sm:text-base text-white/90 mt-1">
+                Lưu mã trước, dùng nhanh khi đặt món.
+              </p>
+            </div>
+
+            {/* <TicketPercent className="w-8 h-8 text-white/95 hidden sm:block" /> */}
+          </div>
+
+          {/*
+            note: cân nhắc ẩn đi "all"
+          */}
+          <div className="flex mt-4 rounded-2xl bg-white/18 p-1.5 gap-1 w-fit">
+            {[
+              { key: 'system', label: `Từ FoodDeli (${couponStats.system})` },
+              { key: 'restaurant', label: `Từ nhà hàng (${couponStats.restaurant})` },
+              { key: 'all', label: `Tất cả (${couponStats.total})` },
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setSourceFilter(tab.key as SourceFilter)}
+                className={`px-3 py-2 rounded-xl text-sm font-semibold transition-colors 
+                  ${sourceFilter === tab.key ? 'bg-white text-[#0f8b4c]' : 'text-white/95 hover:bg-white/15'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <p className="text-xs text-white/90 mt-2">Lưu chỉ có hiệu lực trên thiết bị hiện tại.</p>
+        </div>
+      </section>
+
+      <section className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 z-20">
+        <div className="rounded-2xl border border-[#d8e5de] bg-white shadow-sm p-3 sm:p-4 flex items-center gap-3">
+          <Search className="text-[#7a9187] w-5 h-5" />
+          <input
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            placeholder="Tìm theo mã, tên ưu đãi hoặc nhà hàng"
+            className="w-full outline-none text-[15px] text-[#1c2a23] placeholder:text-[#93a59c]"
+          />
+        </div>
+
+        <div className="mt-5 space-y-3 pb-12">
+          {displayedCoupons.length === 0 ? (
+            <div className="rounded-2xl border border-[#d9e7df] bg-white p-8 text-center text-[#6f857b]">
+              Chưa có coupon phù hợp với bộ lọc hiện tại.
+            </div>
+          ) : (
+            displayedCoupons.map((coupon) => {
+              const isRestaurantCouponItem = isRestaurantCoupon(coupon);
+              const isSaved = savedCouponIds.includes(coupon.id);
+
+              const navigateToRestaurant = () => {
+                if (!isRestaurantCouponItem || !coupon.restaurant_id) return;
+                router.push(`/client/food-service/restaurants/${coupon.restaurant_id}`);
+              };
+
+              const navigateToRestaurantList = () => {
+                router.push('/client/food-service/restaurants');
+              };
+
+              return (
+                <article
                   key={coupon.id}
-                  onClick={goToRestaurant}
-                  className={`
-                    flex flex-col md:flex-row rounded-2xl p-5 shadow-md hover:shadow-xl 
-                    transition-all hover:-translate-y-1 gap-4 cursor-pointer duration-150 
-                    ${isExpired ? 'bg-gray-100 text-gray-400' : 'bg-white'}
-                  `}
+                  onClick={isRestaurantCouponItem ? navigateToRestaurant : navigateToRestaurantList}
+                  className={`rounded-2xl border bg-white overflow-hidden transition-all ${
+                    isRestaurantCouponItem
+                      ? 'border-[#d5e8dc] hover:border-[#7fc99a] hover:shadow-md cursor-pointer'
+                      : 'border-[#e2ebe6] hover:border-[#61a8e7] hover:shadow-md cursor-pointer'
+                  }`}
                 >
-                  {/* Hình ảnh */}
-                  <div className="w-full md:w-36 h-36 rounded-xl overflow-hidden flex-shrink-0 mx-auto md:mx-0">
+                  <div className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
                     <img
                       src={coupon.image_url || '/assets/foods/default-food.jpg'}
-                      alt={coupon.title}
-                      className="w-full h-full object-cover object-center scale-75 md:scale-110"
+                      alt={coupon.title || coupon.code}
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-[#d8e6df]"
                     />
-                  </div>
 
-                  {/* Nội dung */}
-                  <div className="flex-1 text-left">
-                    <div className="flex flex-col-reverse justify-between items-start md:items-center md:flex-row">
-                      <h3 className="text-lg md:text-xl font-bold tracking-wide md:w-[70%]">
-                        {coupon.title}
-                      </h3>
-
-                      <div className="flex flex-wrap gap-2 mt-2 md:mt-0">
-                        <span className={`px-3 py-1 text-xs rounded-full font-semibold ${isExpired ? 'bg-gray-200 text-gray-500' : 'bg-green-100 text-green-700'}`}>
-                          {isExpired ? 'Hết hạn' : 'Còn hiệu lực'}
-                        </span>
-                        <span className={`px-3 py-1 text-xs rounded-full font-semibold ${coupon.is_platform ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-                          {coupon.is_platform ? 'Hệ thống' : 'Nhà hàng'}
-                        </span>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-lg font-bold text-[#17231d] leading-tight line-clamp-2">
+                        {coupon.title || getDiscountLabel(coupon)}
+                      </p>
+                      <p className="text-sm text-[#70867c] mt-1 line-clamp-1">{getSubtitle(coupon)}</p>
+                      <p className="text-[15px] font-semibold text-[#197a43] mt-1">{getDiscountLabel(coupon)}</p>
                     </div>
 
-                    <p className="text-gray-600 mt-2 md:w-[70%] line-clamp-1">{coupon.description}</p>
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleSaveCoupon(coupon.id);
+                        }}
+                        className={`rounded-full px-4 py-1.5 text-sm font-bold inline-flex items-center gap-1.5 ${
+                          isSaved
+                            ? 'bg-[#0f8b4c] text-white'
+                            : 'bg-[#e9f6ee] text-[#0f8b4c] hover:bg-[#d9f0e2]'
+                        }`}
+                      >
+                        {isSaved ? <BookmarkCheck size={14} /> : <Bookmark size={14} />} {isSaved ? 'Đã lưu' : 'Lưu mã'}
+                      </button>
 
-                    <p className="text-orange-600 font-bold text-lg mt-3">
-                      [{coupon.code}] {' '}
-                      Giảm {Number(coupon.discount_value)}
-                      {coupon.discount_type === 'percentage' ? '%' : ' VNĐ'}
-                    </p>
-
-                    {isRestaurantCoupon && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        {coupon.restaurant_name || `Nhà hàng #${coupon.restaurant_id}`} - Nhấn để xem
-                      </p>
-                    )}
-
-                    <p className="text-sm text-gray-500 mt-1">
-                      Hết hạn: {dayjs(coupon.end_date).format('DD/MM/YYYY HH:mm')}
-                    </p>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          copyCode(coupon.code);
+                        }}
+                        className="text-xs font-semibold text-[#1f7f49] hover:text-[#0f8b4c]"
+                      >
+                        {copiedCode === coupon.code ? 'Đã sao chép' : `Nhấn để lấy mã: ${coupon.code}`}
+                      </button>
+                    </div>
                   </div>
-                </div>
-            );
-          })}
+                </article>
+              );
+            })
+          )}
         </div>
-      )}
-    </div>
-
-    {/* test */}
-    {/* <MapClient center={[21.028511, 105.804817]} zoom={15} markers={markers} /> */}
-    </>
+      </section>
+    </main>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import SupplierLayout from '../components/SupplierLayout';
 import { useSupplierAuth } from '../contexts/SupplierAuthContext';
 import SupplierAPI from '../lib/api';
@@ -196,12 +197,12 @@ export default function SupplierDashboard() {
             <h3 className="font-semibold text-orange-900">Có {stats.orders.pending_orders} đơn hàng chờ xác nhận</h3>
             <p className="text-sm text-orange-700">Vui lòng xác nhận đơn hàng để khách hàng không phải chờ lâu</p>
           </div>
-          <a
+          <Link
             href="/supplier/orders?status=pending"
             className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
           >
             Xem ngay
-          </a>
+          </Link>
         </div>
       )}
 
@@ -210,12 +211,12 @@ export default function SupplierDashboard() {
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-gray-900">Đơn hàng gần đây</h2>
-            <a
+            <Link
               href="/supplier/orders"
               className="text-orange-600 hover:text-orange-700 text-sm font-medium"
             >
               Xem tất cả →
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -264,7 +265,7 @@ export default function SupplierDashboard() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-        <a
+        <Link
           href="/supplier/orders?status=pending"
           className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
         >
@@ -277,9 +278,9 @@ export default function SupplierDashboard() {
               <p className="text-sm text-gray-600">Xem và xác nhận đơn hàng mới</p>
             </div>
           </div>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/supplier/menu"
           className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
         >
@@ -292,9 +293,9 @@ export default function SupplierDashboard() {
               <p className="text-sm text-gray-600">Thêm, sửa món ăn</p>
             </div>
           </div>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/supplier/settings"
           className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
         >
@@ -307,7 +308,7 @@ export default function SupplierDashboard() {
               <p className="text-sm text-gray-600">Cập nhật thông tin</p>
             </div>
           </div>
-        </a>
+        </Link>
       </div>
     </SupplierLayout>
   );

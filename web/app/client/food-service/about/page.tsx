@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import Header from '../components/layout/Header';
 
 import { Bolt, Shield, Heart, Star } from 'lucide-react';
@@ -425,9 +426,9 @@ export default function AboutPage() {
               Hàng chục nhà hàng đang chờ đưa món yêu thích của bạn về tận nơi.
               Đặt hàng ngay — miễn phí vận chuyển đơn đầu tiên.
             </p>
-            <a href="./" className="fd-btn">
+            <Link href="/client/food-service" className="fd-btn">
               Khám phá ngay →
-            </a>
+            </Link>
           </div>
         </main>
       </div>

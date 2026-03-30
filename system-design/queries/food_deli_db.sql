@@ -201,8 +201,8 @@ ALTER COLUMN role SET NOT NULL;
 
 -- STEP 6: Thêm CHECK constraint (data validation)
 ALTER TABLE users
-ADD CONSTRAINT check_user_role 
-CHECK (role IN ('customer', 'restaurant_owner', 'admin', 'shipper'));
+ADD CONSTRAINT check_user_role
+CHECK (role IN ('customer', 'restaurant_owner', 'admin', 'driver'));
 
 -- STEP 7: Tạo index cho performance
 CREATE INDEX idx_users_role ON users(role);

@@ -217,7 +217,7 @@ export default function RestaurantsPage() {
                         <div className="flex-shrink-0 h-10 w-10">
                           <img
                             className="h-10 w-10 rounded-full object-cover"
-                            src={restaurant.image_url || '/placeholder-restaurant.jpg'}
+                            src={restaurant.image_url || 'https://res.cloudinary.com/dpldznnma/image/upload/v1751874870/main.jpg'}
                             alt={restaurant.name}
                           />
                         </div>
@@ -337,7 +337,7 @@ export default function RestaurantsPage() {
                 <div className="flex items-start gap-3">
                   <img
                     className="h-16 w-16 rounded-lg object-cover flex-shrink-0"
-                    src={restaurant.image_url || '/placeholder-restaurant.jpg'}
+                    src={restaurant.image_url || 'https://res.cloudinary.com/dpldznnma/image/upload/v1751874870/main.jpg'}
                     alt={restaurant.name}
                   />
                   <div className="flex-1 min-w-0">

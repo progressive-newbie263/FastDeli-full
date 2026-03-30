@@ -67,8 +67,6 @@ class Order {
     return result.rows;
   }
 
-  
-  // 🆕 Tạo đơn hàng
   static async createOrder(orderData, items) {
     const client = await foodPool.connect();
     try {
@@ -80,6 +78,8 @@ class Order {
         user_name,
         user_phone,
         delivery_address,
+        delivery_latitude = null,
+        delivery_longitude = null,
         notes,
         delivery_fee = 0,
         payment_method = 'cash',
@@ -139,14 +139,15 @@ class Order {
       const orderInsertQuery = `
         INSERT INTO orders (
           user_id, restaurant_id, user_name, user_phone,
-          delivery_address, notes, delivery_fee, total_amount,
+          delivery_address, delivery_latitude, delivery_longitude, notes, delivery_fee, total_amount,
           coupon_id, coupon_code, discount_amount, original_total,
           order_status, payment_status, payment_method, created_at, updated_at
         )
         VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8,
-          $9, $10, $11, $12,
-          'pending', 'pending', $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          $1, $2, $3, $4,
+          $5, $6, $7, $8, $9, $10,
+          $11, $12, $13, $14,
+          'pending', 'pending', $15, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         )
         RETURNING *
       `;
@@ -157,6 +158,8 @@ class Order {
         user_name,
         user_phone,
         delivery_address,
+        delivery_latitude,
+        delivery_longitude,
         notes || '',
         delivery_fee,
         normalizedTotalAmount,

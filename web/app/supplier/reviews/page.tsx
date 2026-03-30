@@ -149,14 +149,15 @@ export default function ReviewsPage() {
                       filter === rating ? 'bg-orange-50' : ''
                     }`}
                   >
-                    <span className="font-medium w-12">{rating} sao</span>
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <span className="font-medium w-12 text-gray-700">{rating} sao</span>
+                    <div className="flex-1 h-2 bg-gray-300 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-orange-500"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
-                    <span className="text-gray-600 w-8 text-right">{count}</span>
+                    
+                    <span className="text-gray-700 w-8 text-right">{count}</span>
                   </button>
                 );
               })}
@@ -221,7 +222,7 @@ export default function ReviewsPage() {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     {renderStars(review.rating)}
-                    <span className="text-sm font-medium text-gray-700">{review.rating}/5</span>
+                    {/* <span className="text-sm font-medium text-gray-700">{review.rating}/5</span> */}
                   </div>
                 </div>
 

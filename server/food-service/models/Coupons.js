@@ -64,11 +64,12 @@ class Coupon {
     const hasUsageLimitColumn = columns.has('usage_limit');
     const hasUsedCountColumn = columns.has('used_count');
     const hasCreatedAtColumn = columns.has('created_at');
+    const hasScopedRestaurantId = Number.isFinite(Number(restaurantId)) && Number(restaurantId) > 0;
 
     const restaurantSelect = hasRestaurantIdColumn
       ? 'c.restaurant_id, r.name AS restaurant_name'
       : 'NULL::integer AS restaurant_id, NULL::text AS restaurant_name';
-    const restaurantFilter = hasRestaurantIdColumn
+    const restaurantFilter = hasRestaurantIdColumn && hasScopedRestaurantId
       ? 'AND (c.is_platform = true OR c.restaurant_id = $1)'
       : '';
     const usageFilter = hasUsageLimitColumn && hasUsedCountColumn
@@ -102,7 +103,7 @@ class Coupon {
       ${orderBy}
     `;
 
-    const params = hasRestaurantIdColumn ? [restaurantId] : [];
+    const params = hasRestaurantIdColumn && hasScopedRestaurantId ? [Number(restaurantId)] : [];
     const result = await foodPool.query(query, params);
     return this.attachCouponKeys(result.rows);
   }
