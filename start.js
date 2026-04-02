@@ -5,7 +5,7 @@
  *   node start.js client   # starts web client + client-side services
  *   node start.js admin    # starts admin UI + admin-side services
  *   node start.js          # defaults to "client"
- *
+ *   chuẩn bị build driver
  * Edit the "config" section below if your folders differ.
  */
 
