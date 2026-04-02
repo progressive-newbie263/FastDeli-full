@@ -258,6 +258,30 @@ Danh sach cac api endpoint dang co (dan vao terminal):
 
 1. Fix giao diện + lỗi nhỏ.
 
+
+-------------------------------------------------------------------------------------
+------------------------------NOTE, 01-04-2026 (DRIVER)-----------------------------
+1. Đăng ký tài xế gọi endpoint POST /api/driver/register (service port 5004).
+2. Bản ghi mới được thêm vào bảng users (db-shared-deli).
+3. role của user được set là driver.
+4. password lưu dưới dạng password_hash (bcrypt).
+5. Mặc định is_active = false sau khi register.
+6. Vì is_active=false nên app driver chưa đăng nhập được ngay.
+7. Middleware driverAuth chỉ cho qua khi role=driver và is_active=true.
+8. Cần admin kích hoạt tài khoản driver trước khi test app.
+9. Admin API hiện dùng GET /api/admin/users?role=driver để lọc tài xế.
+10. Trạng thái tài xế được đổi qua PUT /api/admin/users/:id.
+11. Đã có trang admin /drivers để duyệt nhanh tài khoản tài xế.
+12. Driver service tạo bảng driver_locations nếu chưa tồn tại.
+13. Bảng driver_locations lưu lat/lng, is_online, updated_at theo driver_user_id.
+14. Driver service tạo bảng virtual_driver_candidates nếu chưa tồn tại.
+15. Bảng virtual_driver_candidates lưu candidate ảo theo order_id, candidate_idx.
+16. Driver service tạo bảng order_driver_assignments nếu chưa tồn tại.
+17. Bảng order_driver_assignments lưu assigned_driver_user_id cho mỗi order.
+18. Dữ liệu 3 bảng driver phát sinh khi update location/map assignment chạy.
+19. Nếu chỉ register thì thay đổi DB chủ yếu nằm ở users (shared DB).
+20. Kết luận: mobile test chuẩn cần 2 bước: đúng API host + driver đã active.
+
 -------------------------------------------------------------------------------------
 ------------------------------GITPUSH + NOTE, 13-03-2026-----------------------------
 
@@ -393,3 +417,30 @@ nên load lâu ko xong là bình thường, đúng chủ đích (tránh ăn brut
 # note:
 - bắt đầu khởi tạo "/driver".
 - dự kiến: React Native + expo go.
+
+
+=====================================================================================
+------------------------------GITPUSH + NOTE, 31-03-2026-----------------------------
+=====================================================================================
+
+# note (hướng ý tưởng):
+1. DRIVER UPDATE 31-03-2026
+2. Đăng ký tài xế qua endpoint POST /api/driver/register.
+3. Bản ghi mới được tạo trong bảng users (db-shared-deli).
+4. Các cột chính: phone_number, email, password_hash, full_name, role=driver.
+5. Mặc định is_active=false (chờ admin duyệt).
+6. Vì is_active=false nên đăng nhập app driver chưa dùng được ngay.
+7. Middleware driverAuth chỉ cho qua khi role=driver và is_active=true.
+8. Admin cần bật active cho tài khoản driver trước khi test app.
+9. Hiện menu admin đã có mục /drivers nhưng cần page thật để quản lý.
+10. Trang Driver nên dùng nguồn dữ liệu từ API admin users với role=driver.
+11. Khi bật active cần gửi đủ payload update user để tránh lỗi validate.
+12. Trong backend admin users có bug biến phone chưa định nghĩa.
+13. Sửa phone thành phone_number tại query update user.
+14. Driver-service tự tạo 3 bảng ở db-food-deli khi khởi động.
+15. Bảng driver_locations lưu vị trí online của tài xế.
+16. Bảng virtual_driver_candidates lưu candidate ảo cho thuật toán gán đơn.
+17. Bảng order_driver_assignments lưu mapping đơn hàng và tài xế được gán.
+18. Driver tables chỉ có dữ liệu sau khi tài xế cập nhật vị trí/map assignment chạy.
+19. Nếu chỉ mới register thì thay đổi DB chủ yếu nằm ở bảng users.
+20. Kết luận: bước bắt buộc để test app là activate driver từ admin.

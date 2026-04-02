@@ -24,6 +24,7 @@ const config = {
     { name: 'web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./web') },
     { name: 'food-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
     { name: 'auth-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
+    { name: 'driver-service', cmd: 'node', args: ['index.js'], cwd: path.resolve('./server/driver-service') },
   ],
   admin: [
     { name: 'admin-ui', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./admin-ui') },

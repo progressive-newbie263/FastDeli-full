@@ -44,7 +44,7 @@ export interface User {
   full_name: string;
   email: string;
   phone_number: string;
-  role: 'customer' | 'restaurant_owner' | 'admin' | 'shipper';
+  role: 'customer' | 'restaurant_owner' | 'admin' | 'shipper' | 'driver';
   is_active: boolean;
   created_at: string;
   last_login?: string;

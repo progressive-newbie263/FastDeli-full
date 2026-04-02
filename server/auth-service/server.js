@@ -36,6 +36,7 @@ app.use('/api/upload', uploadRoute);
 
 // Start server
 const PORT = config.port || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running in ${config.env} mode on port ${PORT}`);
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`Server running in ${config.env} mode on ${HOST}:${PORT}`);
 });

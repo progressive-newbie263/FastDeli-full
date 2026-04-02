@@ -85,6 +85,7 @@ export default function UsersAdmin() {
             <option value="">Tất cả vai trò</option>
             <option value="customer">Khách hàng</option>
             <option value="restaurant_owner">Chủ nhà hàng</option>
+            <option value="driver">Tài xế</option>
             <option value="shipper">Shipper</option>
             <option value="admin">Admin</option>
           </select>
@@ -131,11 +132,13 @@ export default function UsersAdmin() {
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
                       user.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' :
                       user.role === 'restaurant_owner' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300' :
+                      user.role === 'driver' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-200' :
                       user.role === 'shipper' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' :
                       'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200'
                     }`}>
                       {user.role === 'admin' ? 'Admin' :
                       user.role === 'restaurant_owner' ? 'Nhà hàng' :
+                      user.role === 'driver' ? 'Tài xế' :
                       user.role === 'shipper' ? 'Shipper' :
                       'Khách hàng'}
                     </span>

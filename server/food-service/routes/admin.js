@@ -173,17 +173,26 @@ router.put('/users/:id', async (req, res) => {
     const userId = parseInt(req.params.id);
     const { full_name, phone_number, role, is_active } = req.body;
 
-    // Validate
-    if (!full_name || !phone_number || !role) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    const currentUserRes = await sharedPool.query(
+      'SELECT full_name, phone_number, role, is_active FROM users WHERE user_id = $1 LIMIT 1',
+      [userId]
+    );
+    if (currentUserRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
     }
+
+    const currentUser = currentUserRes.rows[0];
+    const nextFullName = full_name ?? currentUser.full_name;
+    const nextPhone = phone_number ?? currentUser.phone_number;
+    const nextRole = role ?? currentUser.role;
+    const nextActive = typeof is_active === 'boolean' ? is_active : currentUser.is_active;
 
     const result = await sharedPool.query(`
       UPDATE users
       SET full_name = $1, phone_number = $2, role = $3, is_active = $4, updated_at = NOW()
       WHERE user_id = $5
       RETURNING *
-    `, [full_name, phone, role, is_active, userId]);
+    `, [nextFullName, nextPhone, nextRole, nextActive, userId]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });

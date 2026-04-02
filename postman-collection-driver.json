@@ -1,0 +1,174 @@
+{
+  "info": {
+    "name": "Driver App APIs",
+    "description": "Collection để test API endpoints của Driver service (/api/driver/*)",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{driver_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login as Driver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{driver_email}}\",\n  \"password\": \"{{driver_password}}\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          },
+          "description": "Sau khi login, copy JWT token từ response vào biến {{driver_token}}"
+        }
+      ]
+    },
+    {
+      "name": "Driver Registration",
+      "item": [
+        {
+          "name": "Register driver (wait admin approval)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"{{driver_phone}}\",\n  \"email\": \"{{driver_email}}\",\n  \"password\": \"{{driver_password}}\",\n  \"full_name\": \"{{driver_full_name}}\",\n  \"gender\": \"other\",\n  \"date_of_birth\": \"2000-01-01\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5004/api/driver/register",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5004",
+              "path": ["api", "driver", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Driver Runtime",
+      "item": [
+        {
+          "name": "Update driver location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{driver_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": {{driver_lat}},\n  \"longitude\": {{driver_lng}}\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5004/api/driver/location",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5004",
+              "path": ["api", "driver", "location"]
+            }
+          }
+        },
+        {
+          "name": "Get delivering orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{driver_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5004/api/driver/orders/delivering",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5004",
+              "path": ["api", "driver", "orders", "delivering"]
+            }
+          }
+        },
+        {
+          "name": "Get order map data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{driver_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:5004/api/driver/orders/{{order_id}}/map",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5004",
+              "path": ["api", "driver", "orders", "{{order_id}}", "map"]
+            }
+          }
+        },
+        {
+          "name": "Confirm delivered",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{driver_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "http://localhost:5004/api/driver/orders/{{order_id}}/confirm-delivered",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5004",
+              "path": ["api", "driver", "orders", "{{order_id}}", "confirm-delivered"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+
