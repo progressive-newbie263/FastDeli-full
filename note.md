@@ -423,24 +423,25 @@ nên load lâu ko xong là bình thường, đúng chủ đích (tránh ăn brut
 ------------------------------GITPUSH + NOTE, 31-03-2026-----------------------------
 =====================================================================================
 
-# note (hướng ý tưởng):
-1. DRIVER UPDATE 31-03-2026
-2. Đăng ký tài xế qua endpoint POST /api/driver/register.
-3. Bản ghi mới được tạo trong bảng users (db-shared-deli).
-4. Các cột chính: phone_number, email, password_hash, full_name, role=driver.
-5. Mặc định is_active=false (chờ admin duyệt).
-6. Vì is_active=false nên đăng nhập app driver chưa dùng được ngay.
-7. Middleware driverAuth chỉ cho qua khi role=driver và is_active=true.
-8. Admin cần bật active cho tài khoản driver trước khi test app.
-9. Hiện menu admin đã có mục /drivers nhưng cần page thật để quản lý.
-10. Trang Driver nên dùng nguồn dữ liệu từ API admin users với role=driver.
-11. Khi bật active cần gửi đủ payload update user để tránh lỗi validate.
-12. Trong backend admin users có bug biến phone chưa định nghĩa.
-13. Sửa phone thành phone_number tại query update user.
-14. Driver-service tự tạo 3 bảng ở db-food-deli khi khởi động.
-15. Bảng driver_locations lưu vị trí online của tài xế.
-16. Bảng virtual_driver_candidates lưu candidate ảo cho thuật toán gán đơn.
-17. Bảng order_driver_assignments lưu mapping đơn hàng và tài xế được gán.
-18. Driver tables chỉ có dữ liệu sau khi tài xế cập nhật vị trí/map assignment chạy.
-19. Nếu chỉ mới register thì thay đổi DB chủ yếu nằm ở bảng users.
-20. Kết luận: bước bắt buộc để test app là activate driver từ admin.
+- Đã khởi tạo + push mobile app cho driver lên github
+- xây dựng mô phỏng login + giao diện trang đăng nhập/đăng kí thành công 
+và giao diện thô sơ trang chính của tài xế
+- cập nhật route /drivers cho bên admin-ui (web)
+
+
+=====================================================================================
+------------------------------GITPUSH + NOTE, 02-04-2026-----------------------------
+=====================================================================================
+
+1. Chốt hạ tầng giai đoạn driver: Supabase (PostgreSQL) + Render (auth-service, driver-service).
+2. Tạm thời không deploy web/admin; giữ local để tránh tăng độ phức tạp.
+3. Chuyển dữ liệu local PostgreSQL lên Supabase bằng backup/restore, không chỉnh schema tay.
+4. Trên Render, deploy auth-service trước rồi mới deploy driver-service.
+5. Bắt buộc dùng cùng JWT_SECRET cho 2 service để token login không bị lệch.
+6. Cấu hình đầy đủ DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, FOOD_DB_NAME, AUTH_DB_NAME.
+7. Giai đoạn test đặt DRIVER_AUTO_APPROVE=1 để bỏ bước duyệt tài xế.
+8. Khi cần quay lại quy trình duyệt thủ công thì đổi DRIVER_AUTO_APPROVE=0.
+9. Driver app phải trỏ API host cloud, bỏ phụ thuộc IP LAN nội bộ.
+10. Tắt mock login ở driver app để gọi API thật từ auth-service.
+11. Checklist test: register -> login -> update location -> get delivering orders.
+12. Sau khi mobile ổn định mới triển khai tiếp food-service và web.

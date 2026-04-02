@@ -31,18 +31,33 @@ async function registerDriver(req, res) {
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
 
+    // Cho phep bo qua buoc duyet de test mobile nhanh hon.
+    // Dat DRIVER_AUTO_APPROVE=0 de quay lai flow cho admin duyet.
+    const shouldAutoApprove = process.env.DRIVER_AUTO_APPROVE !== '0';
+
     const insertRes = await sharedPool.query(
       `INSERT INTO users
         (phone_number, email, password_hash, full_name, gender, date_of_birth, avatar_url, role, is_active)
        VALUES
-        ($1, $2, $3, $4, $5, $6, $7, 'driver', false)
+        ($1, $2, $3, $4, $5, $6, $7, 'driver', $8)
        RETURNING user_id, full_name, email, role, is_active, created_at`,
-      [phone_number, email, password_hash, full_name, gender || null, date_of_birth || null, DEFAULT_AVATAR_URL]
+      [
+        phone_number,
+        email,
+        password_hash,
+        full_name,
+        gender || null,
+        date_of_birth || null,
+        DEFAULT_AVATAR_URL,
+        shouldAutoApprove,
+      ]
     );
 
     return res.status(201).json({
       success: true,
-      message: 'Register driver submitted. Waiting admin approval.',
+      message: shouldAutoApprove
+        ? 'Register driver success. Account is active.'
+        : 'Register driver submitted. Waiting admin approval.',
       data: insertRes.rows[0],
     });
   } catch (err) {

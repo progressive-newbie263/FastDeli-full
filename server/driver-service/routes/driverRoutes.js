@@ -4,7 +4,8 @@ const driverAuth = require('../middleware/driverAuth');
 
 const router = express.Router();
 
-// Driver registration: tạo tài khoản role=driver nhưng is_active=false (chờ admin duyệt)
+// Driver registration: mac dinh auto-approve (is_active=true).
+// Dat DRIVER_AUTO_APPROVE=0 de bat lai flow cho admin duyet.
 router.post('/register', DriverController.registerDriver);
 
 // Cập nhật vị trí tài xế
