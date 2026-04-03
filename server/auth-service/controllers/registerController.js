@@ -1,21 +1,17 @@
 const User = require('../models/userModel');
 const { generateToken } = require('../utils/tokenGenerator');
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
-const register = async (req, res) => {
-  const { 
-    phone_number, 
-    email, 
-    password, 
-    full_name, 
-    gender, 
-    date_of_birth 
+const buildRegisterHandler = (role) => async (req, res) => {
+  const {
+    phone_number,
+    email,
+    password,
+    full_name,
+    gender,
+    date_of_birth
   } = req.body;
 
   try {
-    // đăng kí thì check xem sđt đã đc đăng kí trước đó chưa.
     const existingUserByPhone = await User.findByPhone(phone_number);
     if (existingUserByPhone) {
       return res.status(400).json({
@@ -24,7 +20,6 @@ const register = async (req, res) => {
       });
     }
 
-    // đăng kí thì check xem email đã đc đăng kí trước đó chưa.
     const existingUserByEmail = await User.findByEmail(email);
     if (existingUserByEmail) {
       return res.status(400).json({
@@ -33,7 +28,6 @@ const register = async (req, res) => {
       });
     }
 
-    // tạo người dùng mới
     const user = await User.create({
       phone_number,
       email,
@@ -41,13 +35,9 @@ const register = async (req, res) => {
       full_name,
       gender,
       date_of_birth,
-      role: 'customer' // mặc định
+      role
     });
 
-    // role mặc định là user
-    // await User.createUserRole(user.user_id);
-
-    // token jwt.
     const token = generateToken(user.user_id, user.role);
 
     res.status(201).json({
@@ -75,6 +65,17 @@ const register = async (req, res) => {
   }
 };
 
+// @desc    Register a new user
+// @route   POST /api/auth/register
+// @access  Public
+const register = buildRegisterHandler('customer');
+
+// @desc    Register a new driver
+// @route   POST /api/auth/register-driver
+// @access  Public
+const registerDriver = buildRegisterHandler('driver');
+
 module.exports = {
-  register
+  register,
+  registerDriver
 };

@@ -4,6 +4,7 @@
  * Usage:
  *   node start.js client   # starts web client + client-side services
  *   node start.js admin    # starts admin UI + admin-side services
+ *   node start.js driver   # starts expo driver app + auth service
  *   node start.js          # defaults to "client"
  *   chuẩn bị build driver
  * Edit the "config" section below if your folders differ.
@@ -15,7 +16,7 @@ const path = require('path');
 
 const mode = (process.argv[2] || 'client').toLowerCase();
 if (['-h', '--help', 'help'].includes(mode)) {
-  console.log('Usage: node start-multi.js [client|admin]');
+  console.log('Usage: node start.js [client|admin|driver]');
   process.exit(0);
 }
 
@@ -29,11 +30,15 @@ const config = {
     { name: 'admin-ui', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./admin-ui') },
     { name: 'food-service-admin', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
   ],
+  driver: [
+    { name: 'driver-app', cmd: 'npm', args: ['run', 'start'], cwd: path.resolve('./driver-app') },
+    { name: 'auth-service-driver', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
+  ],
 };
 
 const services = config[mode];
 if (!services) {
-  console.error(`Unknown mode "${mode}". Use "client" or "admin".`);
+  console.error(`Unknown mode "${mode}". Use "client", "admin", or "driver".`);
   process.exit(1);
 }
 
