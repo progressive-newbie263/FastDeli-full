@@ -393,3 +393,11 @@ nên load lâu ko xong là bình thường, đúng chủ đích (tránh ăn brut
 # note:
 - bắt đầu khởi tạo "/driver".
 - dự kiến: React Native + expo go.
+
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 03-04-2026-----------------------------
+
+- Khởi tạo: driver-app (mobile app)
+- trước tiên có giao diện login
