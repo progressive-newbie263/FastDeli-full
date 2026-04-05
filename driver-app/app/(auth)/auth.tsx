@@ -53,7 +53,7 @@ export default function AuthScreen() {
         });
       }
 
-      router.replace('/home');
+      router.replace('/(tabs)/home' as any);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Có lỗi xảy ra.');
     } finally {
@@ -177,55 +177,52 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#e2e8f0',
+    backgroundColor: '#ffffff',
   },
   container: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 20,
+    padding: 24,
   },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#0f172a',
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 5,
+    paddingBottom: 20,
   },
   brand: {
-    color: '#0369a1',
-    fontWeight: '700',
-    fontSize: 16,
-    marginBottom: 6,
+    color: '#00B14F',
+    fontWeight: '800',
+    fontSize: 20,
+    marginBottom: 8,
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
-    color: '#0f172a',
-    marginBottom: 18,
+    color: '#1c1c1c',
+    marginBottom: 32,
   },
   input: {
-    borderColor: '#cbd5e1',
+    borderColor: '#e2e8f0',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-    marginBottom: 12,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    marginBottom: 16,
     backgroundColor: '#f8fafc',
+    fontSize: 16,
   },
   error: {
-    color: '#dc2626',
-    marginBottom: 12,
+    color: '#ef4444',
+    marginBottom: 16,
     fontSize: 14,
   },
   submitButton: {
-    backgroundColor: '#0284c7',
-    borderRadius: 10,
-    paddingVertical: 13,
+    backgroundColor: '#00B14F',
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
+    marginTop: 8,
   },
   submitLabel: {
     color: '#ffffff',
@@ -233,11 +230,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   switchModeButton: {
-    marginTop: 14,
+    marginTop: 24,
     alignItems: 'center',
+    paddingVertical: 12,
   },
   switchModeLabel: {
-    color: '#0f172a',
-    fontSize: 14,
+    color: '#00B14F',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

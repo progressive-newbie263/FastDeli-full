@@ -390,14 +390,29 @@ DashboardAdmin.tsx , StatsCard.tsx và analytics/page.tsx.
 - khi tạo nhà hàng mới, trang restaurants (food-service) đang có set cache time 5p
 nên load lâu ko xong là bình thường, đúng chủ đích (tránh ăn brute force)
 
-# note:
-- bắt đầu khởi tạo "/driver".
-- dự kiến: React Native + expo go.
-
-
 
 -------------------------------------------------------------------------------------
 ------------------------------GITPUSH + NOTE, 03-04-2026-----------------------------
 
 - Khởi tạo: driver-app (mobile app)
 - trước tiên có giao diện login
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 05-04-2026-----------------------------
+
+- fix lỗi kết nối giữa 2 thiết bị khác nhau bằng chạy lệnh thông qua tunnel 
+(npx expo start -- tunnel)
+- Xây dựng sơ bộ giao diện mobile app (driver-app)
+- lưu ý: để khởi tạo, ngoài chạy lệnh thêm --tunnel trong terminal ra, cần 
+vào ports (trong terminal, cái ngoài cùng bên phải), forward cổng 5000 vào
+rồi click chuột phải để chỉnh nó từ public sang private.
+- Tạo dữ liệu ảo để hiển thị giao diện cho driver. Có thể login/logout thoải mái,
+logout bằng cách tab sang profile , sẽ có nút đăng xuất ở đó.
+
+# note (nhiệm vụ sắp tới):
+- Hoàn thiện giao diện mobile app
+- Chèn được dữ liệu thật vào
+- Làm bản đồ "Clean" hơn
+- cần sửa nhiều về giao diện, nhìn rất xấu + lạc hậu. Ý tưởng học hỏi sẽ là video này.
+https://www.youtube.com/watch?v=pDKuFmpqzmo. 

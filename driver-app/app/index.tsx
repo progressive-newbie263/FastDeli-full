@@ -14,7 +14,7 @@ export default function IndexScreen() {
   }
 
   if (token && user?.role === 'driver') {
-    return <Redirect href="/home" />;
+    return <Redirect href={"/(tabs)/home" as any} />;
   }
 
   return <Redirect href="/(auth)/auth" />;

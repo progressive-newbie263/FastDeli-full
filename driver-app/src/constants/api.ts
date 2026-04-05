@@ -23,7 +23,15 @@ const getFallbackUrl = () => {
   });
 };
 
-export const AUTH_API_URL = process.env.EXPO_PUBLIC_AUTH_API_URL || getFallbackUrl();
+// Cấu hình Nhanh - Dành cho lúc thử nghiệm mạng Public (3G/4G)
+// set USE_PUBLIC_TUNNEL = `true`, dán đường link tunnel của bạn vào PUBLIC_TUNNEL_URL
+// false là dùng local network (wifi), chỉ dùng được khi điện thoại và máy tính cùng kết nối một mạng wifi
+const USE_PUBLIC_TUNNEL = true; 
+const PUBLIC_TUNNEL_URL = 'https://hvzv22k8-5000.asse.devtunnels.ms';
+
+export const AUTH_API_URL = USE_PUBLIC_TUNNEL 
+  ? PUBLIC_TUNNEL_URL 
+  : (process.env.EXPO_PUBLIC_AUTH_API_URL || getFallbackUrl());
 
 if (__DEV__) {
   console.log('[API] AUTH_API_URL =', AUTH_API_URL);
