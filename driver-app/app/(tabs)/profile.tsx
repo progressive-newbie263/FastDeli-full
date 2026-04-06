@@ -2,6 +2,19 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
+import { APP_COLORS } from '../../src/constants/theme';
+
+const PRIMARY = '#00B14F';
+const PRIMARY_DARK = '#007A37';
+const PRIMARY_SOFT = '#E8F8EF';
+const DANGER = '#EF4444';
+const DANGER_SOFT = '#FEF2F2';
+
+type MenuItem = {
+  icon: string;
+  label: string;
+  onPress?: () => void;
+};
 
 export default function ProfileScreen() {
   const { user, logout } = useAuth();
@@ -11,53 +24,98 @@ export default function ProfileScreen() {
     router.replace('/(auth)/auth' as any);
   };
 
+  const menuItems: MenuItem[] = [
+    { icon: 'clipboard-text-outline', label: 'Đơn hàng của tôi' },
+    { icon: 'ticket-percent-outline', label: 'Voucher của tôi' },
+    { icon: 'account-cog-outline', label: 'Quản lý tài khoản' },
+    { icon: 'wallet-outline', label: 'Phương thức thanh toán' },
+    { icon: 'phone-outline', label: 'Hỗ trợ' },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        {/* Profile Header */}
-        <View style={styles.headerCard}>
-          <View style={styles.avatarContainer}>
-            <MaterialCommunityIcons name="account" size={48} color="#94a3b8" />
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <Pressable style={styles.iconBtn} onPress={() => router.back()}>
+          <MaterialCommunityIcons name="chevron-left" size={22} color="#546E7A" />
+        </Pressable>
+
+        <Text style={styles.pageTitle}>Thông tin tài khoản</Text>
+
+        <Pressable style={styles.iconBtn}>
+          <MaterialCommunityIcons name="bell-outline" size={20} color="#546E7A" />
+          <View style={styles.bellBadge}>
+            <Text style={styles.bellBadgeText}>2</Text>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.name}>{user?.full_name || 'Tài xế FastDeli'}</Text>
-            <View style={styles.ratingRow}>
-              <MaterialCommunityIcons name="star" size={16} color="#f59e0b" />
-              <Text style={styles.ratingText}>5.0</Text>
-              <View style={styles.dot} />
-              <Text style={styles.vehicleText}>Honda Wave Alpha</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Profile hero */}
+        <View style={styles.profileHero}>
+          <View style={styles.avatarRing}>
+            <View style={styles.avatar}>
+              <MaterialCommunityIcons name="account" size={48} color={PRIMARY_DARK} />
             </View>
           </View>
+          <Text style={styles.userName}>{user?.full_name || 'Tài xế FastDeli'}</Text>
+          <Text style={styles.userEmail}>{user?.email || 'driver@fastdeli.vn'}</Text>
+
+          <View style={styles.driverBadge}>
+            <MaterialCommunityIcons name="truck-fast" size={12} color={PRIMARY} />
+            <Text style={styles.driverBadgeText}>Tài xế đã xác minh</Text>
+          </View>
         </View>
 
-        {/* Menu Items */}
-        <View style={styles.menuContainer}>
-          <Pressable style={styles.menuItem}>
-            <MaterialCommunityIcons name="card-account-details-outline" size={24} color="#64748b" />
-            <Text style={styles.menuText}>Thông tin cá nhân</Text>
-            <MaterialCommunityIcons name="chevron-right" size={24} color="#cbd5e1" />
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <MaterialCommunityIcons name="motorbike" size={24} color="#64748b" />
-            <Text style={styles.menuText}>Phương tiện của tôi</Text>
-            <MaterialCommunityIcons name="chevron-right" size={24} color="#cbd5e1" />
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <MaterialCommunityIcons name="cog-outline" size={24} color="#64748b" />
-            <Text style={styles.menuText}>Cài đặt ứng dụng</Text>
-            <MaterialCommunityIcons name="chevron-right" size={24} color="#cbd5e1" />
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <MaterialCommunityIcons name="help-circle-outline" size={24} color="#64748b" />
-            <Text style={styles.menuText}>Trung tâm trợ giúp</Text>
-            <MaterialCommunityIcons name="chevron-right" size={24} color="#cbd5e1" />
-          </Pressable>
+        {/* Stats row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statVal}>48</Text>
+            <Text style={styles.statLbl}>Đơn hoàn thành</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statVal}>4.9 ★</Text>
+            <Text style={styles.statLbl}>Đánh giá</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statVal}>12</Text>
+            <Text style={styles.statLbl}>Ngày hoạt động</Text>
+          </View>
         </View>
 
-        <Pressable style={styles.logoutButton} onPress={handleLogout}>
-          <MaterialCommunityIcons name="logout" size={20} color="#ef4444" />
+        {/* Menu */}
+        <View style={styles.menuSection}>
+          {menuItems.map((item, index) => (
+            <Pressable
+              key={item.label}
+              style={({ pressed }) => [
+                styles.menuItem,
+                index === menuItems.length - 1 && styles.menuItemLast,
+                pressed && styles.menuItemPressed,
+              ]}
+              onPress={item.onPress}
+            >
+              <View style={styles.menuIconBox}>
+                <MaterialCommunityIcons name={item.icon as any} size={20} color={PRIMARY} />
+              </View>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#CBD5E0" />
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Logout */}
+        <Pressable
+          style={({ pressed }) => [styles.logoutBtn, pressed && { opacity: 0.85 }]}
+          onPress={handleLogout}
+        >
+          <MaterialCommunityIcons name="logout" size={20} color={DANGER} />
           <Text style={styles.logoutText}>Đăng xuất</Text>
         </Pressable>
+
+        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -66,86 +124,196 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#F7F9FC',
   },
-  headerCard: {
-    backgroundColor: '#ffffff',
-    padding: 24,
+
+  topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 40,
+    paddingBottom: 14,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F7',
   },
-  avatarContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#e2e8f0',
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#F7F9FC',
+    borderWidth: 1,
+    borderColor: '#EEF2F7',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16,
   },
-  userInfo: {
-    flex: 1,
+  pageTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
-  name: {
+  bellBadge: {
+    position: 'absolute',
+    right: -4,
+    top: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: DANGER,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 0,
+    borderColor: '#fff',
+  },
+  bellBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+
+  profileHero: {
+    alignItems: 'center',
+    paddingTop: 24,
+    paddingBottom: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F7',
+  },
+  avatarRing: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    padding: 3,
+    backgroundColor: PRIMARY_SOFT,
+    borderWidth: 2,
+    borderColor: '#A7F3C4',
+    marginBottom: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: '#DCF5E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userName: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontWeight: '800',
+    color: '#1A1A1A',
     marginBottom: 4,
   },
-  ratingRow: {
+  userEmail: {
+    fontSize: 14,
+    color: '#78909C',
+    marginBottom: 12,
+  },
+  driverBadge: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 5,
+    backgroundColor: PRIMARY_SOFT,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#A7F3C4',
   },
-  ratingText: {
-    marginLeft: 4,
-    fontWeight: '600',
-    color: '#334155',
+  driverBadgeText: {
+    fontSize: 12,
+    color: PRIMARY_DARK,
+    fontWeight: '700',
   },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#94a3b8',
-    marginHorizontal: 8,
+
+  statsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    paddingVertical: 18,
+    marginTop: 12,
+    marginHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#EEF2F7',
+    marginBottom: 4,
   },
-  vehicleText: {
-    color: '#64748b',
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
   },
-  menuContainer: {
-    backgroundColor: '#ffffff',
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e2e8f0',
-    marginBottom: 24,
+  statVal: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 3,
+  },
+  statLbl: {
+    fontSize: 11,
+    color: '#90A4AE',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#EEF2F7',
+  },
+
+  menuSection: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: 14,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#EEF2F7',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#F1F5F9',
   },
-  menuText: {
+  menuItemLast: {
+    borderBottomWidth: 0,
+  },
+  menuItemPressed: {
+    backgroundColor: '#F7F9FC',
+  },
+  menuIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: PRIMARY_SOFT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  menuLabel: {
     flex: 1,
-    marginLeft: 12,
-    fontSize: 16,
-    color: '#334155',
+    fontSize: 15,
+    color: '#1A1A1A',
+    fontWeight: '500',
   },
-  logoutButton: {
+
+  logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
-    padding: 16,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#e2e8f0',
+    gap: 10,
+    marginHorizontal: 16,
+    marginTop: 14,
+    paddingVertical: 15,
+    borderRadius: 14,
+    backgroundColor: DANGER_SOFT,
+    borderWidth: 1,
+    borderColor: '#FECACA',
   },
   logoutText: {
-    marginLeft: 8,
-    color: '#ef4444',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    color: DANGER,
+    fontWeight: '700',
   },
 });

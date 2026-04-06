@@ -1,27 +1,27 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { StyleSheet, Text, View, Pressable } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { APP_COLORS } from '../../src/constants/theme';
+
+const PRIMARY = '#00B14F';
+const PRIMARY_DARK = '#007A37';
 
 export default function HomeScreen() {
   const [isOnline, setIsOnline] = useState(false);
 
-  // Mock initial region for Map
   const initialRegion = {
-    latitude: 21.028511,  // Hanoi
+    latitude: 21.028511,
     longitude: 105.804817,
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   };
 
-  const toggleStatus = () => {
-    setIsOnline(!isOnline);
-  };
+  const toggleStatus = () => setIsOnline((prev) => !prev);
 
   return (
     <View style={styles.container}>
-      {/* Map Background */}
       <MapView
         provider={PROVIDER_DEFAULT}
         style={StyleSheet.absoluteFillObject}
@@ -29,49 +29,89 @@ export default function HomeScreen() {
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
-        <Marker coordinate={{ latitude: 21.028511, longitude: 105.804817 }} />
+        <Marker coordinate={{ latitude: 21.028511, longitude: 105.804817 }} pinColor={PRIMARY} />
       </MapView>
 
-      {/* Online/Offline Toggle Header */}
-      <SafeAreaView edges={['top']} style={styles.header}>
-        <View style={styles.statusCard}>
-          <View style={styles.statusTextContainer}>
-            <Text style={styles.statusLabel}>
-              {isOnline ? 'Bạn đang Trực tuyến' : 'Bạn đang Ngoại tuyến'}
-            </Text>
-            <Text style={styles.statusSub}>
-              {isOnline ? 'Đang tự động nhận đơn hàng mới' : 'Bật trực tuyến để nhận đơn ngay'}
+      {/* Top overlay – SafeAreaView giữ padding top tự nhiên, thêm paddingTop nhỏ */}
+      <SafeAreaView edges={['top']} style={styles.topArea}>
+        <View style={styles.headerCard}>
+          <View style={styles.headerLeft}>
+            <View style={styles.brandBadge}>
+              <MaterialCommunityIcons name="truck-fast" size={14} color="#fff" />
+            </View>
+            <View>
+              <Text style={styles.brandLabel}>FastDeli Driver</Text>
+              <Text style={styles.stateTitle}>
+                {isOnline ? 'Sẵn sàng nhận đơn' : 'Bạn đang tạm nghỉ'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.statusPill, isOnline ? styles.pillOn : styles.pillOff]}>
+            <View style={[styles.statusDot, isOnline ? styles.dotOn : styles.dotOff]} />
+            <Text style={[styles.statusPillText, isOnline ? styles.pillTextOn : styles.pillTextOff]}>
+              {isOnline ? 'Trực tuyến' : 'Ngoại tuyến'}
             </Text>
           </View>
-          <Pressable
-            style={[styles.toggleButton, isOnline ? styles.toggleOn : styles.toggleOff]}
-            onPress={toggleStatus}
-          >
-            <MaterialCommunityIcons name="power" size={28} color="#fff" />
-          </Pressable>
         </View>
+
+        <Text style={styles.stateSubTitle}>
+          {isOnline
+            ? 'Hệ thống đang tự động ghép đơn hàng gần bạn.'
+            : 'Bật trực tuyến để bắt đầu chuyến giao hàng.'}
+        </Text>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.powerButton,
+            isOnline ? styles.powerBtnOn : styles.powerBtnOff,
+            pressed && { opacity: 0.88 },
+          ]}
+          onPress={toggleStatus}
+        >
+          <View style={styles.powerIconWrap}>
+            <MaterialCommunityIcons
+              name={isOnline ? 'power-plug-off' : 'power'}
+              size={20}
+              color={isOnline ? PRIMARY_DARK : '#fff'}
+            />
+          </View>
+          <Text style={[styles.powerButtonText, isOnline && styles.powerButtonTextOn]}>
+            {isOnline ? 'Tắt trực tuyến' : 'Bật trực tuyến'}
+          </Text>
+        </Pressable>
       </SafeAreaView>
 
-      {/* Driver Dashboard Bottom Card */}
+      {/* Bottom card */}
       <View style={styles.bottomCard}>
+        <View style={styles.bottomCardHandle} />
+        <Text style={styles.sectionTitle}>Tổng quan hôm nay</Text>
+
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
+          <View style={[styles.statBox, { marginRight: 8 }]}>
+            <MaterialCommunityIcons name="cash" size={22} color={PRIMARY} style={styles.statIcon} />
             <Text style={styles.statValue}>0đ</Text>
-            <Text style={styles.statLabel}>Thu nhập hôm nay</Text>
+            <Text style={styles.statLabel}>Thu nhập</Text>
           </View>
-          <View style={styles.divider} />
           <View style={styles.statBox}>
+            <MaterialCommunityIcons name="check-circle-outline" size={22} color={PRIMARY} style={styles.statIcon} />
             <Text style={styles.statValue}>100%</Text>
             <Text style={styles.statLabel}>Tỉ lệ nhận đơn</Text>
           </View>
         </View>
 
-        {!isOnline && (
-          <View style={styles.offlineOverlay}>
-            <MaterialCommunityIcons name="sleep" size={40} color="#94a3b8" />
-            <Text style={styles.offlineText}>Hãy bật Trực tuyến để bắt đầu làm việc</Text>
-          </View>
-        )}
+        <View style={[styles.noteCard, isOnline && styles.noteCardOn]}>
+          <MaterialCommunityIcons
+            name={isOnline ? 'check-decagram-outline' : 'sleep'}
+            size={20}
+            color={isOnline ? PRIMARY : '#90A4AE'}
+          />
+          <Text style={styles.noteText}>
+            {isOnline
+              ? 'Bạn đang ở trạng thái nhận đơn. Hãy kiểm tra thông báo liên tục.'
+              : 'Chế độ nghỉ đang bật. Bạn sẽ không nhận đơn mới cho đến khi trực tuyến.'}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -80,105 +120,195 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: '#F0F4F8',
   },
-  header: {
+
+  topArea: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 16,   // thêm 16px xuống để tránh lỗi hiển thị sát mép
   },
-  statusCard: {
-    backgroundColor: '#ffffff',
+  headerCard: {
+    backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
+    elevation: 5,
   },
-  statusTextContainer: {
-    flex: 1,
-    paddingRight: 10,
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
-  statusLabel: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#0f172a',
-  },
-  statusSub: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 4,
-  },
-  toggleButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  brandBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: PRIMARY,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
   },
-  toggleOn: {
-    backgroundColor: '#00B14F',
+  brandLabel: {
+    fontSize: 11,
+    color: '#90A4AE',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
-  toggleOff: {
-    backgroundColor: '#ef4444',
+  stateTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginTop: 1,
   },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    gap: 5,
+  },
+  pillOn: { backgroundColor: '#E8F8EF' },
+  pillOff: { backgroundColor: '#F1F5F9' },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  dotOn: { backgroundColor: PRIMARY },
+  dotOff: { backgroundColor: '#CBD5E0' },
+  statusPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  pillTextOn: { color: PRIMARY_DARK },
+  pillTextOff: { color: '#90A4AE' },
+
+  stateSubTitle: {
+    fontSize: 13,
+    color: '#78909C',
+    marginTop: 10,
+    marginBottom: 10,
+    paddingHorizontal: 4,
+    lineHeight: 18,
+  },
+
+  powerButton: {
+    height: 52,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  powerBtnOff: {
+    backgroundColor: PRIMARY,
+    shadowColor: PRIMARY,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 6,
+  },
+  powerBtnOn: {
+    backgroundColor: '#E8F8EF',
+    borderWidth: 1.5,
+    borderColor: '#A7F3C4',
+  },
+  powerIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  powerButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  powerButtonTextOn: {
+    color: PRIMARY_DARK,
+  },
+
   bottomCard: {
     position: 'absolute',
     bottom: 24,
     left: 16,
     right: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 18,
     shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: -4 },
-    elevation: 5,
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 8,
+  },
+  bottomCardHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E2E8F0',
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    marginBottom: 14,
   },
   statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: 14,
   },
   statBox: {
     flex: 1,
+    backgroundColor: '#F7FBF8',
+    borderRadius: 14,
+    paddingVertical: 14,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DCEEE4',
   },
-  divider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#e2e8f0',
-  },
+  statIcon: { marginBottom: 4 },
   statValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#00B14F',
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
   statLabel: {
-    fontSize: 13,
-    color: '#64748b',
-    marginTop: 4,
+    fontSize: 12,
+    color: '#90A4AE',
+    marginTop: 2,
   },
-  offlineOverlay: {
-    marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+  noteCard: {
+    flexDirection: 'row',
     alignItems: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 10,
   },
-  offlineText: {
-    marginTop: 8,
-    color: '#64748b',
-    fontWeight: '500',
+  noteCardOn: {
+    backgroundColor: '#F0FBF4',
+    borderColor: '#C6EDD5',
+  },
+  noteText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#78909C',
+    lineHeight: 18,
   },
 });

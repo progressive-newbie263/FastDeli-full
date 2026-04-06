@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FlatList, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
+const PRIMARY = '#00B14F';
+
 const mockOrders = [
   {
     id: 'ORD-12001',
@@ -26,27 +28,47 @@ export default function OrdersScreen() {
   const renderItem = ({ item }: { item: typeof mockOrders[0] }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.orderId}>{item.id}</Text>
+        <View style={styles.orderIdRow}>
+          <View style={styles.orderIconBox}>
+            <MaterialCommunityIcons name="clipboard-list-outline" size={16} color={PRIMARY} />
+          </View>
+          <Text style={styles.orderId}>{item.id}</Text>
+        </View>
         <View style={styles.badge}>
+          <MaterialCommunityIcons name="check-circle" size={12} color={PRIMARY} />
           <Text style={styles.badgeText}>Hoàn thành</Text>
         </View>
       </View>
 
-      <View style={styles.locationContainer}>
-        <View style={styles.locationRow}>
-          <MaterialCommunityIcons name="store-marker-outline" size={20} color="#00B14F" />
-          <Text style={styles.locationText} numberOfLines={1}>{item.restaurant} - {item.address}</Text>
+      <View style={styles.routeContainer}>
+        <View style={styles.routeRow}>
+          <View style={[styles.routeDot, { backgroundColor: PRIMARY }]} />
+          <View style={styles.routeTextWrap}>
+            <Text style={styles.routeRestaurant}>{item.restaurant}</Text>
+            <Text style={styles.routeAddress} numberOfLines={1}>{item.address}</Text>
+          </View>
         </View>
-        <View style={styles.dashLine} />
-        <View style={styles.locationRow}>
-          <MaterialCommunityIcons name="map-marker" size={20} color="#f97316" />
-          <Text style={styles.locationText} numberOfLines={1}>{item.customerAddress}</Text>
+        <View style={styles.routeConnector}>
+          <View style={styles.routeLine} />
+        </View>
+        <View style={styles.routeRow}>
+          <View style={[styles.routeDot, { backgroundColor: '#F97316' }]} />
+          <View style={styles.routeTextWrap}>
+            <Text style={styles.routeCustomerLabel}>Khách hàng</Text>
+            <Text style={styles.routeAddress} numberOfLines={1}>{item.customerAddress}</Text>
+          </View>
         </View>
       </View>
 
       <View style={styles.cardFooter}>
-        <Text style={styles.timeLabel}>{item.timestamp}</Text>
-        <Text style={styles.priceLabel}>Thu nhập: <Text style={styles.priceValue}>{item.price}</Text></Text>
+        <View style={styles.timeRow}>
+          <MaterialCommunityIcons name="clock-outline" size={14} color="#90A4AE" />
+          <Text style={styles.timeLabel}>{item.timestamp}</Text>
+        </View>
+        <View style={styles.earningRow}>
+          <Text style={styles.earningLabel}>Thu nhập</Text>
+          <Text style={styles.earningValue}>{item.price}</Text>
+        </View>
       </View>
     </View>
   );
@@ -54,14 +76,19 @@ export default function OrdersScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Lịch sử Đơn hàng</Text>
+        <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
+        <View style={styles.countBadge}>
+          <Text style={styles.countText}>{mockOrders.length} đơn</Text>
+        </View>
       </View>
+
       <FlatList
         data={mockOrders}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
       />
     </SafeAreaView>
   );
@@ -70,91 +97,168 @@ export default function OrdersScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#F7F9FC',
   },
+
   header: {
-    padding: 16,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f5f9',
+    borderBottomColor: '#EEF2F7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
+  countBadge: {
+    backgroundColor: '#E8F8EF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: PRIMARY,
+  },
+
   listContainer: {
     padding: 16,
+    paddingBottom: 24,
   },
+
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: '#EEF2F7',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
+
   cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  orderIdRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  orderIconBox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#E8F8EF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   orderId: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#334155',
+    color: '#1A1A1A',
   },
   badge: {
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#E8F8EF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
   },
   badgeText: {
-    color: '#166534',
+    color: '#007A37',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  locationContainer: {
-    marginBottom: 16,
+
+  routeContainer: {
+    marginBottom: 14,
+    paddingHorizontal: 2,
   },
-  locationRow: {
+  routeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    gap: 12,
   },
-  locationText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#475569',
-    flex: 1,
+  routeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginTop: 5,
+    flexShrink: 0,
   },
-  dashLine: {
-    height: 16,
+  routeTextWrap: { flex: 1 },
+  routeRestaurant: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  routeCustomerLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  routeAddress: {
+    fontSize: 12,
+    color: '#78909C',
+    marginTop: 1,
+    lineHeight: 16,
+  },
+  routeConnector: {
+    paddingLeft: 4,
+    paddingVertical: 4,
+  },
+  routeLine: {
     width: 2,
-    backgroundColor: '#cbd5e1',
-    marginLeft: 9,
-    marginVertical: 4,
+    height: 18,
+    backgroundColor: '#E2E8F0',
+    borderRadius: 1,
+    marginLeft: 4,
   },
+
   cardFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
+    borderTopColor: '#F1F5F9',
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   timeLabel: {
-    color: '#64748b',
     fontSize: 13,
+    color: '#90A4AE',
   },
-  priceLabel: {
-    color: '#64748b',
-    fontSize: 14,
+  earningRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  priceValue: {
+  earningLabel: {
+    fontSize: 13,
+    color: '#90A4AE',
+  },
+  earningValue: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#0f172a',
+    fontWeight: '800',
+    color: PRIMARY,
   },
 });
