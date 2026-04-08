@@ -11,6 +11,9 @@ const buildRegisterHandler = (role) => async (req, res) => {
     date_of_birth
   } = req.body;
 
+  const normalizedGender = gender ? String(gender).trim() : null;
+  const normalizedDateOfBirth = date_of_birth ? String(date_of_birth).trim() : null;
+
   try {
     const existingUserByPhone = await User.findByPhone(phone_number);
     if (existingUserByPhone) {
@@ -33,8 +36,8 @@ const buildRegisterHandler = (role) => async (req, res) => {
       email,
       password,
       full_name,
-      gender,
-      date_of_birth,
+      gender: normalizedGender,
+      date_of_birth: normalizedDateOfBirth,
       role
     });
 

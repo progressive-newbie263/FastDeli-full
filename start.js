@@ -4,7 +4,7 @@
  * Usage:
  *   node start.js client   # starts web client + client-side services
  *   node start.js admin    # starts admin UI + admin-side services
- *   node start.js driver   # starts expo driver app + auth service
+ *   node start.js driver   # starts expo driver app + auth service + delivery service
  *   node start.js          # defaults to "client"
  *   chuẩn bị build driver
  * Edit the "config" section below if your folders differ.
@@ -21,6 +21,13 @@ if (['-h', '--help', 'help'].includes(mode)) {
 }
 
 const config = {
+  all: [
+    { name: 'web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./web') },
+    { name: 'admin-ui', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./admin-ui') },
+    { name: 'food-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
+    { name: 'auth-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
+    { name: 'delivery-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
+  ],
   client: [
     { name: 'web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./web') },
     { name: 'food-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
@@ -33,6 +40,7 @@ const config = {
   driver: [
     { name: 'driver-app', cmd: 'npm', args: ['run', 'start'], cwd: path.resolve('./driver-app') },
     { name: 'auth-service-driver', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
+    { name: 'delivery-service-driver', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
   ],
 };
 

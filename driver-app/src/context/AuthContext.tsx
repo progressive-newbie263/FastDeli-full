@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ReactNode, createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { AUTH_API_URL } from '../constants/api';
+import { AUTH_API_CANDIDATES, AUTH_API_URL } from '../constants/api';
 import { AuthApiResponse, DriverUser, RegisterInput } from '../types/auth';
 
 type AuthContextValue = {
@@ -14,6 +14,19 @@ type AuthContextValue = {
 
 const STORAGE_TOKEN_KEY = 'driver_token';
 const STORAGE_USER_KEY = 'driver_user';
+
+const parseTimeoutMs = (raw: string | undefined, fallback = 4500) => {
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+
+  return Math.min(Math.max(parsed, 1500), 20000);
+};
+
+const REQUEST_TIMEOUT_MS = parseTimeoutMs(process.env.EXPO_PUBLIC_API_TIMEOUT_MS, 4500);
+const COLD_START_RETRY_ROUNDS = 2;
+const COLD_START_RETRY_DELAY_MS = 600;
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -42,22 +55,68 @@ const persistSession = async (token: string, user: DriverUser) => {
   ]);
 };
 
-const postAuth = async (path: string, payload: object) => {
-  try {
-    const response = await fetch(`${AUTH_API_URL}${path}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    const data = (await response.json()) as AuthApiResponse;
-    return { response, data };
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal as any,
+    });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'unknown error';
-    throw new Error(`Khong ket noi duoc API (${AUTH_API_URL}). Chi tiet: ${message}`);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Request timeout (${timeoutMs}ms)`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const postAuth = async (path: string, payload: object) => {
+  let connectivityError: Error | null = null;
+
+  for (let round = 0; round < COLD_START_RETRY_ROUNDS; round++) {
+    for (const baseUrl of AUTH_API_CANDIDATES) {
+      try {
+        const response = await fetchWithTimeout(`${baseUrl}${path}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'bypass-tunnel-reminder': 'true',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        try {
+          const data = (await response.json()) as AuthApiResponse;
+          return { response, data };
+        } catch {
+          // Tunnel URL sai dich vu thuong tra HTML/plain text, thu base URL tiep theo.
+          connectivityError = new Error(`Phan hoi khong hop le tu ${baseUrl}`);
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'unknown error';
+        connectivityError = new Error(`${baseUrl}: ${message}`);
+      }
+    }
+
+    if (round < COLD_START_RETRY_ROUNDS - 1) {
+      // Tunnel moi khoi dong doi khi can mot nhip de route on dinh.
+      await sleep(COLD_START_RETRY_DELAY_MS * (round + 1));
+    }
+  }
+
+  if (connectivityError) {
+    throw new Error(
+      `Khong ket noi duoc API auth. URL uu tien: ${AUTH_API_URL}. Da thu: ${AUTH_API_CANDIDATES.join(', ')}. Chi tiet: ${connectivityError.message}`
+    );
+  }
+
+  throw new Error('Khong ket noi duoc API auth.');
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {

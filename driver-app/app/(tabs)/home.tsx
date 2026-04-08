@@ -1,38 +1,138 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { APP_COLORS } from '../../src/constants/theme';
+import { useAuth } from '../../src/context/AuthContext';
+import { getDriverProfile, getWalletSummary, updateDriverLocation, updateDriverStatus } from '../../src/services/driverApi';
+import { getCurrentLocation } from '../../src/services/location';
 
 const PRIMARY = '#00B14F';
 const PRIMARY_DARK = '#007A37';
 
-export default function HomeScreen() {
-  const [isOnline, setIsOnline] = useState(false);
+const FALLBACK_REGION: Region = {
+  latitude: 21.028511,
+  longitude: 105.804817,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
+};
 
-  const initialRegion = {
-    latitude: 21.028511,
-    longitude: 105.804817,
-    latitudeDelta: 0.05,
-    longitudeDelta: 0.05,
+const formatCurrency = (amount: number) => `${Math.round(amount).toLocaleString('vi-VN')}đ`;
+
+export default function HomeScreen() {
+  const { token } = useAuth();
+  const [isOnline, setIsOnline] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [todayEarnings, setTodayEarnings] = useState(0);
+  const [acceptanceRate, setAcceptanceRate] = useState<number | null>(null);
+  const [region, setRegion] = useState<Region>(FALLBACK_REGION);
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+
+  const loadDashboard = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const [profile, wallet] = await Promise.all([getDriverProfile(token), getWalletSummary(token)]);
+      setIsOnline(profile.status === 'online' || profile.status === 'busy');
+      setTodayEarnings(wallet.today_earnings || 0);
+      setAcceptanceRate(wallet.acceptance_rate_week);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu tài xế.');
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const syncLocation = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    const current = await getCurrentLocation();
+    const nextRegion: Region = {
+      latitude: current.latitude,
+      longitude: current.longitude,
+      latitudeDelta: 0.02,
+      longitudeDelta: 0.02,
+    };
+
+    setLocation({ latitude: current.latitude, longitude: current.longitude });
+    setRegion(nextRegion);
+    await updateDriverLocation(token, current.latitude, current.longitude, current.accuracy);
+  }, [token]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
+    syncLocation().catch(() => {
+      // Giữ fallback region nếu không lấy được vị trí.
+    });
+  }, [syncLocation]);
+
+  useEffect(() => {
+    if (!isOnline) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      syncLocation().catch(() => {
+        // Bỏ qua lỗi tạm thời khi đồng bộ vị trí.
+      });
+    }, 15000);
+
+    return () => clearInterval(timer);
+  }, [isOnline, syncLocation]);
+
+  const toggleStatus = async () => {
+    if (!token || updatingStatus) {
+      return;
+    }
+
+    const nextStatus = isOnline ? 'offline' : 'online';
+    setUpdatingStatus(true);
+    setError(null);
+
+    try {
+      const profile = await updateDriverStatus(token, nextStatus);
+      setIsOnline(profile.status === 'online' || profile.status === 'busy');
+      if (nextStatus === 'online') {
+        await syncLocation();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Không thể cập nhật trạng thái tài xế.');
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
-  const toggleStatus = () => setIsOnline((prev) => !prev);
+  const acceptanceText = useMemo(() => {
+    if (acceptanceRate === null) {
+      return '--';
+    }
+    return `${acceptanceRate.toFixed(0)}%`;
+  }, [acceptanceRate]);
 
   return (
     <View style={styles.container}>
       <MapView
         provider={PROVIDER_DEFAULT}
         style={StyleSheet.absoluteFillObject}
-        initialRegion={initialRegion}
+        initialRegion={region}
+        region={region}
         showsUserLocation={true}
         showsMyLocationButton={false}
       >
-        <Marker coordinate={{ latitude: 21.028511, longitude: 105.804817 }} pinColor={PRIMARY} />
+        {location && <Marker coordinate={location} pinColor={PRIMARY} />}
       </MapView>
 
-      {/* Top overlay – SafeAreaView giữ padding top tự nhiên, thêm paddingTop nhỏ */}
       <SafeAreaView edges={['top']} style={styles.topArea}>
         <View style={styles.headerCard}>
           <View style={styles.headerLeft}>
@@ -65,24 +165,32 @@ export default function HomeScreen() {
           style={({ pressed }) => [
             styles.powerButton,
             isOnline ? styles.powerBtnOn : styles.powerBtnOff,
-            pressed && { opacity: 0.88 },
+            (pressed || updatingStatus) && { opacity: 0.88 },
           ]}
           onPress={toggleStatus}
+          disabled={updatingStatus || loading}
         >
-          <View style={styles.powerIconWrap}>
-            <MaterialCommunityIcons
-              name={isOnline ? 'power-plug-off' : 'power'}
-              size={20}
-              color={isOnline ? PRIMARY_DARK : '#fff'}
-            />
-          </View>
-          <Text style={[styles.powerButtonText, isOnline && styles.powerButtonTextOn]}>
-            {isOnline ? 'Tắt trực tuyến' : 'Bật trực tuyến'}
-          </Text>
+          {updatingStatus ? (
+            <ActivityIndicator color={isOnline ? PRIMARY_DARK : '#fff'} />
+          ) : (
+            <>
+              <View style={styles.powerIconWrap}>
+                <MaterialCommunityIcons
+                  name={isOnline ? 'power-plug-off' : 'power'}
+                  size={20}
+                  color={isOnline ? PRIMARY_DARK : '#fff'}
+                />
+              </View>
+              <Text style={[styles.powerButtonText, isOnline && styles.powerButtonTextOn]}>
+                {isOnline ? 'Tắt trực tuyến' : 'Bật trực tuyến'}
+              </Text>
+            </>
+          )}
         </Pressable>
+
+        {!!error && <Text style={styles.errorText}>{error}</Text>}
       </SafeAreaView>
 
-      {/* Bottom card */}
       <View style={styles.bottomCard}>
         <View style={styles.bottomCardHandle} />
         <Text style={styles.sectionTitle}>Tổng quan hôm nay</Text>
@@ -90,12 +198,12 @@ export default function HomeScreen() {
         <View style={styles.statsRow}>
           <View style={[styles.statBox, { marginRight: 8 }]}>
             <MaterialCommunityIcons name="cash" size={22} color={PRIMARY} style={styles.statIcon} />
-            <Text style={styles.statValue}>0đ</Text>
+            <Text style={styles.statValue}>{loading ? '...' : formatCurrency(todayEarnings)}</Text>
             <Text style={styles.statLabel}>Thu nhập</Text>
           </View>
           <View style={styles.statBox}>
             <MaterialCommunityIcons name="check-circle-outline" size={22} color={PRIMARY} style={styles.statIcon} />
-            <Text style={styles.statValue}>100%</Text>
+            <Text style={styles.statValue}>{loading ? '...' : acceptanceText}</Text>
             <Text style={styles.statLabel}>Tỉ lệ nhận đơn</Text>
           </View>
         </View>
@@ -125,7 +233,7 @@ const styles = StyleSheet.create({
 
   topArea: {
     paddingHorizontal: 16,
-    paddingTop: 16,   // thêm 16px xuống để tránh lỗi hiển thị sát mép
+    paddingTop: 16,
   },
   headerCard: {
     backgroundColor: '#fff',
@@ -310,5 +418,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#78909C',
     lineHeight: 18,
+  },
+  errorText: {
+    marginTop: 8,
+    color: '#D32F2F',
+    fontSize: 12,
+    paddingHorizontal: 4,
   },
 });

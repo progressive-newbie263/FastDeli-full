@@ -1,39 +1,109 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useAuth } from '../../src/context/AuthContext';
+import { getWalletSummary } from '../../src/services/driverApi';
+import { WalletSummary } from '../../src/types/driver';
 
 const PRIMARY = '#00B14F';
 
-const BARS = [
-  { day: 'T2', pct: 0.3 },
-  { day: 'T3', pct: 0.5 },
-  { day: 'T4', pct: 0.8 },
-  { day: 'T5', pct: 0.4 },
-  { day: 'T6', pct: 0.9, active: true },
-  { day: 'T7', pct: 0.1 },
-  { day: 'CN', pct: 0 },
-];
+const EMPTY_SUMMARY: WalletSummary = {
+  available_balance: 0,
+  today_earnings: 0,
+  week_earnings: 0,
+  month_earnings: 0,
+  completed_orders_week: 0,
+  accepted_count_week: 0,
+  rejected_count_week: 0,
+  acceptance_rate_week: null,
+  daily_breakdown: [],
+};
+
+const formatCurrency = (value: number) => `${Math.round(value || 0).toLocaleString('vi-VN')}đ`;
+const weekDayLabel = (dateString: string) => {
+  const date = new Date(dateString);
+  const day = date.getDay();
+  const labels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+  return labels[day] || 'N/A';
+};
 
 export default function WalletScreen() {
+  const { token } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<WalletSummary>(EMPTY_SUMMARY);
+  const [error, setError] = useState<string | null>(null);
+
   const MAX_BAR_HEIGHT = 120;
+
+  useEffect(() => {
+    const fetchWallet = async () => {
+      if (!token) {
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const walletData = await getWalletSummary(token);
+        setSummary(walletData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Không thể tải dữ liệu ví tài xế.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWallet();
+  }, [token]);
+
+  const bars = useMemo(() => {
+    const points = summary.daily_breakdown || [];
+    const max = points.reduce((acc, point) => Math.max(acc, point.amount), 0);
+
+    return points.map((point) => {
+      const pct = max > 0 ? point.amount / max : 0;
+      return {
+        day: weekDayLabel(point.day),
+        pct,
+        amount: point.amount,
+        active: point.amount === max && max > 0,
+      };
+    });
+  }, [summary.daily_breakdown]);
+
+  const bestDayText = useMemo(() => {
+    if (!bars.length) {
+      return 'Chưa có dữ liệu thu nhập tuần này';
+    }
+
+    const best = bars.reduce((acc, bar) => (bar.amount > acc.amount ? bar : acc), bars[0]);
+    if (best.amount <= 0) {
+      return 'Chưa có dữ liệu thu nhập tuần này';
+    }
+
+    return `${best.day} là ngày thu nhập cao nhất tuần này`;
+  }, [bars]);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        {/* <Pressable style={styles.iconBtn} onPress={() => router.back()}>
-          <MaterialCommunityIcons name="chevron-left" size={22} color="#546E7A" />
-        </Pressable> */}
-
         <Text style={styles.headerTitle}>Ví tiền</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {!!error && <Text style={styles.errorText}>{error}</Text>}
+        {loading && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={PRIMARY} />
+            <Text style={styles.loadingText}>Đang tải dữ liệu ví...</Text>
+          </View>
+        )}
 
-        {/* Balance card */}
         <View style={styles.balanceCard}>
           <View style={styles.balanceTopRow}>
             <View>
               <Text style={styles.balanceLabel}>Số dư khả dụng</Text>
-              <Text style={styles.balanceValue}>150,000đ</Text>
+              <Text style={styles.balanceValue}>{formatCurrency(summary.available_balance)}</Text>
             </View>
             <View style={styles.walletIconWrap}>
               <MaterialCommunityIcons name="wallet-outline" size={28} color="rgba(255,255,255,0.85)" />
@@ -45,29 +115,28 @@ export default function WalletScreen() {
           <View style={styles.balanceActions}>
             <View style={styles.actionBtn}>
               <View style={styles.actionIconBg}>
-                <MaterialCommunityIcons name="bank-transfer-out" size={22} color={PRIMARY} />
+                <MaterialCommunityIcons name="cash-fast" size={22} color={PRIMARY} />
               </View>
-              <Text style={styles.actionText}>Rút tiền</Text>
+              <Text style={styles.actionText}>Hôm nay: {formatCurrency(summary.today_earnings)}</Text>
             </View>
             <View style={styles.actionDivider} />
             <View style={styles.actionBtn}>
               <View style={styles.actionIconBg}>
-                <MaterialCommunityIcons name="history" size={22} color={PRIMARY} />
+                <MaterialCommunityIcons name="calendar-month" size={22} color={PRIMARY} />
               </View>
-              <Text style={styles.actionText}>Lịch sử</Text>
+              <Text style={styles.actionText}>Tháng: {formatCurrency(summary.month_earnings)}</Text>
             </View>
           </View>
         </View>
 
-        {/* Weekly earnings */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Thu nhập tuần này</Text>
-          <Text style={styles.sectionSubTitle}>12 - 18 Tháng 4</Text>
+          <Text style={styles.sectionSubTitle}>{formatCurrency(summary.week_earnings)}</Text>
         </View>
 
         <View style={styles.chartCard}>
           <View style={styles.barsArea}>
-            {BARS.map((bar) => (
+            {bars.map((bar) => (
               <View key={bar.day} style={styles.barCol}>
                 <View style={styles.barTrack}>
                   <View
@@ -89,22 +158,29 @@ export default function WalletScreen() {
 
           <View style={styles.peakRow}>
             <View style={styles.peakDot} />
-            <Text style={styles.peakText}>Thứ 6 là ngày cao nhất tuần này</Text>
+            <Text style={styles.peakText}>{bestDayText}</Text>
           </View>
         </View>
 
-        {/* Quick stats */}
         <View style={styles.quickStatsRow}>
           <View style={[styles.quickStat, { marginRight: 10 }]}>
             <MaterialCommunityIcons name="trending-up" size={20} color={PRIMARY} />
-            <Text style={styles.quickStatValue}>245,000đ</Text>
+            <Text style={styles.quickStatValue}>{formatCurrency(summary.week_earnings)}</Text>
             <Text style={styles.quickStatLabel}>Tổng tuần</Text>
           </View>
           <View style={styles.quickStat}>
             <MaterialCommunityIcons name="truck-fast-outline" size={20} color={PRIMARY} />
-            <Text style={styles.quickStatValue}>12 đơn</Text>
+            <Text style={styles.quickStatValue}>{summary.completed_orders_week} đơn</Text>
             <Text style={styles.quickStatLabel}>Đã giao</Text>
           </View>
+        </View>
+
+        <View style={[styles.quickStat, { marginTop: 12 }]}> 
+          <MaterialCommunityIcons name="percent-box-outline" size={20} color={PRIMARY} />
+          <Text style={styles.quickStatValue}>
+            {summary.acceptance_rate_week === null ? '--' : `${summary.acceptance_rate_week.toFixed(0)}%`}
+          </Text>
+          <Text style={styles.quickStatLabel}>Tỉ lệ nhận đơn tuần</Text>
         </View>
 
       </ScrollView>
@@ -201,8 +277,10 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
+    paddingHorizontal: 4,
   },
 
   sectionHeader: {
@@ -307,5 +385,20 @@ const styles = StyleSheet.create({
   quickStatLabel: {
     fontSize: 12,
     color: '#90A4AE',
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  loadingText: {
+    color: '#64748B',
+    fontSize: 12,
+  },
+  errorText: {
+    marginBottom: 10,
+    color: '#B91C1C',
+    fontSize: 12,
   },
 });

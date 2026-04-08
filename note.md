@@ -410,9 +410,32 @@ rồi click chuột phải để chỉnh nó từ public sang private.
 - Tạo dữ liệu ảo để hiển thị giao diện cho driver. Có thể login/logout thoải mái,
 logout bằng cách tab sang profile , sẽ có nút đăng xuất ở đó.
 
-# note (nhiệm vụ sắp tới):
-- Hoàn thiện giao diện mobile app
-- Chèn được dữ liệu thật vào
-- Làm bản đồ "Clean" hơn
-- cần sửa nhiều về giao diện, nhìn rất xấu + lạc hậu. Ý tưởng học hỏi sẽ là video này.
-https://www.youtube.com/watch?v=pDKuFmpqzmo. 
+ 
+
+========================================================================================
+========================================================================================
+=============================       BIG UPDATE      ====================================
+========================================================================================
+========================================================================================
+
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 08-04-2026-----------------------------
+
+- Tạo file start-tunnel.js cho phép khởi động sẽ tạo 2 localtunnel public để truy cập được.
+Đã đảm bảo tên cổng hoàn toàn độc nhất.
+- Viết các hàm xử lí quy trình giao hàng/nhận đơn của tài xế
+- Cải thiện được giao diện của driver-app
+- Tạo thêm bảng trong database hỗ trợ tính năng của tài xế (vị trí địa lí, thông tin đăng nhập,
+lịch sử giao hàng, thu nhập, ...)
+- viết thêm delivery-service. Dịch vụ mới này sẽ hỗ trợ các thứ liên quan đến quy trình giao
+hàng của driver.
+
+# note: 
+- cần xử lí : nguyên do tại sao tunnel hay bị lag?
+-  hiện tại, nó kiểu này: ở section đăng nhập, phải tab qua lại đăng kí/đăng nhập mới được
+nếu ko, sẽ bị lỗi tunnel api.
+- ở xác nhận/hiển thị đơn hàng, việc bật/tắt trạng thái nhận đơn và hiển thị đơn cũng rất lag
+nên có hướng xử lí ngay ở lần push kế tiếp
+

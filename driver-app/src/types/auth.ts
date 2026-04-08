@@ -1,5 +1,6 @@
 export type DriverUser = {
-  user_id: string;
+  user_id: number;
+  phone_number?: string;
   email: string;
   full_name: string;
   role: string;
@@ -18,6 +19,6 @@ export type RegisterInput = {
   email: string;
   password: string;
   full_name: string;
-  gender: 'male' | 'female' | 'other';
-  date_of_birth: string;
+  gender?: 'male' | 'female' | 'other';
+  date_of_birth?: string;
 };

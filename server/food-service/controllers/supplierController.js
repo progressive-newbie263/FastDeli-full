@@ -636,45 +636,98 @@ const getOrderById = async (req, res) => {
   Cập nhật trạng thái đơn hàng
 */
 const updateOrderStatus = async (req, res) => {
+  const client = await foodPool.connect();
   try {
     const { orderId } = req.params;
-    const status = req.body?.status || req.body?.order_status;
+    const status = String(req.body?.status || req.body?.order_status || '').trim().toLowerCase();
     const userId = req.user.userId;
 
-    const allowedStatuses = ['pending', 'processing', 'delivering', 'delivered', 'cancelled'];
+    const allowedStatuses = ['processing', 'delivering', 'cancelled'];
     
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Trạng thái không hợp lệ.'
+        message: 'Nhà hàng chỉ có thể cập nhật sang processing, delivering hoặc cancelled.'
       });
     }
 
-    const { foodPool } = require('../config/db');
-    const checkResult = await foodPool.query(
-      `SELECT o.id, o.restaurant_id
+    await client.query('BEGIN');
+    const checkResult = await client.query(
+      `SELECT o.id, o.restaurant_id, o.order_status
        FROM orders o
        JOIN restaurants r ON r.id = o.restaurant_id
-       WHERE o.id = $1 AND r.owner_id = $2`,
+       WHERE o.id = $1 AND r.owner_id = $2
+       FOR UPDATE`,
       [orderId, userId]
     );
 
     if (checkResult.rows.length === 0) {
+      await client.query('ROLLBACK');
       return res.status(404).json({
         success: false,
         message: 'Không tìm thấy đơn hàng.'
       });
     }
 
-    const restaurantId = checkResult.rows[0].restaurant_id;
+    const order = checkResult.rows[0];
 
-    const result = await foodPool.query(
+    if (status === 'delivering') {
+      const assignmentCheck = await client.query(
+        `SELECT id
+         FROM delivery_assignments
+         WHERE order_id = $1
+           AND status IN ('accepted', 'picking_up', 'delivering')
+         LIMIT 1`,
+        [orderId]
+      );
+
+      if (assignmentCheck.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          success: false,
+          message: 'Chưa có tài xế nhận đơn, không thể chuyển sang delivering.'
+        });
+      }
+    }
+
+    const transitionRules = {
+      pending: ['processing', 'cancelled'],
+      processing: ['delivering', 'cancelled'],
+      delivering: ['cancelled'],
+      delivered: [],
+      cancelled: [],
+    };
+
+    const currentStatus = String(order.order_status || '').toLowerCase();
+    const allowedNext = transitionRules[currentStatus] || [];
+
+    if (!allowedNext.includes(status)) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        success: false,
+        message: `Không thể chuyển trạng thái từ ${currentStatus} sang ${status}.`
+      });
+    }
+
+    const result = await client.query(
       `UPDATE orders 
        SET order_status = $1, updated_at = NOW()
        WHERE id = $2 AND restaurant_id = $3
        RETURNING *`,
-      [status, orderId, restaurantId]
+      [status, orderId, order.restaurant_id]
     );
+
+    if (status === 'delivering') {
+      await client.query(
+        `UPDATE delivery_assignments
+         SET status = 'delivering'
+         WHERE order_id = $1
+           AND status IN ('accepted', 'picking_up')`,
+        [orderId]
+      );
+    }
+
+    await client.query('COMMIT');
 
     res.json({
       success: true,
@@ -682,11 +735,14 @@ const updateOrderStatus = async (req, res) => {
       data: result.rows[0]
     });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Update order status error:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi khi cập nhật trạng thái đơn hàng.'
     });
+  } finally {
+    client.release();
   }
 };
 

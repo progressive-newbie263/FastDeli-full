@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import {
@@ -24,8 +24,6 @@ const initialRegisterState: RegisterInput = {
   email: '',
   password: '',
   full_name: '',
-  gender: 'male',
-  date_of_birth: '',
 };
 
 type Screen = 'welcome' | 'login' | 'register';
@@ -131,8 +129,17 @@ export default function AuthScreen() {
           <View style={styles.circleBottomLeft} />
 
           <MaterialCommunityIcons name="car-connected" size={52} color="#fff" style={{ marginBottom: 12 }} />
-          <Text style={styles.welcomeAppName}>Fast Deli</Text>
-          <Text style={styles.welcomeTagline}>Chào mừng bạn quay lại 👋</Text>
+          <Text style={styles.welcomeAppName}>FastDeli</Text>
+
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeTagline}>
+              Chào mừng bạn quay lại
+            </Text>
+
+            <View style={styles.handIconWrapper}>
+              <FontAwesome size={30} name="hand-peace-o" color="yellow" />
+            </View>
+          </View>
         </View>
 
         {/* Bottom white card */}
@@ -195,7 +202,7 @@ export default function AuthScreen() {
           <>
             {renderInput('Email', email, setEmail, {
               keyboardType: 'email-address',
-              placeholder: 'Email của bạn',
+              placeholder: 'abcxyz@gmail.com',
             })}
             {renderInput('Mật khẩu', password, setPassword, {
               isPassword: true,
@@ -219,15 +226,15 @@ export default function AuthScreen() {
           <>
             {renderInput('Họ và tên', registerData.full_name,
               (v) => setRegisterData((p) => ({ ...p, full_name: v })),
-              { autoCapitalize: 'words', placeholder: 'Tên đầy đủ' }
+              { autoCapitalize: 'words', placeholder: 'VD: Nguyễn Văn A, ...' }
             )}
             {renderInput('Email', registerData.email,
               (v) => setRegisterData((p) => ({ ...p, email: v })),
-              { keyboardType: 'email-address', placeholder: 'Email của bạn' }
+              { keyboardType: 'email-address', placeholder: 'abcxyz@gmail.com' }
             )}
             {renderInput('Số điện thoại', registerData.phone_number,
               (v) => setRegisterData((p) => ({ ...p, phone_number: v })),
-              { keyboardType: 'phone-pad', placeholder: '0xx xxx xxxx' }
+              { keyboardType: 'phone-pad', placeholder: 'VD: 0123456789, ...' }
             )}
             {renderInput('Mật khẩu', registerData.password,
               (v) => setRegisterData((p) => ({ ...p, password: v })),
@@ -302,17 +309,30 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginBottom: 6,
   },
+  welcomeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+  },
+  handIconWrapper: {
+    //backgroundColor: "yellow",
+    padding: 6,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   welcomeTagline: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.8)',
+    marginRight: 6,
   },
   welcomeCard: {
     backgroundColor: '#fff',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 28,
-    paddingTop: 32,
-    paddingBottom: 40,
+    paddingTop: 60,
+    paddingBottom: 60,
     alignItems: 'center',
     gap: 14,
   },
@@ -377,8 +397,8 @@ const styles = StyleSheet.create({
   },
   authHeader: {
     paddingHorizontal: 24,
-    paddingTop: 52,
-    paddingBottom: 28,
+    paddingTop: 40,
+    paddingBottom: 25,
     overflow: 'hidden',
   },
   backBtn: {
@@ -396,6 +416,7 @@ const styles = StyleSheet.create({
   //   fontWeight: '500',
   // },
   authHeaderTitle: {
+    textAlign: "center",
     fontSize: 30,
     fontWeight: '900',
     color: '#fff',

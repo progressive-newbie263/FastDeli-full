@@ -23,14 +23,14 @@ const registerValidationRules = [
     .notEmpty().withMessage('Họ tên không được để trống')
     .isLength({ min: 2 }).withMessage('Họ tên phải có ít nhất 2 ký tự'),
   
-  // Gender validation
+  // Gender validation (optional)
   body('gender')
-    .notEmpty().withMessage('Giới tính không được để trống')
+    .optional({ checkFalsy: true })
     .isIn(['male', 'female', 'other']).withMessage('Giới tính không hợp lệ'),
-  
-  // Date of birth validation
+
+  // Date of birth validation (optional)
   body('date_of_birth')
-    .notEmpty().withMessage('Ngày sinh không được để trống')
+    .optional({ checkFalsy: true })
     .isDate().withMessage('Ngày sinh không hợp lệ')
 ];
 
