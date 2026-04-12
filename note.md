@@ -432,6 +432,9 @@ lịch sử giao hàng, thu nhập, ...)
 - viết thêm delivery-service. Dịch vụ mới này sẽ hỗ trợ các thứ liên quan đến quy trình giao
 hàng của driver.
 
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 12-04-2026-----------------------------
 # note: 
 - cần xử lí : nguyên do tại sao tunnel hay bị lag?
 -  hiện tại, nó kiểu này: ở section đăng nhập, phải tab qua lại đăng kí/đăng nhập mới được
@@ -440,3 +443,24 @@ nếu ko, sẽ bị lỗi tunnel api.
 nên có hướng xử lí ngay ở lần push kế tiếp
 - khi mạng yếu, upload ảnh lên cloudinary (khách hàng/admin) chắc chắn sẽ lỗi. Mạng phải trung bình trở lên mới ổn áp.
 
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 13-04-2026-----------------------------
+- đã xử lí: tách "web" thành "client" và "Supplier" ở gốc dự án.
+- sau khi tách đã có thể chạy riêng biệt và hoạt động bình thường.
+- cập nhật phiên bản mới của 1 số dependency trong package như axios, cloudinary, next, multer, ...
+- fix nhiều lỗi còn tồn đọng sau bản cập nhật mới nhất (TS 7.0): tạo file global rồi declare css
+
+# note: 
+- làm bảng công nợ (thu/chi cho supplier và driver)
+- Tính theo chiết khấu (%) (tự đặt ra)
+- chuyển logic tính tổng doanh thu ấy sang tính qua backend
+- tiếp tục chia dịch vụ nhưu hiện tại (tức làm thêm 2 dịch vụ bike, delivery kia thì tạo tiếp 2 database)
+Không gộp database.
+- cần xử lí : nguyên do tại sao tunnel hay bị lag?
+-  hiện tại, nó kiểu này: ở section đăng nhập, phải tab qua lại đăng kí/đăng nhập mới được
+nếu ko, sẽ bị lỗi tunnel api.
+- ở xác nhận/hiển thị đơn hàng, việc bật/tắt trạng thái nhận đơn và hiển thị đơn cũng rất lag
+nên có hướng xử lí ngay ở lần push kế tiếp
+- khi mạng yếu, upload ảnh lên cloudinary (khách hàng/admin) chắc chắn sẽ lỗi. Mạng phải trung bình trở lên mới ổn áp.

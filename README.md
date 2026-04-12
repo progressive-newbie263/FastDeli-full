@@ -1,15 +1,29 @@
-localhost:3000. Cổng chính (fast deli) + các info vớ vẩn (blog, service,....) text cứng.
-localhost:3000/food-service (food deli) : Cổng phụ. Tính năng chính của web này luôn. Có profile cho user (đã xong) kèm theo danh sách các nhà hàng (đang build)
+# FastDeli Workspace
 
-các dịch vụ khác (delivery-service, bike-service) sẽ được build sau (dù chúng có vẻ phù hợp khi làm app hơn, và ko phù hợp build theo web lắm). Chưa thiết kế thời điểm hiện tại.
+## Web apps da tach rieng
 
-backend: cổng 5000 cho auth, 5001 cho food.
+- Client app: folder `client`, chay o port 3000.
+- Supplier app: folder `supplier`, chay o port 3001.
+- Admin app: folder `admin-ui`, chay o port 4000.
 
-localhost:3000/food-service (food deli) : Cổng phụ. Tính năng chính của web này luôn. Có profile cho user (đã xong)
-kèm theo danh sách các nhà hàng (đang build)
+## Service routes cho nguoi dung (client)
 
-các dịch vụ khác (delivery-service, bike-service) sẽ được build sau (dù chúng có vẻ phù hợp khi làm app hơn, và ko
-phù hợp build theo web lắm). Chưa thiết kế thời điểm hiện tại.
+- `/food-service` (giu nhu huong truoc day)
+- `/delivery-service` (da uu tien tao truoc)
+- `/bike-service` (da tao san folder/route, chua implement nghiep vu)
 
-backend: cổng 5000 cho auth, 5001 cho food.
+## Backend service ports
+
+- Auth service: 5000
+- Food service: 5001
+- Delivery service: 5002
+- Bike service: 5003
+
+## Che do khoi dong tu `start.js`
+
+- `client`: client web + food + auth + delivery.
+- `supplier`: supplier web + food + auth.
+- `admin`: admin web + food + delivery + bike.
+- `driver`: driver app + auth + delivery.
+- `all`: chay dong thoi tat ca web va backend services.
 

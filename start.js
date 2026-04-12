@@ -2,9 +2,11 @@
  * start.js
  *
  * Usage:
- *   node start.js client   # starts web client + client-side services
- *   node start.js admin    # starts admin UI + admin-side services
+ *   node start.js client   # starts customer client + food/auth/delivery services
+ *   node start.js supplier # starts supplier portal + food/auth services
+ *   node start.js admin    # starts admin UI + food/delivery/bike services
  *   node start.js driver   # starts expo driver app + auth service + delivery service
+ *   node start.js all      # starts all web apps + all backend services
  *   node start.js          # defaults to "client"
  *   chuẩn bị build driver
  * Edit the "config" section below if your folders differ.
@@ -16,26 +18,36 @@ const path = require('path');
 
 const mode = (process.argv[2] || 'client').toLowerCase();
 if (['-h', '--help', 'help'].includes(mode)) {
-  console.log('Usage: node start.js [client|admin|driver]');
+  console.log('Usage: node start.js [client|supplier|admin|driver|all]');
   process.exit(0);
 }
 
 const config = {
   all: [
-    { name: 'web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./web') },
+    { name: 'client-web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./client') },
+    { name: 'supplier-web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./supplier') },
     { name: 'admin-ui', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./admin-ui') },
     { name: 'food-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
     { name: 'auth-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
     { name: 'delivery-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
+    { name: 'bike-service', cmd: 'node', args: ['index.js'], cwd: path.resolve('./server/bike-service') },
   ],
   client: [
-    { name: 'web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./web') },
+    { name: 'client-web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./client') },
     { name: 'food-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
     { name: 'auth-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
+    { name: 'delivery-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
+  ],
+  supplier: [
+    { name: 'supplier-web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./supplier') },
+    { name: 'food-service-supplier', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
+    { name: 'auth-service-supplier', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
   ],
   admin: [
     { name: 'admin-ui', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./admin-ui') },
     { name: 'food-service-admin', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
+    { name: 'delivery-service-admin', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
+    { name: 'bike-service-admin', cmd: 'node', args: ['index.js'], cwd: path.resolve('./server/bike-service') },
   ],
   driver: [
     { name: 'driver-app', cmd: 'npm', args: ['run', 'start'], cwd: path.resolve('./driver-app') },
@@ -46,7 +58,7 @@ const config = {
 
 const services = config[mode];
 if (!services) {
-  console.error(`Unknown mode "${mode}". Use "client", "admin", or "driver".`);
+  console.error(`Unknown mode "${mode}". Use "client", "supplier", "admin", "driver", or "all".`);
   process.exit(1);
 }
 
