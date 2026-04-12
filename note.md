@@ -438,4 +438,5 @@ hàng của driver.
 nếu ko, sẽ bị lỗi tunnel api.
 - ở xác nhận/hiển thị đơn hàng, việc bật/tắt trạng thái nhận đơn và hiển thị đơn cũng rất lag
 nên có hướng xử lí ngay ở lần push kế tiếp
+- khi mạng yếu, upload ảnh lên cloudinary (khách hàng/admin) chắc chắn sẽ lỗi. Mạng phải trung bình trở lên mới ổn áp.
 

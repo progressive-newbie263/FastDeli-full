@@ -68,9 +68,13 @@ body {
   font-size: 14px;
   background-color: #ffffff !important;
   border-left: 4px solid #f8ff2f !important;
-  color: #000;
+  color: #000 !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-radius: 8px;
+}
+
+.custom-toast .Toastify__toast-body {
+  color: #000 !important;
 }
 
 /* Tuỳ chỉnh icon cảnh báo */

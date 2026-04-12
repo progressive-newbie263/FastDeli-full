@@ -56,7 +56,9 @@ const Home = () => {
 
   // Hiển thị toast thông báo redirect từ trang khác
   useEffect(() => {
-    const message = localStorage.getItem("toastMessage");
+    const storedMessage = localStorage.getItem("toastMessage");
+    const message = typeof storedMessage === 'string' ? storedMessage.trim() : '';
+
     if (message) {
       toast.info(message, {
         position: "top-right",
@@ -65,10 +67,12 @@ const Home = () => {
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
-        theme: "colored",
+        theme: "light",
       });
-      localStorage.removeItem("toastMessage");
     }
+
+    // Luon xoa key sau khi mount de tranh toast cu bi lap lai sau reload.
+    localStorage.removeItem("toastMessage");
   }, []);
 
   useEffect(() => {

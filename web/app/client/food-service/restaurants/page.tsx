@@ -561,10 +561,10 @@ const RestaurantClient = () => {
               onChange={(event) => setSortBy(event.target.value as 'default' | 'rating' | 'reviews' | 'deliveryFee')}
               className="w-full bg-transparent outline-none text-sm text-gray-700"
             >
-              <option value="default">Gan nhat</option>
-              <option value="rating">Danh gia cao</option>
-              <option value="reviews">Nhieu danh gia</option>
-              <option value="deliveryFee">Phi giao thap</option>
+              <option value="default">Gần nhất</option>
+              <option value="rating">Đánh giá cao</option>
+              <option value="reviews">Nhiều đánh giá</option>
+              <option value="deliveryFee">Phi giao thấp</option>
             </select>
           </div>
 
