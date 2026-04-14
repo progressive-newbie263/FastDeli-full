@@ -89,6 +89,11 @@ export interface SupplierStats {
   revenue: {
     total: number;
     today: number;
+    net_total?: number;
+    net_today?: number;
+    commission_total?: number;
+    commission_today?: number;
+    commission_rate?: number;
   };
   orders: {
     total_orders: number;
@@ -108,11 +113,45 @@ export interface SupplierStats {
     revenue: number;
     orders_count: number;
   }>;
+  debt_ledger?: {
+    commission_rate: number;
+    summary: {
+      orders_count: number;
+      gross_revenue: number;
+      commission_amount: number;
+      net_revenue: number;
+    };
+    daily: Array<{
+      date: string;
+      orders_count: number;
+      gross_revenue: number;
+      commission_amount: number;
+      net_revenue: number;
+    }>;
+  };
   best_sellers?: Array<{
     food_name: string;
     sold_quantity: number;
     orders_count: number;
     total_revenue: number;
+  }>;
+}
+
+export interface SupplierDebtLedger {
+  days: number;
+  commission_rate: number;
+  summary: {
+    orders_count: number;
+    gross_revenue: number;
+    commission_amount: number;
+    net_revenue: number;
+  };
+  daily: Array<{
+    date: string;
+    orders_count: number;
+    gross_revenue: number;
+    commission_amount: number;
+    net_revenue: number;
   }>;
 }
 

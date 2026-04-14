@@ -2,6 +2,7 @@ const fsp = require('fs/promises');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
+const https = require('https');
 
 const TUNNELS = [
   { port: 5000, envKey: 'EXPO_PUBLIC_AUTH_API_URL', label: 'auth-service' },
@@ -16,6 +17,7 @@ const STATIC_DRIVER_ENV = {
   EXPO_PUBLIC_ENABLE_LOCAL_FALLBACK: 'false',
   EXPO_PUBLIC_API_TIMEOUT_MS: '4500',
 };
+let isPersistingEnv = false;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -58,6 +60,57 @@ const waitForLocalService = async ({ port, label }, maxWaitMs = 90000) => {
   return false;
 };
 
+const probePublicTunnel = (url, timeoutMs = 8000) =>
+  new Promise((resolve) => {
+    let parsed;
+    try {
+      parsed = new URL(url);
+    } catch {
+      resolve(false);
+      return;
+    }
+
+    const transport = parsed.protocol === 'https:' ? https : http;
+    const req = transport.get(
+      {
+        hostname: parsed.hostname,
+        path: '/',
+        port: parsed.port || undefined,
+        timeout: timeoutMs,
+        headers: {
+          'bypass-tunnel-reminder': 'true',
+        },
+      },
+      (res) => {
+        res.resume();
+        resolve(res.statusCode >= 200 && res.statusCode < 500);
+      }
+    );
+
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => {
+      req.destroy();
+      resolve(false);
+    });
+  });
+
+const waitForPublicTunnel = async (url, label, maxWaitMs = 60000) => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < maxWaitMs) {
+    // eslint-disable-next-line no-await-in-loop
+    const ok = await probePublicTunnel(url);
+    if (ok) {
+      console.log(`Public tunnel ready: ${label} -> ${url}`);
+      return true;
+    }
+    // eslint-disable-next-line no-await-in-loop
+    await sleep(1200);
+  }
+
+  console.warn(`Timeout waiting public tunnel: ${label} -> ${url}`);
+  return false;
+};
+
 const upsertEnvLine = (content, key, value) => {
   const line = `${key}=${value}`;
   if (content.includes(`${key}=`)) {
@@ -79,11 +132,33 @@ const persistEnv = async () => {
     nextContent = upsertEnvLine(nextContent, envKey, value);
   });
 
-  Object.entries(discoveredUrls).forEach(([envKey, url]) => {
-    nextContent = upsertEnvLine(nextContent, envKey, url);
+  TUNNELS.forEach(({ envKey }) => {
+    nextContent = upsertEnvLine(nextContent, envKey, discoveredUrls[envKey] || '');
   });
 
   await fsp.writeFile(envPath, nextContent, 'utf8');
+};
+
+const persistEnvWhenAllReady = async () => {
+  const allDiscovered = TUNNELS.every(({ envKey }) => Boolean(discoveredUrls[envKey]));
+  if (!allDiscovered || isPersistingEnv) {
+    return;
+  }
+
+  isPersistingEnv = true;
+  try {
+    for (const tunnel of TUNNELS) {
+      const tunnelUrl = discoveredUrls[tunnel.envKey];
+      // eslint-disable-next-line no-await-in-loop
+      await waitForPublicTunnel(tunnelUrl, tunnel.label);
+    }
+
+    await persistEnv();
+    console.log('Updated driver-app/.env.local with all tunnel URLs.');
+    console.log('Tunnel env is stable. You can (re)start Expo now.');
+  } finally {
+    isPersistingEnv = false;
+  }
 };
 
 function startTunnel({ port, envKey, label }) {
@@ -101,11 +176,14 @@ function startTunnel({ port, envKey, label }) {
 
     const url = match[1];
     discoveredUrls[envKey] = url;
-    await persistEnv();
+    await persistEnvWhenAllReady();
 
     console.log(` ${label}: ${url}`);
-    console.log(` Updated driver-app/.env.local -> ${envKey}=${url}`);
-    console.log(' Restart Expo app after both URLs are ready.');
+    if (TUNNELS.every((item) => Boolean(discoveredUrls[item.envKey]))) {
+      console.log(' All tunnel URLs discovered. Verifying reachability...');
+    } else {
+      console.log(' Waiting remaining tunnel URL before writing .env.local...');
+    }
   });
 
   lt.stderr.on('data', (data) => {
@@ -118,6 +196,7 @@ function startTunnel({ port, envKey, label }) {
 }
 
 async function run() {
+  await persistEnv();
   console.log('Waiting local services before opening public tunnels...');
   for (const tunnel of TUNNELS) {
     // eslint-disable-next-line no-await-in-loop

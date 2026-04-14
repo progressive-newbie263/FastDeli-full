@@ -2,6 +2,12 @@
 const express = require('express');
 const router = express.Router();
 const { foodPool, sharedPool } = require('../config/db');
+const {
+  PLATFORM_COMMISSION_RATE,
+  calcCommission,
+  calcRestaurantNet,
+  roundMoney,
+} = require('../utils/finance');
 
 function toNumber(value, fallback = 0) {
   const n = Number(value);
@@ -135,15 +141,25 @@ router.get('/stats', async (req, res) => {
       toNumber(lastMonthRevenueRes.rows[0]?.total, 0)
     );
 
+    const totalRevenue = toNumber(revenueResult.rows[0]?.total, 0);
+    const todayRevenue = toNumber(todayRevenueResult.rows[0]?.total, 0);
+
     // Response
     res.json({
       totalOrders: parseInt(ordersResult.rows[0].count),
-      totalRevenue: parseFloat(revenueResult.rows[0].total),
+      totalRevenue,
+      totalGrossRevenue: totalRevenue,
+      totalPlatformCommissionRevenue: calcCommission(totalRevenue),
+      totalRestaurantNetRevenue: calcRestaurantNet(totalRevenue),
       activeRestaurants: parseInt(restaurantsResult.rows[0].count),
       totalUsers: parseInt(usersResult.rows[0].count),
       pendingOrders: parseInt(pendingResult.rows[0].count),
       pendingRestaurants: parseInt(pendingRestaurantsResult.rows[0].count),
-      todayRevenue: parseFloat(todayRevenueResult.rows[0].total),
+      todayRevenue,
+      todayGrossRevenue: todayRevenue,
+      todayPlatformCommissionRevenue: calcCommission(todayRevenue),
+      todayRestaurantNetRevenue: calcRestaurantNet(todayRevenue),
+      commissionRate: PLATFORM_COMMISSION_RATE,
       ordersTrend: parseFloat(ordersTrend),
       revenueTrend,
     });
@@ -153,6 +169,99 @@ router.get('/stats', async (req, res) => {
     res.status(500).json({ 
       error: 'Internal server error',
       message: error.message 
+    });
+  }
+});
+
+/*
+  * GET /api/admin/ledger?days=30
+  * Sổ công nợ hệ thống theo ngày:
+  * - gross_revenue: doanh thu thực từ khách
+  * - platform_commission_revenue: phần chiết khấu admin giữ lại
+  * - restaurant_net_revenue: phần thực nhận của nhà hàng
+*/
+router.get('/ledger', async (req, res) => {
+  try {
+    const requestedDays = toNumber(req.query.days, 30);
+    const days = Math.min(Math.max(Math.floor(requestedDays), 1), 90);
+
+    const dailyResult = await foodPool.query(
+      `WITH day_series AS (
+         SELECT generate_series(
+           CURRENT_DATE - (($1::int - 1) * INTERVAL '1 day'),
+           CURRENT_DATE,
+           INTERVAL '1 day'
+         )::date AS day
+       ),
+       paid_orders AS (
+         SELECT
+           DATE(o.created_at) AS day,
+           COUNT(*)::int AS orders_count,
+           COALESCE(SUM(o.total_amount), 0)::numeric(12,2) AS gross_revenue
+         FROM orders o
+         WHERE o.payment_status = 'paid'
+           AND o.order_status <> 'cancelled'
+           AND o.created_at >= CURRENT_DATE - (($1::int - 1) * INTERVAL '1 day')
+         GROUP BY DATE(o.created_at)
+       )
+       SELECT
+         ds.day,
+         COALESCE(po.orders_count, 0)::int AS orders_count,
+         COALESCE(po.gross_revenue, 0)::numeric(12,2) AS gross_revenue
+       FROM day_series ds
+       LEFT JOIN paid_orders po ON po.day = ds.day
+       ORDER BY ds.day ASC`,
+      [days]
+    );
+
+    const daily = dailyResult.rows.map((row) => {
+      const grossRevenue = toNumber(row.gross_revenue, 0);
+      const platformCommissionRevenue = calcCommission(grossRevenue);
+      const restaurantNetRevenue = roundMoney(grossRevenue - platformCommissionRevenue);
+
+      return {
+        date: row.day,
+        orders_count: toNumber(row.orders_count, 0),
+        gross_revenue: grossRevenue,
+        platform_commission_revenue: platformCommissionRevenue,
+        restaurant_net_revenue: restaurantNetRevenue,
+      };
+    });
+
+    const summary = daily.reduce(
+      (acc, item) => {
+        acc.total_orders += item.orders_count;
+        acc.gross_revenue = roundMoney(acc.gross_revenue + item.gross_revenue);
+        acc.platform_commission_revenue = roundMoney(
+          acc.platform_commission_revenue + item.platform_commission_revenue
+        );
+        acc.restaurant_net_revenue = roundMoney(
+          acc.restaurant_net_revenue + item.restaurant_net_revenue
+        );
+        return acc;
+      },
+      {
+        total_orders: 0,
+        gross_revenue: 0,
+        platform_commission_revenue: 0,
+        restaurant_net_revenue: 0,
+      }
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        days,
+        commission_rate: PLATFORM_COMMISSION_RATE,
+        summary,
+        daily,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching admin ledger:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Không thể tải dữ liệu bảng công nợ admin.',
     });
   }
 });

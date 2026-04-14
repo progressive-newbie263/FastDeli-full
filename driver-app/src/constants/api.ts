@@ -18,6 +18,34 @@ const trimTrailingSlash = (url: string) => url.replace(/\/$/, '');
 
 const normalizeUrl = (url: string) => trimTrailingSlash(url.trim());
 
+const tryParseUrl = (raw: string) => {
+  try {
+    return new URL(raw);
+  } catch {
+    return null;
+  }
+};
+
+const replacePort = (rawUrl: string, nextPort: string) => {
+  const parsed = tryParseUrl(rawUrl);
+  if (!parsed) {
+    return null;
+  }
+
+  parsed.port = nextPort;
+  return trimTrailingSlash(parsed.toString());
+};
+
+const isLocalHostUrl = (rawUrl: string) => {
+  const parsed = tryParseUrl(rawUrl);
+  if (!parsed) {
+    return false;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  return host === 'localhost' || host === '127.0.0.1' || host === '10.0.2.2';
+};
+
 const pushIfUnique = (list: string[], value: string | null | undefined) => {
   if (!value) {
     return;
@@ -70,8 +98,9 @@ const deriveDeliveryFromAuth = (authUrl: string) => {
     return null;
   }
 
-  if (authUrl.includes(':5000')) {
-    return authUrl.replace(':5000', ':5002');
+  const byPortSwap = replacePort(authUrl, DRIVER_PORT);
+  if (byPortSwap && byPortSwap !== authUrl) {
+    return byPortSwap;
   }
 
   if (authUrl.includes('-5000.')) {
@@ -115,12 +144,12 @@ const buildDriverCandidates = (authCandidates: string[]) => {
       return;
     }
 
-    if (authUrl.includes(':5000')) {
-      pushIfUnique(candidates, authUrl.replace(':5000', ':5002'));
-      return;
+    // Chi fallback theo auth URL khi do la host local,
+    // tranh truong hop tunnel bi ghep sai port (vd https://abc.loca.lt:5002).
+    if (isLocalHostUrl(authUrl)) {
+      const localDerived = replacePort(authUrl, DRIVER_PORT);
+      pushIfUnique(candidates, localDerived);
     }
-
-    pushIfUnique(candidates, withPort(authUrl, DRIVER_PORT));
   });
   if (candidates.length > 0) {
     return candidates;

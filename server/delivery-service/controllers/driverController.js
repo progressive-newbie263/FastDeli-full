@@ -578,74 +578,147 @@ exports.getWalletSummary = async (req, res) => {
     try {
         const driver = await getDriverProfile(req.user.userId);
 
-        const summaryResult = await foodPool.query(
-            `SELECT
-                 COALESCE(SUM(amount), 0)::numeric(12,2) AS available_balance,
-                 COALESCE(SUM(amount) FILTER (WHERE earned_at >= date_trunc('day', NOW())), 0)::numeric(12,2) AS today_earnings,
-                 COALESCE(SUM(amount) FILTER (WHERE earned_at >= NOW() - INTERVAL '7 days'), 0)::numeric(12,2) AS week_earnings,
-                 COALESCE(SUM(amount) FILTER (WHERE earned_at >= NOW() - INTERVAL '30 days'), 0)::numeric(12,2) AS month_earnings
-             FROM driver_earnings
-             WHERE driver_id = $1`,
-            [driver.id]
-        );
-
-        const deliveriesResult = await foodPool.query(
-            `SELECT
-                 COUNT(*) FILTER (WHERE status = 'completed' AND completed_at >= NOW() - INTERVAL '7 days')::int AS completed_orders_week,
-                 COUNT(*) FILTER (WHERE assigned_at >= NOW() - INTERVAL '7 days')::int AS accepted_count_week
-             FROM delivery_assignments
-             WHERE driver_id = $1`,
-            [driver.id]
-        );
-
-        const rejectedCountWeek = 0;
-
-        const breakdownResult = await foodPool.query(
-            `WITH day_series AS (
-                 SELECT generate_series(
-                     date_trunc('day', NOW())::date - 6,
-                     date_trunc('day', NOW())::date,
-                     INTERVAL '1 day'
-                 )::date AS day
-             ),
-             daily_earnings AS (
-                 SELECT
-                     DATE_TRUNC('day', earned_at)::date AS day,
-                     COALESCE(SUM(amount), 0)::numeric(12,2) AS amount
+        const [summaryResult, deliveriesResult, breakdownResult, debtLedgerResult] = await Promise.all([
+            foodPool.query(
+                `SELECT
+                     COALESCE(SUM(amount), 0)::numeric(12,2) AS available_balance,
+                     COALESCE(SUM(amount) FILTER (WHERE earned_at >= date_trunc('day', NOW())), 0)::numeric(12,2) AS today_earnings,
+                     COALESCE(SUM(amount) FILTER (WHERE earned_at >= NOW() - INTERVAL '7 days'), 0)::numeric(12,2) AS week_earnings,
+                     COALESCE(SUM(amount) FILTER (WHERE earned_at >= NOW() - INTERVAL '30 days'), 0)::numeric(12,2) AS month_earnings
                  FROM driver_earnings
-                 WHERE driver_id = $1
-                     AND earned_at >= NOW() - INTERVAL '7 days'
-                 GROUP BY 1
-             )
-             SELECT
-                 d.day,
-                 COALESCE(e.amount, 0)::numeric(12,2) AS amount
-             FROM day_series d
-             LEFT JOIN daily_earnings e ON e.day = d.day
-             ORDER BY d.day`,
-            [driver.id]
-        );
+                 WHERE driver_id = $1`,
+                [driver.id]
+            ),
+            foodPool.query(
+                `SELECT
+                     COUNT(*) FILTER (WHERE status = 'completed' AND completed_at >= NOW() - INTERVAL '7 days')::int AS completed_orders_week,
+                     COUNT(*) FILTER (WHERE assigned_at >= NOW() - INTERVAL '7 days')::int AS accepted_count_week,
+                     COUNT(*) FILTER (WHERE assigned_at >= date_trunc('day', NOW()))::int AS accepted_count_today,
+                     COUNT(*) FILTER (WHERE status = 'completed' AND completed_at >= date_trunc('day', NOW()))::int AS completed_count_today,
+                     COUNT(*) FILTER (WHERE status = 'completed')::int AS completed_orders_total
+                 FROM delivery_assignments
+                 WHERE driver_id = $1`,
+                [driver.id]
+            ),
+            foodPool.query(
+                `WITH day_series AS (
+                     SELECT generate_series(
+                         date_trunc('day', NOW())::date - 6,
+                         date_trunc('day', NOW())::date,
+                         INTERVAL '1 day'
+                     )::date AS day
+                 ),
+                 daily_earnings AS (
+                     SELECT
+                         DATE_TRUNC('day', earned_at)::date AS day,
+                         COALESCE(SUM(amount), 0)::numeric(12,2) AS amount
+                     FROM driver_earnings
+                     WHERE driver_id = $1
+                         AND earned_at >= NOW() - INTERVAL '7 days'
+                     GROUP BY 1
+                 )
+                 SELECT
+                     d.day,
+                     COALESCE(e.amount, 0)::numeric(12,2) AS amount
+                 FROM day_series d
+                 LEFT JOIN daily_earnings e ON e.day = d.day
+                 ORDER BY d.day`,
+                [driver.id]
+            ),
+            foodPool.query(
+                `WITH day_series AS (
+                     SELECT generate_series(
+                         date_trunc('day', NOW())::date - 13,
+                         date_trunc('day', NOW())::date,
+                         INTERVAL '1 day'
+                     )::date AS day
+                 ),
+                 accepted_daily AS (
+                     SELECT
+                         DATE(assigned_at) AS day,
+                         COUNT(*)::int AS accepted_orders
+                     FROM delivery_assignments
+                     WHERE driver_id = $1
+                       AND assigned_at >= date_trunc('day', NOW()) - INTERVAL '13 days'
+                     GROUP BY DATE(assigned_at)
+                 ),
+                 completed_daily AS (
+                     SELECT
+                         DATE(completed_at) AS day,
+                         COUNT(*)::int AS completed_orders
+                     FROM delivery_assignments
+                     WHERE driver_id = $1
+                       AND status = 'completed'
+                       AND completed_at IS NOT NULL
+                       AND completed_at >= date_trunc('day', NOW()) - INTERVAL '13 days'
+                     GROUP BY DATE(completed_at)
+                 ),
+                 earnings_daily AS (
+                     SELECT
+                         DATE(earned_at) AS day,
+                         COALESCE(SUM(amount), 0)::numeric(12,2) AS gross_income
+                     FROM driver_earnings
+                     WHERE driver_id = $1
+                       AND earned_at >= date_trunc('day', NOW()) - INTERVAL '13 days'
+                     GROUP BY DATE(earned_at)
+                 )
+                 SELECT
+                     ds.day,
+                     COALESCE(ad.accepted_orders, 0)::int AS accepted_orders,
+                     COALESCE(cd.completed_orders, 0)::int AS completed_orders,
+                     COALESCE(ed.gross_income, 0)::numeric(12,2) AS gross_income
+                 FROM day_series ds
+                 LEFT JOIN accepted_daily ad ON ad.day = ds.day
+                 LEFT JOIN completed_daily cd ON cd.day = ds.day
+                 LEFT JOIN earnings_daily ed ON ed.day = ds.day
+                 ORDER BY ds.day ASC`,
+                [driver.id]
+            ),
+        ]);
 
         const summary = summaryResult.rows[0] || {};
-        const deliveries = deliveriesResult.rows[0] || { completed_orders_week: 0, accepted_count_week: 0 };
+        const deliveries = deliveriesResult.rows[0] || {
+            completed_orders_week: 0,
+            accepted_count_week: 0,
+            accepted_count_today: 0,
+            completed_count_today: 0,
+            completed_orders_total: 0,
+        };
         const acceptedCountWeek = deliveries.accepted_count_week || 0;
         const acceptanceRate = null;
+        const todayEarnings = Number(summary.today_earnings || 0);
+        const rejectedCountWeek = 0;
 
         return res.json({
             success: true,
             data: {
                 available_balance: Number(summary.available_balance || 0),
-                today_earnings: Number(summary.today_earnings || 0),
+                today_earnings: todayEarnings,
+                today_gross_income: todayEarnings,
+                today_net_income: todayEarnings,
                 week_earnings: Number(summary.week_earnings || 0),
                 month_earnings: Number(summary.month_earnings || 0),
                 completed_orders_week: Number(deliveries.completed_orders_week || 0),
                 accepted_count_week: Number(acceptedCountWeek || 0),
+                today_orders_accepted: Number(deliveries.accepted_count_today || 0),
+                today_orders_completed: Number(deliveries.completed_count_today || 0),
+                total_completed_orders: Number(driver.total_deliveries || deliveries.completed_orders_total || 0),
                 rejected_count_week: Number(rejectedCountWeek || 0),
                 acceptance_rate_week: acceptanceRate,
                 daily_breakdown: breakdownResult.rows.map((row) => ({
                     day: row.day,
                     amount: Number(row.amount || 0),
                 })),
+                debt_ledger: debtLedgerResult.rows.map((row) => {
+                    const grossIncome = Number(row.gross_income || 0);
+                    return {
+                        day: row.day,
+                        accepted_orders: Number(row.accepted_orders || 0),
+                        completed_orders: Number(row.completed_orders || 0),
+                        gross_income: grossIncome,
+                        net_income: grossIncome,
+                    };
+                }),
             },
         });
     } catch (error) {

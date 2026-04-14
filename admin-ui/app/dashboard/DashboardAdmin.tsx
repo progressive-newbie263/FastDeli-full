@@ -190,8 +190,9 @@ export default function DashboardAdmin() {
           />
 
           <StatsCard
-            title="Doanh thu"
-            value={formatCurrency(stats.totalRevenue || 0)}
+            title="Thu nhập thực hệ thống"
+            value={formatCurrency(stats.totalGrossRevenue || stats.totalRevenue || 0)}
+            trend={stats.revenueTrend ? `${stats.revenueTrend > 0 ? '+' : ''}${stats.revenueTrend}%` : undefined}
             icon={<DollarSign />}
             color="green"
           />
@@ -211,19 +212,41 @@ export default function DashboardAdmin() {
           />
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-gray-100 dark:border-gray-700">
+            <h3 className="text-sm text-gray-600 dark:text-gray-300 mb-2">Admin ăn chiết khấu</h3>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mb-1">
+              {formatCurrency(stats.totalPlatformCommissionRevenue || 0)}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Tỉ lệ chiết khấu: {((stats.commissionRate || 0) * 100).toFixed(1)}%
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6 border border-gray-100 dark:border-gray-700">
+            <h3 className="text-sm text-gray-600 dark:text-gray-300 mb-2">Nhà hàng thực nhận</h3>
+            <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">
+              {formatCurrency(stats.totalRestaurantNetRevenue || 0)}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Tong doanh thu da tru hoa hong nen tang
+            </p>
+          </div>
+        </div>
+
         {/* stats trong ngày */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 rounded-xl card-shadow p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Doanh thu hôm nay
+                  Thu nhập hôm nay
                 </h3>
                 <div className="text-2xl font-bold text-green-600 dark:text-green-400 mb-1">
-                  {formatCurrency(stats?.todayRevenue || 0)}
+                  {formatCurrency(stats?.todayGrossRevenue || stats?.todayRevenue || 0)}
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  Từ các đơn đã thanh toán
+                  Nha hang: {formatCurrency(stats?.todayRestaurantNetRevenue || 0)} • Admin: {formatCurrency(stats?.todayPlatformCommissionRevenue || 0)}
                 </p>
               </div>
 

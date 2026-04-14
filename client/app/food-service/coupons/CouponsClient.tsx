@@ -308,7 +308,7 @@ export default function CouponsPage() {
                           event.stopPropagation();
                           copyCode(coupon.code);
                         }}
-                        className="text-xs font-semibold text-[#1f7f49] hover:text-[#0f8b4c]"
+                        className="text-xs font-semibold text-[#1f7f49] hover:text-[#0f8b4c] hover:underline"
                       >
                         {copiedCode === coupon.code ? 'Đã sao chép' : `Nhấn để lấy mã: ${coupon.code}`}
                       </button>

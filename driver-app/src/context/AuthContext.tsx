@@ -27,6 +27,10 @@ const parseTimeoutMs = (raw: string | undefined, fallback = 4500) => {
 const REQUEST_TIMEOUT_MS = parseTimeoutMs(process.env.EXPO_PUBLIC_API_TIMEOUT_MS, 4500);
 const COLD_START_RETRY_ROUNDS = 2;
 const COLD_START_RETRY_DELAY_MS = 600;
+const FAILED_BASE_COOLDOWN_MS = 12000;
+
+let preferredAuthBaseUrl: string | null = null;
+const failedAuthBases = new Map<string, number>();
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -76,11 +80,37 @@ const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = R
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const getOrderedAuthCandidates = () => {
+  const now = Date.now();
+  const available = AUTH_API_CANDIDATES.filter((baseUrl) => {
+    const failedUntil = failedAuthBases.get(baseUrl) || 0;
+    return failedUntil <= now;
+  });
+
+  const baseList = available.length > 0 ? available : AUTH_API_CANDIDATES;
+  if (!preferredAuthBaseUrl || !baseList.includes(preferredAuthBaseUrl)) {
+    return baseList;
+  }
+
+  return [preferredAuthBaseUrl, ...baseList.filter((item) => item !== preferredAuthBaseUrl)];
+};
+
+const markAuthBaseSuccess = (baseUrl: string) => {
+  preferredAuthBaseUrl = baseUrl;
+  failedAuthBases.delete(baseUrl);
+};
+
+const markAuthBaseFailure = (baseUrl: string) => {
+  failedAuthBases.set(baseUrl, Date.now() + FAILED_BASE_COOLDOWN_MS);
+};
+
 const postAuth = async (path: string, payload: object) => {
   let connectivityError: Error | null = null;
 
   for (let round = 0; round < COLD_START_RETRY_ROUNDS; round++) {
-    for (const baseUrl of AUTH_API_CANDIDATES) {
+    const candidates = getOrderedAuthCandidates();
+
+    for (const baseUrl of candidates) {
       try {
         const response = await fetchWithTimeout(`${baseUrl}${path}`, {
           method: 'POST',
@@ -93,12 +123,15 @@ const postAuth = async (path: string, payload: object) => {
 
         try {
           const data = (await response.json()) as AuthApiResponse;
+          markAuthBaseSuccess(baseUrl);
           return { response, data };
         } catch {
           // Tunnel URL sai dich vu thuong tra HTML/plain text, thu base URL tiep theo.
+          markAuthBaseFailure(baseUrl);
           connectivityError = new Error(`Phan hoi khong hop le tu ${baseUrl}`);
         }
       } catch (error) {
+        markAuthBaseFailure(baseUrl);
         const message = error instanceof Error ? error.message : 'unknown error';
         connectivityError = new Error(`${baseUrl}: ${message}`);
       }

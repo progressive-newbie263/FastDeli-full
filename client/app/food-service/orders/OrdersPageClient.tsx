@@ -29,6 +29,10 @@ interface Order {
   delivery_fee: string;
   meal_slot?: 'breakfast' | 'lunch' | 'dinner' | null;
   deliver_by?: string | null;
+  driver_name?: string | null;
+  driver_phone?: string | null;
+  driver_assignment_status?: string | null;
+  driver_assigned_at?: string | null;
 }
 
 interface FlowStage {
@@ -145,6 +149,23 @@ const paymentStatusTranslator = (status: PaymentStatus) => {
       return 'Đã hoàn tiền';
     default:
       return status;
+  }
+};
+
+const driverAssignmentStatusTranslator = (status?: string | null) => {
+  switch (status) {
+    case 'accepted':
+      return 'Đã nhận đơn';
+    case 'picking_up':
+      return 'Đang lấy món';
+    case 'delivering':
+      return 'Đang giao';
+    case 'completed':
+      return 'Đã giao xong';
+    case 'cancelled':
+      return 'Đã hủy nhận đơn';
+    default:
+      return 'Đang chờ tài xế nhận';
   }
 };
 
@@ -400,6 +421,15 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
                       </p>
 
                       <p className="text-gray-700 mb-1">
+                        <span className="font-semibold">Tài xế:</span>{' '}
+                        {order.driver_name ? `${order.driver_name}${order.driver_phone ? ` (${order.driver_phone})` : ''}` : 'Chưa có tài xế nhận đơn'}
+                      </p>
+
+                      <p className="text-sm text-blue-700 mb-1">
+                        {driverAssignmentStatusTranslator(order.driver_assignment_status)}
+                      </p>
+
+                      <p className="text-gray-700 mb-1">
                         <span className="font-semibold">Ghi chú:</span> {order.notes?.trim() ? order.notes : 'Không có'}
                       </p>
 
@@ -538,6 +568,7 @@ export default function OrdersPageClient({ initialOrders = [] }: { initialOrders
                   {sampleSchedule && (
                     <div className="mt-4 rounded-xl bg-gray-50 border border-gray-200 p-4">
                       <h5 className="text-sm font-semibold text-gray-800 mb-2">Mốc thời gian dự kiến cho đơn hẹn giờ</h5>
+                      
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
                         <p>Thời điểm bắt đầu chuẩn bị: <span className="font-semibold">{sampleSchedule.prepAt.format('HH:mm')}</span></p>
                         <p>Thời điểm bắt đầu nấu: <span className="font-semibold">{sampleSchedule.cookAt.format('HH:mm')}</span></p>

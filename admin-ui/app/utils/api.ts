@@ -85,6 +85,9 @@ export const adminAPI = {
     return fetchAPI(`/api/admin/analytics${qs ? `?${qs}` : ''}`);
   },
 
+  getDebtLedger: (days = 30) =>
+    fetchAPI(`/api/admin/ledger?days=${days}`),
+
   getAvailableCoupons: (restaurantId?: number) => {
     const query = new URLSearchParams();
     if (restaurantId) {

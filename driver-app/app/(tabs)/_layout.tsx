@@ -73,7 +73,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="wallet"
         options={{
-          title: 'Ví tiền',
+          title: 'Công nợ',
           tabBarIcon: ({ color, focused }) => (
             <View style={[styles.iconContainer, focused && styles.activeIconWrap]}>
               <MaterialCommunityIcons

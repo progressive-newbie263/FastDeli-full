@@ -14,6 +14,7 @@ import {
   Car,
   Settings,
   BarChart3,
+  BookText,
   LogOut,
   Menu,
   X,
@@ -42,6 +43,11 @@ const navItems: NavItem[] = [
     href: '/analytics',
     icon: <BarChart3 />, 
     label: 'Thống kê' 
+  },
+  {
+    href: '/ledger',
+    icon: <BookText />,
+    label: 'Bảng công nợ'
   },
   { 
     href: '/orders', 

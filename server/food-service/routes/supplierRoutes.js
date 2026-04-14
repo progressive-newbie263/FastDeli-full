@@ -6,6 +6,7 @@ const {
   registerPartner,
   getMyRestaurant,
   getStatistics,
+  getDebtLedger,
   getOrders,
   getOrderById,
   updateOrderStatus,
@@ -40,6 +41,12 @@ router.get('/restaurants/:restaurantId/statistics',
   supplierAuth, 
   verifyRestaurantOwnership, 
   getStatistics
+);
+
+router.get('/restaurants/:restaurantId/debt-ledger',
+  supplierAuth,
+  verifyRestaurantOwnership,
+  getDebtLedger
 );
 
 // Update restaurant info

@@ -10,13 +10,19 @@ const PRIMARY = '#00B14F';
 const EMPTY_SUMMARY: WalletSummary = {
   available_balance: 0,
   today_earnings: 0,
+  today_gross_income: 0,
+  today_net_income: 0,
   week_earnings: 0,
   month_earnings: 0,
   completed_orders_week: 0,
   accepted_count_week: 0,
+  today_orders_accepted: 0,
+  today_orders_completed: 0,
+  total_completed_orders: 0,
   rejected_count_week: 0,
   acceptance_rate_week: null,
   daily_breakdown: [],
+  debt_ledger: [],
 };
 
 const formatCurrency = (value: number) => `${Math.round(value || 0).toLocaleString('vi-VN')}đ`;
@@ -84,10 +90,15 @@ export default function WalletScreen() {
     return `${best.day} là ngày thu nhập cao nhất tuần này`;
   }, [bars]);
 
+  const recentLedger = useMemo(() => {
+    const points = summary.debt_ledger || [];
+    return [...points].reverse().slice(0, 7);
+  }, [summary.debt_ledger]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Ví tiền</Text>
+        <Text style={styles.headerTitle}>Bảng công nợ</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -117,14 +128,14 @@ export default function WalletScreen() {
               <View style={styles.actionIconBg}>
                 <MaterialCommunityIcons name="cash-fast" size={22} color={PRIMARY} />
               </View>
-              <Text style={styles.actionText}>Hôm nay: {formatCurrency(summary.today_earnings)}</Text>
+              <Text style={styles.actionText}>Thu nhập thực: {formatCurrency(summary.today_gross_income)}</Text>
             </View>
             <View style={styles.actionDivider} />
             <View style={styles.actionBtn}>
               <View style={styles.actionIconBg}>
-                <MaterialCommunityIcons name="calendar-month" size={22} color={PRIMARY} />
+                <MaterialCommunityIcons name="cash-refund" size={22} color={PRIMARY} />
               </View>
-              <Text style={styles.actionText}>Tháng: {formatCurrency(summary.month_earnings)}</Text>
+              <Text style={styles.actionText}>Thu nhập ròng: {formatCurrency(summary.today_net_income)}</Text>
             </View>
           </View>
         </View>
@@ -175,12 +186,53 @@ export default function WalletScreen() {
           </View>
         </View>
 
+        <View style={styles.quickStatsRow}>
+          <View style={[styles.quickStat, { marginRight: 10, marginTop: 12 }]}> 
+            <MaterialCommunityIcons name="clipboard-list-outline" size={20} color={PRIMARY} />
+            <Text style={styles.quickStatValue}>{summary.today_orders_accepted} đơn</Text>
+            <Text style={styles.quickStatLabel}>Đã nhận hôm nay</Text>
+          </View>
+          <View style={[styles.quickStat, { marginTop: 12 }]}> 
+            <MaterialCommunityIcons name="check-decagram-outline" size={20} color={PRIMARY} />
+            <Text style={styles.quickStatValue}>{summary.today_orders_completed} đơn</Text>
+            <Text style={styles.quickStatLabel}>Đã giao hôm nay</Text>
+          </View>
+        </View>
+
         <View style={[styles.quickStat, { marginTop: 12 }]}> 
           <MaterialCommunityIcons name="percent-box-outline" size={20} color={PRIMARY} />
           <Text style={styles.quickStatValue}>
             {summary.acceptance_rate_week === null ? '--' : `${summary.acceptance_rate_week.toFixed(0)}%`}
           </Text>
           <Text style={styles.quickStatLabel}>Tỉ lệ nhận đơn tuần</Text>
+        </View>
+
+        <View style={[styles.quickStat, { marginTop: 12 }]}> 
+          <MaterialCommunityIcons name="counter" size={20} color={PRIMARY} />
+          <Text style={styles.quickStatValue}>{summary.total_completed_orders} đơn</Text>
+          <Text style={styles.quickStatLabel}>Tổng đơn đã chạy</Text>
+        </View>
+
+        <View style={styles.chartCard}>
+          <Text style={styles.sectionTitle}>Sổ công nợ 7 ngày gần nhất</Text>
+          {recentLedger.length === 0 ? (
+            <Text style={styles.loadingText}>Chưa có dữ liệu công nợ.</Text>
+          ) : (
+            <View>
+              {recentLedger.map((item) => (
+                <View key={String(item.day)} style={styles.ledgerRow}>
+                  <View>
+                    <Text style={styles.ledgerDay}>{weekDayLabel(item.day)}</Text>
+                    <Text style={styles.ledgerOrders}>{item.accepted_orders} nhận / {item.completed_orders} giao</Text>
+                  </View>
+                  <View style={styles.ledgerIncomeWrap}>
+                    <Text style={styles.ledgerGross}>{formatCurrency(item.gross_income)}</Text>
+                    <Text style={styles.ledgerNet}>Ròng: {formatCurrency(item.net_income)}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
       </ScrollView>
@@ -385,6 +437,37 @@ const styles = StyleSheet.create({
   quickStatLabel: {
     fontSize: 12,
     color: '#90A4AE',
+  },
+  ledgerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF2F7',
+  },
+  ledgerDay: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  ledgerOrders: {
+    marginTop: 2,
+    fontSize: 11,
+    color: '#78909C',
+  },
+  ledgerIncomeWrap: {
+    alignItems: 'flex-end',
+  },
+  ledgerGross: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  ledgerNet: {
+    marginTop: 2,
+    fontSize: 11,
+    color: '#007A37',
   },
   loadingRow: {
     flexDirection: 'row',

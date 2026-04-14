@@ -1,8 +1,10 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '../../src/context/AuthContext';
 import { APP_COLORS } from '../../src/constants/theme';
+import { getDriverProfile, getWalletSummary } from '../../src/services/driverApi';
 
 const PRIMARY = '#00B14F';
 const PRIMARY_DARK = '#007A37';
@@ -17,7 +19,29 @@ type MenuItem = {
 };
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
+  const [totalCompletedOrders, setTotalCompletedOrders] = useState(0);
+  const [todayAcceptedOrders, setTodayAcceptedOrders] = useState(0);
+  const [driverRating, setDriverRating] = useState(0);
+
+  useEffect(() => {
+    const loadProfileMetrics = async () => {
+      if (!token) {
+        return;
+      }
+
+      try {
+        const [profile, wallet] = await Promise.all([getDriverProfile(token), getWalletSummary(token)]);
+        setDriverRating(Number(profile.rating || 0));
+        setTotalCompletedOrders(Number(wallet.total_completed_orders || profile.total_deliveries || 0));
+        setTodayAcceptedOrders(Number(wallet.today_orders_accepted || 0));
+      } catch {
+        // Keep UI usable with default fallback values.
+      }
+    };
+
+    loadProfileMetrics();
+  }, [token]);
 
   const handleLogout = async () => {
     await logout();
@@ -70,18 +94,18 @@ export default function ProfileScreen() {
         {/* Stats row */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statVal}>48</Text>
-            <Text style={styles.statLbl}>Đơn hoàn thành</Text>
+            <Text style={styles.statVal}>{totalCompletedOrders}</Text>
+            <Text style={styles.statLbl}>Tong don da chay</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statVal}>4.9 ★</Text>
+            <Text style={styles.statVal}>{driverRating.toFixed(1)} ★</Text>
             <Text style={styles.statLbl}>Đánh giá</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statVal}>12</Text>
-            <Text style={styles.statLbl}>Ngày hoạt động</Text>
+            <Text style={styles.statVal}>{todayAcceptedOrders}</Text>
+            <Text style={styles.statLbl}>Da nhan hom nay</Text>
           </View>
         </View>
 

@@ -452,15 +452,32 @@ nên có hướng xử lí ngay ở lần push kế tiếp
 - cập nhật phiên bản mới của 1 số dependency trong package như axios, cloudinary, next, multer, ...
 - fix nhiều lỗi còn tồn đọng sau bản cập nhật mới nhất (TS 7.0): tạo file global rồi declare css
 
-# note: 
+
+
+-------------------------------------------------------------------------------------
+------------------------------GITPUSH + NOTE, 14-04-2026-----------------------------
+
+- khi mạng yếu, upload ảnh lên cloudinary (khách hàng/admin) chắc chắn sẽ lỗi. Mạng phải trung bình trở lên mới ổn áp.
+(ko liên quan lần push này)
 - làm bảng công nợ (thu/chi cho supplier và driver)
 - Tính theo chiết khấu (%) (tự đặt ra)
 - chuyển logic tính tổng doanh thu ấy sang tính qua backend
+- cần xử lí : nguyên do tại sao tunnel hay bị lag?
+=> Đã fix xong.
+=> Lí do: ngrok chưa cập nhật bản mới nhất. ngoài ra, SDK của expo go mới nhất đang là 54.0.6,
+chưa đồng bộ được. Cập nhật package của ngrok lên 4.1.3 và expo lên 54.0.x là được.
+
+# note:
 - tiếp tục chia dịch vụ nhưu hiện tại (tức làm thêm 2 dịch vụ bike, delivery kia thì tạo tiếp 2 database)
 Không gộp database.
-- cần xử lí : nguyên do tại sao tunnel hay bị lag?
--  hiện tại, nó kiểu này: ở section đăng nhập, phải tab qua lại đăng kí/đăng nhập mới được
-nếu ko, sẽ bị lỗi tunnel api.
-- ở xác nhận/hiển thị đơn hàng, việc bật/tắt trạng thái nhận đơn và hiển thị đơn cũng rất lag
-nên có hướng xử lí ngay ở lần push kế tiếp
-- khi mạng yếu, upload ảnh lên cloudinary (khách hàng/admin) chắc chắn sẽ lỗi. Mạng phải trung bình trở lên mới ổn áp.
+- Sửa lại đoạn thanh toán 1 chút (client payment), hiện tại thông tin cứng truyền vào đang là STK của bản thân.
+Nên thêm stk cho nhà hàng và sau này thay thế số tài khoản của nhà hàng vào thay vì STK của chính mình.
+- Cập nhật bản đồ thật, di động cho driver
+- Hướng dẫn - Khởi động : 
+  + B1: tại gốc dự án: node start.js all (chạy toàn bộ cổng backend + 3 trang web: client, supplier, admin)
+  + B2: Tại terminal, swap sang thẻ "ports". Nhập vào 2 cổng 5000, 5002. chuyển state 5000, 5002 từ private sang public
+  + B3: tại gốc dự án. node start-tunnel.js. Lệnh này tạo và up 2 cổng kia lên public
+  + B4: tại gốc dự án, chuyển directory sang driver-app : cd driver-app. Chọn 1 trong 2 hướng.
+      1. chạy tiếp npx expo start --tunnel -c (với mạng public)
+      2. chạy tiếp npx expo start -c (mạng ở nhà/private)
+    Sau đó quét QR là xong.

@@ -1,6 +1,12 @@
 const { foodPool, sharedPool } = require('../config/db');
 const { getNutritionFromUSDA } = require('../utils/usdaAPI');
 const bcrypt = require('bcryptjs');
+const {
+  PLATFORM_COMMISSION_RATE,
+  calcCommission,
+  calcRestaurantNet,
+  roundMoney,
+} = require('../utils/finance');
 
 const buildUsersMap = async (userIds) => {
   if (!userIds.length) {
@@ -24,6 +30,13 @@ const buildUsersMap = async (userIds) => {
 
 const DEFAULT_AVATAR_URL = process.env.DEFAULT_AVATAR_URL || 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
 const DEFAULT_RESTAURANT_IMAGE_URL = process.env.DEFAULT_RESTAURANT_IMAGE_URL || 'https://res.cloudinary.com/dpldznnma/image/upload/v1751874870/main.jpg';
+
+const toNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const toInt = (value, fallback = 0) => Math.trunc(toNumber(value, fallback));
 
 const geocodeAddress = async (address) => {
   const normalized = String(address || '').trim();
@@ -329,6 +342,72 @@ const getMyRestaurant = async (req, res) => {
   }
 };
 
+const getSupplierDebtLedgerData = async (restaurantId, chartDays) => {
+  const ledgerResult = await foodPool.query(
+    `WITH day_series AS (
+       SELECT generate_series(
+         CURRENT_DATE - (($2::int - 1) * INTERVAL '1 day'),
+         CURRENT_DATE,
+         INTERVAL '1 day'
+       )::date AS day
+     ),
+     daily_orders AS (
+       SELECT
+         DATE(o.created_at) AS day,
+         COUNT(*) FILTER (WHERE o.order_status = 'delivered')::int AS orders_count,
+         COALESCE(SUM(o.total_amount) FILTER (WHERE o.order_status = 'delivered'), 0)::numeric(12,2) AS gross_revenue
+       FROM orders o
+       WHERE o.restaurant_id = $1
+         AND o.created_at >= CURRENT_DATE - (($2::int - 1) * INTERVAL '1 day')
+       GROUP BY DATE(o.created_at)
+     )
+     SELECT
+       ds.day AS date,
+       COALESCE(daily.orders_count, 0)::int AS orders_count,
+       COALESCE(daily.gross_revenue, 0)::numeric(12,2) AS gross_revenue
+     FROM day_series ds
+     LEFT JOIN daily_orders daily ON daily.day = ds.day
+     ORDER BY ds.day ASC`,
+    [restaurantId, chartDays]
+  );
+
+  const daily = ledgerResult.rows.map((row) => {
+    const grossRevenue = toNumber(row.gross_revenue, 0);
+    const commissionAmount = calcCommission(grossRevenue);
+    const netRevenue = roundMoney(grossRevenue - commissionAmount);
+
+    return {
+      date: row.date,
+      orders_count: toInt(row.orders_count, 0),
+      gross_revenue: grossRevenue,
+      commission_amount: commissionAmount,
+      net_revenue: netRevenue,
+    };
+  });
+
+  const summary = daily.reduce(
+    (acc, item) => {
+      acc.orders_count += item.orders_count;
+      acc.gross_revenue = roundMoney(acc.gross_revenue + item.gross_revenue);
+      acc.commission_amount = roundMoney(acc.commission_amount + item.commission_amount);
+      acc.net_revenue = roundMoney(acc.net_revenue + item.net_revenue);
+      return acc;
+    },
+    {
+      orders_count: 0,
+      gross_revenue: 0,
+      commission_amount: 0,
+      net_revenue: 0,
+    }
+  );
+
+  return {
+    commission_rate: PLATFORM_COMMISSION_RATE,
+    summary,
+    daily,
+  };
+};
+
 /*
   Lấy thống kê dashboard cho supplier
 */
@@ -340,108 +419,157 @@ const getStatistics = async (req, res) => {
       ? Math.min(Math.max(Math.floor(requestedDays), 1), 90)
       : 7;
 
-    // Tổng doanh thu
-    const revenueResult = await foodPool.query(
-      `SELECT COALESCE(SUM(total_amount), 0) as total_revenue
-       FROM orders 
-       WHERE restaurant_id = $1 AND order_status = 'delivered'`,
-      [restaurantId]
-    );
+    const [
+      revenueResult,
+      ordersResult,
+      foodsResult,
+      ratingResult,
+      debtLedgerData,
+      bestSellerResult,
+    ] = await Promise.all([
+      foodPool.query(
+        `SELECT
+           COALESCE(SUM(total_amount) FILTER (WHERE order_status = 'delivered'), 0)::numeric(12,2) AS gross_total,
+           COALESCE(SUM(total_amount) FILTER (WHERE order_status = 'delivered' AND DATE(created_at) = CURRENT_DATE), 0)::numeric(12,2) AS gross_today
+         FROM orders
+         WHERE restaurant_id = $1`,
+        [restaurantId]
+      ),
+      foodPool.query(
+        `SELECT
+           COUNT(*)::int AS total_orders,
+           COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE)::int AS today_orders,
+           COUNT(*) FILTER (WHERE order_status = 'pending')::int AS pending_orders,
+           COUNT(*) FILTER (WHERE order_status = 'processing')::int AS processing_orders,
+           COUNT(*) FILTER (WHERE order_status = 'delivering')::int AS delivering_orders,
+           COUNT(*) FILTER (WHERE order_status = 'delivered')::int AS delivered_orders,
+           COUNT(*) FILTER (WHERE order_status = 'cancelled')::int AS cancelled_orders
+         FROM orders
+         WHERE restaurant_id = $1`,
+        [restaurantId]
+      ),
+      foodPool.query(
+        `SELECT
+           COUNT(*)::int AS total_foods,
+           COUNT(*) FILTER (WHERE is_available = true)::int AS available_foods,
+           COUNT(*) FILTER (WHERE is_available = false)::int AS unavailable_foods
+         FROM foods
+         WHERE restaurant_id = $1`,
+        [restaurantId]
+      ),
+      foodPool.query(
+        `SELECT
+           COALESCE(AVG(rating), 0) AS avg_rating,
+           COUNT(*)::int AS total_reviews
+         FROM reviews
+         WHERE restaurant_id = $1`,
+        [restaurantId]
+      ),
+      getSupplierDebtLedgerData(restaurantId, chartDays),
+      foodPool.query(
+        `SELECT
+           oi.food_name,
+           COALESCE(SUM(oi.quantity), 0) AS sold_quantity,
+           COUNT(DISTINCT o.id) AS orders_count,
+           COALESCE(SUM(oi.quantity * oi.food_price), 0) AS total_revenue
+         FROM order_items oi
+         INNER JOIN orders o ON o.id = oi.order_id
+         WHERE o.restaurant_id = $1
+           AND o.order_status = 'delivered'
+           AND o.created_at >= CURRENT_DATE - (($2::int - 1) * INTERVAL '1 day')
+         GROUP BY oi.food_name
+         ORDER BY sold_quantity DESC, orders_count DESC, total_revenue DESC
+         LIMIT 8`,
+        [restaurantId, chartDays]
+      ),
+    ]);
 
-    // Số lượng đơn hàng
-    const ordersResult = await foodPool.query(
-      `SELECT 
-        COUNT(*) as total_orders,
-        COUNT(CASE WHEN order_status = 'pending' THEN 1 END) as pending_orders,
-        COUNT(CASE WHEN order_status = 'processing' THEN 1 END) as processing_orders,
-        COUNT(CASE WHEN order_status = 'delivering' THEN 1 END) as delivering_orders,
-        COUNT(CASE WHEN order_status = 'delivered' THEN 1 END) as delivered_orders,
-        COUNT(CASE WHEN order_status = 'cancelled' THEN 1 END) as cancelled_orders
-       FROM orders 
-       WHERE restaurant_id = $1`,
-      [restaurantId]
-    );
-
-    // Số lượng món ăn
-    const foodsResult = await foodPool.query(
-      `SELECT 
-        COUNT(*) as total_foods,
-        COUNT(CASE WHEN is_available = true THEN 1 END) as available_foods,
-        COUNT(CASE WHEN is_available = false THEN 1 END) as unavailable_foods
-       FROM foods 
-       WHERE restaurant_id = $1`,
-      [restaurantId]
-    );
-
-    // Đánh giá trung bình
-    const ratingResult = await foodPool.query(
-      `SELECT 
-        COALESCE(AVG(rating), 0) as avg_rating,
-        COUNT(*) as total_reviews
-       FROM reviews 
-       WHERE restaurant_id = $1`,
-      [restaurantId]
-    );
-
-    // Doanh thu theo ngày (7 ngày gần nhất)
-    const revenueChartResult = await foodPool.query(
-      `SELECT 
-        DATE(created_at) as date,
-        COALESCE(SUM(total_amount), 0) as revenue,
-        COUNT(*) as orders_count
-       FROM orders
-       WHERE restaurant_id = $1 
-         AND order_status = 'delivered'
-         AND created_at >= CURRENT_DATE - ($2::int * INTERVAL '1 day')
-       GROUP BY DATE(created_at)
-       ORDER BY date ASC`,
-      [restaurantId, chartDays]
-    );
-
-    const bestSellerResult = await foodPool.query(
-      `SELECT
-        oi.food_name,
-        COALESCE(SUM(oi.quantity), 0) AS sold_quantity,
-        COUNT(DISTINCT o.id) AS orders_count,
-        COALESCE(SUM(oi.quantity * oi.food_price), 0) AS total_revenue
-      FROM order_items oi
-      INNER JOIN orders o ON o.id = oi.order_id
-      WHERE o.restaurant_id = $1
-        AND o.order_status = 'delivered'
-        AND o.created_at >= CURRENT_DATE - ($2::int * INTERVAL '1 day')
-      GROUP BY oi.food_name
-      ORDER BY sold_quantity DESC, orders_count DESC, total_revenue DESC
-      LIMIT 8`,
-      [restaurantId, chartDays]
-    );
+    const grossTotal = toNumber(revenueResult.rows[0]?.gross_total, 0);
+    const grossToday = toNumber(revenueResult.rows[0]?.gross_today, 0);
+    const commissionTotal = calcCommission(grossTotal);
+    const commissionToday = calcCommission(grossToday);
+    const netTotal = calcRestaurantNet(grossTotal);
+    const netToday = calcRestaurantNet(grossToday);
 
     res.json({
       success: true,
       data: {
         revenue: {
-          total: parseFloat(revenueResult.rows[0].total_revenue),
-          trend: 0 // TODO: Tính trend so với tuần trước
+          total: grossTotal,
+          today: grossToday,
+          net_total: netTotal,
+          net_today: netToday,
+          commission_total: commissionTotal,
+          commission_today: commissionToday,
+          commission_rate: PLATFORM_COMMISSION_RATE,
+          trend: 0,
         },
-        orders: ordersResult.rows[0],
-        foods: foodsResult.rows[0],
+        orders: {
+          total_orders: toInt(ordersResult.rows[0]?.total_orders, 0),
+          today_orders: toInt(ordersResult.rows[0]?.today_orders, 0),
+          pending_orders: toInt(ordersResult.rows[0]?.pending_orders, 0),
+          processing_orders: toInt(ordersResult.rows[0]?.processing_orders, 0),
+          delivering_orders: toInt(ordersResult.rows[0]?.delivering_orders, 0),
+          delivered_orders: toInt(ordersResult.rows[0]?.delivered_orders, 0),
+          cancelled_orders: toInt(ordersResult.rows[0]?.cancelled_orders, 0),
+        },
+        foods: {
+          total_foods: toInt(foodsResult.rows[0]?.total_foods, 0),
+          available_foods: toInt(foodsResult.rows[0]?.available_foods, 0),
+          unavailable_foods: toInt(foodsResult.rows[0]?.unavailable_foods, 0),
+        },
         rating: {
-          average: parseFloat(ratingResult.rows[0].avg_rating).toFixed(1),
-          total_reviews: parseInt(ratingResult.rows[0].total_reviews)
+          average: Number(toNumber(ratingResult.rows[0]?.avg_rating, 0).toFixed(1)),
+          total_reviews: toInt(ratingResult.rows[0]?.total_reviews, 0),
         },
-        revenueChart: revenueChartResult.rows,
+        revenueChart: debtLedgerData.daily.map((item) => ({
+          date: item.date,
+          revenue: item.gross_revenue,
+          orders_count: item.orders_count,
+        })),
+        debt_ledger: debtLedgerData,
         best_sellers: (bestSellerResult.rows || []).map((row) => ({
           food_name: row.food_name,
-          sold_quantity: Number(row.sold_quantity || 0),
-          orders_count: Number(row.orders_count || 0),
-          total_revenue: Number(row.total_revenue || 0),
-        }))
-      }
+          sold_quantity: toInt(row.sold_quantity, 0),
+          orders_count: toInt(row.orders_count, 0),
+          total_revenue: toNumber(row.total_revenue, 0),
+        })),
+      },
     });
   } catch (error) {
     console.error('Get statistics error:', error);
     res.status(500).json({
       success: false,
       message: 'Lỗi khi lấy thống kê.'
+    });
+  }
+};
+
+/*
+  Bảng công nợ riêng cho supplier
+*/
+const getDebtLedger = async (req, res) => {
+  try {
+    const restaurantId = req.restaurantId;
+    const requestedDays = Number(req.query?.days || 30);
+    const days = Number.isFinite(requestedDays)
+      ? Math.min(Math.max(Math.floor(requestedDays), 1), 90)
+      : 30;
+
+    const ledger = await getSupplierDebtLedgerData(restaurantId, days);
+
+    return res.json({
+      success: true,
+      data: {
+        days,
+        ...ledger,
+      },
+    });
+  } catch (error) {
+    console.error('Get debt ledger error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi khi lấy bảng công nợ nhà hàng.',
     });
   }
 };
@@ -1597,6 +1725,7 @@ module.exports = {
   registerPartner,
   getMyRestaurant,
   getStatistics,
+  getDebtLedger,
   getOrders,
   getOrderById,
   updateOrderStatus,

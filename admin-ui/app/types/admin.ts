@@ -7,11 +7,18 @@
 export interface DashboardStats {
   totalOrders: number;
   totalRevenue: number;
+  totalGrossRevenue?: number;
+  totalPlatformCommissionRevenue?: number;
+  totalRestaurantNetRevenue?: number;
   activeRestaurants: number;
   totalUsers: number;
   pendingOrders?: number;
   pendingRestaurants?: number;
   todayRevenue?: number;
+  todayGrossRevenue?: number;
+  todayPlatformCommissionRevenue?: number;
+  todayRestaurantNetRevenue?: number;
+  commissionRate?: number;
   ordersTrend?: number;
   revenueTrend?: number;
 }
@@ -234,4 +241,29 @@ export interface AnalyticsData {
 export interface TimeSeriesData {
   date: string;
   value: number;
+}
+
+export interface AdminLedgerDailyItem {
+  date: string;
+  orders_count: number;
+  gross_revenue: number;
+  platform_commission_revenue: number;
+  restaurant_net_revenue: number;
+}
+
+export interface AdminLedgerSummary {
+  total_orders: number;
+  gross_revenue: number;
+  platform_commission_revenue: number;
+  restaurant_net_revenue: number;
+}
+
+export interface AdminLedgerResponse {
+  success: boolean;
+  data: {
+    days: number;
+    commission_rate: number;
+    summary: AdminLedgerSummary;
+    daily: AdminLedgerDailyItem[];
+  };
 }

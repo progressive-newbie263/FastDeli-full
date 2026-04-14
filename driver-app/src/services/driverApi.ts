@@ -11,6 +11,12 @@ const parseTimeoutMs = (raw: string | undefined, fallback = 4500) => {
 };
 
 const REQUEST_TIMEOUT_MS = parseTimeoutMs(process.env.EXPO_PUBLIC_API_TIMEOUT_MS, 4500);
+const COLD_START_RETRY_ROUNDS = 2;
+const COLD_START_RETRY_DELAY_MS = 450;
+const FAILED_BASE_COOLDOWN_MS = 12000;
+
+let preferredDriverBaseUrl: string | null = null;
+const failedDriverBases = new Map<string, number>();
 
 class ApiResponseError extends Error {}
 
@@ -35,6 +41,33 @@ const parseErrorMessage = (body: unknown, fallback: string) => {
     }
   }
   return fallback;
+};
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const getOrderedDriverCandidates = () => {
+  const now = Date.now();
+  const available = DRIVER_API_CANDIDATES.filter((baseUrl) => {
+    const failedUntil = failedDriverBases.get(baseUrl) || 0;
+    return failedUntil <= now;
+  });
+
+  const baseList = available.length > 0 ? available : DRIVER_API_CANDIDATES;
+
+  if (!preferredDriverBaseUrl || !baseList.includes(preferredDriverBaseUrl)) {
+    return baseList;
+  }
+
+  return [preferredDriverBaseUrl, ...baseList.filter((item) => item !== preferredDriverBaseUrl)];
+};
+
+const markDriverBaseSuccess = (baseUrl: string) => {
+  preferredDriverBaseUrl = baseUrl;
+  failedDriverBases.delete(baseUrl);
+};
+
+const markDriverBaseFailure = (baseUrl: string) => {
+  failedDriverBases.set(baseUrl, Date.now() + FAILED_BASE_COOLDOWN_MS);
 };
 
 const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs = REQUEST_TIMEOUT_MS) => {
@@ -64,40 +97,51 @@ const request = async <T>(
 ): Promise<T> => {
   let connectivityError: Error | null = null;
 
-  for (const baseUrl of DRIVER_API_CANDIDATES) {
-    try {
-      const response = await fetchWithTimeout(`${baseUrl}${path}`, {
-        ...options,
-        headers: {
-          ...buildHeaders(token),
-          ...(options?.headers || {}),
-        },
-      });
+  for (let round = 0; round < COLD_START_RETRY_ROUNDS; round++) {
+    const candidates = getOrderedDriverCandidates();
 
-      let payload: unknown = null;
+    for (const baseUrl of candidates) {
       try {
-        payload = await response.json();
-      } catch {
-        // Sai endpoint/tunnel het han thuong khong tra JSON, thu URL tiep theo.
-        if (!response.ok) {
-          connectivityError = new Error(`Phan hoi khong hop le tu ${baseUrl}`);
-          continue;
+        const response = await fetchWithTimeout(`${baseUrl}${path}`, {
+          ...options,
+          headers: {
+            ...buildHeaders(token),
+            ...(options?.headers || {}),
+          },
+        });
+
+        let payload: unknown = null;
+        try {
+          payload = await response.json();
+        } catch {
+          // Sai endpoint/tunnel het han thuong khong tra JSON, thu URL tiep theo.
+          if (!response.ok) {
+            markDriverBaseFailure(baseUrl);
+            connectivityError = new Error(`Phan hoi khong hop le tu ${baseUrl}`);
+            continue;
+          }
+          throw new ApiResponseError(`Phan hoi tu API tai xe khong phai JSON (${baseUrl}).`);
         }
-        throw new ApiResponseError(`Phan hoi tu API tai xe khong phai JSON (${baseUrl}).`);
-      }
 
-      if (!response.ok) {
-        throw new ApiResponseError(parseErrorMessage(payload, fallbackMessage));
-      }
+        if (!response.ok) {
+          throw new ApiResponseError(parseErrorMessage(payload, fallbackMessage));
+        }
 
-      return payload as T;
-    } catch (error) {
-      if (error instanceof ApiResponseError) {
-        throw error;
-      }
+        markDriverBaseSuccess(baseUrl);
+        return payload as T;
+      } catch (error) {
+        if (error instanceof ApiResponseError) {
+          throw error;
+        }
 
-      const message = error instanceof Error ? error.message : 'unknown error';
-      connectivityError = new Error(`${baseUrl}: ${message}`);
+        markDriverBaseFailure(baseUrl);
+        const message = error instanceof Error ? error.message : 'unknown error';
+        connectivityError = new Error(`${baseUrl}: ${message}`);
+      }
+    }
+
+    if (round < COLD_START_RETRY_ROUNDS - 1) {
+      await sleep(COLD_START_RETRY_DELAY_MS * (round + 1));
     }
   }
 

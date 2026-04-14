@@ -16,6 +16,7 @@ import {
   X,
   Bell,
   BarChart3,
+  BookOpen,
   Star,
   User,
 } from 'lucide-react';
@@ -102,6 +103,7 @@ export default function SupplierHeader() {
     { id: 'orders', href: '/orders', icon: ShoppingBag, label: 'Đơn hàng', badge: pendingOrders },
     { id: 'menu', href: '/menu', icon: UtensilsCrossed, label: 'Thực đơn' },
     { id: 'analytics', href: '/analytics', icon: BarChart3, label: 'Phân tích' },
+    { id: 'ledger', href: '/ledger', icon: BookOpen, label: 'Bảng công nợ' },
     { id: 'reviews', href: '/reviews', icon: Star, label: 'Đánh giá' },
     { id: 'settings', href: '/settings', icon: Settings, label: 'Cài đặt' },
   ];

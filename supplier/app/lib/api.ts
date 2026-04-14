@@ -7,6 +7,7 @@ import type {
   Food,
   Order,
   SupplierStats,
+  SupplierDebtLedger,
   OrdersResponse,
   FoodsResponse,
   FoodCategory,
@@ -537,6 +538,23 @@ class SupplierAPI {
       return {
         success: false,
         message: 'Không thể lấy thống kê',
+      };
+    }
+  }
+
+  static async getDebtLedger(restaurantId: number, days = 30): Promise<ApiResponse<SupplierDebtLedger>> {
+    try {
+      const response = await fetch(
+        `${FOOD_API_URL}/api/supplier/restaurants/${restaurantId}/debt-ledger?days=${days}`,
+        {
+          headers: this.getAuthHeaders(),
+        }
+      );
+      return response.json();
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Không thể lấy bảng công nợ',
       };
     }
   }

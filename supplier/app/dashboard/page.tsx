@@ -142,6 +142,8 @@ export default function SupplierDashboard() {
           <h3 className="text-gray-600 text-sm mb-1">Tổng doanh thu</h3>
           <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.revenue?.total || 0)}</p>
           <p className="text-xs text-gray-500 mt-2">Hôm nay: {formatCurrency(stats?.revenue?.today || 0)}</p>
+          <p className="text-xs text-emerald-700 mt-1">Thực nhận: {formatCurrency(stats?.revenue?.net_total || 0)}</p>
+          <p className="text-xs text-orange-700 mt-1">Chiết khấu: {formatCurrency(stats?.revenue?.commission_total || 0)}</p>
         </div>
 
         {/* Total Orders */}

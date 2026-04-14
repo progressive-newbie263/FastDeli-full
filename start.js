@@ -30,7 +30,7 @@ const config = {
     { name: 'food-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/food-service') },
     { name: 'auth-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
     { name: 'delivery-service', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
-    { name: 'bike-service', cmd: 'node', args: ['index.js'], cwd: path.resolve('./server/bike-service') },
+    //{ name: 'bike-service', cmd: 'node', args: ['index.js'], cwd: path.resolve('./server/bike-service') },
   ],
   client: [
     { name: 'client-web', cmd: 'npm', args: ['run', 'dev'], cwd: path.resolve('./client') },
@@ -49,11 +49,11 @@ const config = {
     { name: 'delivery-service-admin', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
     { name: 'bike-service-admin', cmd: 'node', args: ['index.js'], cwd: path.resolve('./server/bike-service') },
   ],
-  driver: [
-    { name: 'driver-app', cmd: 'npm', args: ['run', 'start'], cwd: path.resolve('./driver-app') },
-    { name: 'auth-service-driver', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
-    { name: 'delivery-service-driver', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
-  ],
+  // driver: [
+  //   { name: 'auth-service-driver', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/auth-service') },
+  //   { name: 'delivery-service-driver', cmd: 'node', args: ['server.js'], cwd: path.resolve('./server/delivery-service') },
+  //   { name: 'driver-app', cmd: 'npm', args: ['run', 'start'], cwd: path.resolve('./driver-app') },
+  // ],
 };
 
 const services = config[mode];

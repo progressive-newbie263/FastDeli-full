@@ -54,14 +54,28 @@ export type WalletDailyPoint = {
   amount: number;
 };
 
+export type WalletLedgerPoint = {
+  day: string;
+  accepted_orders: number;
+  completed_orders: number;
+  gross_income: number;
+  net_income: number;
+};
+
 export type WalletSummary = {
   available_balance: number;
   today_earnings: number;
+  today_gross_income: number;
+  today_net_income: number;
   week_earnings: number;
   month_earnings: number;
   completed_orders_week: number;
   accepted_count_week: number;
+  today_orders_accepted: number;
+  today_orders_completed: number;
+  total_completed_orders: number;
   rejected_count_week: number;
   acceptance_rate_week: number | null;
   daily_breakdown: WalletDailyPoint[];
+  debt_ledger: WalletLedgerPoint[];
 };

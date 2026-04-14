@@ -228,6 +228,10 @@ class Order {
           o.order_status,
           o.payment_status,
           o.notes,
+          driver_assignment.driver_name,
+          driver_assignment.driver_phone,
+          driver_assignment.driver_assignment_status,
+          driver_assignment.driver_assigned_at,
           o.created_at,
           o.updated_at
         FROM orders o
@@ -240,6 +244,18 @@ class Order {
           ORDER BY oi.order_item_id ASC
           LIMIT 1
         ) first_item ON TRUE
+        LEFT JOIN LATERAL (
+          SELECT
+            d.full_name AS driver_name,
+            d.phone AS driver_phone,
+            da.status AS driver_assignment_status,
+            da.assigned_at AS driver_assigned_at
+          FROM delivery_assignments da
+          INNER JOIN drivers d ON d.id = da.driver_id
+          WHERE da.order_id = o.id
+          ORDER BY da.assigned_at DESC NULLS LAST, da.id DESC
+          LIMIT 1
+        ) driver_assignment ON TRUE
         WHERE o.user_id = $1
         ORDER BY o.created_at DESC
       `;
