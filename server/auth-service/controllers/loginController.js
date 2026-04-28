@@ -50,6 +50,16 @@ const login = async (req, res) => {
       });
     }
 
+    // Verify service access
+    const requestedService = req.body.service || 'food';
+    const userServices = user.service || [];
+    if (!userServices.includes(requestedService)) {
+      return res.status(401).json({
+        success: false,
+        message: `Tài khoản này chưa được kích hoạt cho dịch vụ ${requestedService === 'food' ? 'FoodDeli' : 'ExpressDeli'}. Vui lòng đăng ký tham gia dịch vụ này trước.`
+      });
+    }
+
     const token = generateToken(user.user_id, user.role); 
 
     // Chuẩn bị response user data
@@ -61,7 +71,8 @@ const login = async (req, res) => {
       gender: user.gender,
       date_of_birth: user.date_of_birth,
       avatar_url: user.avatar_url,
-      role: user.role  
+      role: user.role,
+      service: userServices
     };
 
     // Nếu user là restaurant_owner, lấy thêm restaurant_id

@@ -60,6 +60,7 @@ export default function AuthScreen() {
           email: registerData.email.trim(),
           phone_number: registerData.phone_number.trim(),
           full_name: registerData.full_name.trim(),
+          service: ['food', 'delivery'],
         });
       }
       router.replace('/(tabs)/home' as any);

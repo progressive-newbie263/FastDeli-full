@@ -5,6 +5,7 @@ const config = require('./config/config');
 //food category routes
 const adminStatsRoutes = require('./routes/adminStats');
 const adminRoutes = require('./routes/admin');
+const adminDriversRoutes = require('./routes/adminDrivers');
 const adminRestaurantsRoutes = require('./routes/adminRestaurants');
 const foodCategoryRoutes = require('./routes/foodCategories');
 const restaurantRoutes = require('./routes/restaurants');
@@ -40,6 +41,7 @@ app.use('/api/food-upload', uploadRoutes);
 // app.use('/api/featured-items', featuredItemRoutes);
 app.use('/api/admin', adminStatsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin', adminDriversRoutes);
 app.use('/api/admin/restaurants', adminRestaurantsRoutes);
 
 

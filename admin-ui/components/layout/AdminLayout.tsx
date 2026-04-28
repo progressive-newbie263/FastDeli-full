@@ -119,7 +119,7 @@ export default function AdminLayout({
         `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <Link href="/" className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-xl">F</span>
@@ -136,7 +136,7 @@ export default function AdminLayout({
         </div>
 
         {/* Admin Info */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
               <span className="text-blue-600 dark:text-blue-300 font-semibold text-sm">
@@ -151,13 +151,13 @@ export default function AdminLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-3">
+        <nav className="flex-1 overflow-y-auto py-4 px-2">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => setIsSidebarOpen(false)}
-              className={`flex items-center space-x-3 px-4 py-3 mb-1 rounded-lg transition-all duration-200
+              className={`flex items-center space-x-3 px-3 py-3 mb-1 rounded-lg transition-all duration-200
                 ${
                   isActive(item.href)
                     ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold shadow-sm'
@@ -172,12 +172,12 @@ export default function AdminLayout({
         </nav>
 
         {/* Logout Button */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-3">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-2">
           <ThemeToggle />
           
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg cursor-pointer
+            className="w-full flex items-center space-x-3 px-3 py-2 rounded-lg cursor-pointer
               text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-all duration-200 font-medium"
           >
             <LogOut className="text-lg" />

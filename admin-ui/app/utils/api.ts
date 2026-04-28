@@ -146,6 +146,24 @@ export const adminAPI = {
     }),
 
   /*
+    * drivers
+  */
+  getDrivers: (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.page) query.append('page', params.page.toString());
+    if (params?.limit) query.append('limit', params.limit.toString());
+    if (params?.search) query.append('search', params.search);
+    if (params?.status) query.append('status', params.status);
+
+    return fetchAPI(`/api/admin/drivers?${query.toString()}`);
+  },
+
+  /*
     * phần bổ sung: users
     * Hiện tại đang bị 1 số vấn đề. Tạm thời đang thử nghiệm là chính
   */

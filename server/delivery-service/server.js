@@ -5,11 +5,13 @@ const app = express();
 const port = Number(process.env.DELIVERY_SERVICE_PORT || 5002);
 
 const driverRoutes = require('./routes/driverRoutes');
+const shipmentRoutes = require('./routes/shipmentRoutes');
 
 app.use(cors());
 app.use(express.json());
 
 app.use('/api/driver', driverRoutes);
+app.use('/api/shipments', shipmentRoutes);
 
 app.get('/', (req, res) => {
   res.json({

@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import {
   acceptOrder,
@@ -30,6 +31,7 @@ const formatDateTime = (value: string) => new Date(value).toLocaleString('vi-VN'
 
 export default function OrdersScreen() {
   const { token } = useAuth();
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -190,7 +192,7 @@ export default function OrdersScreen() {
           </View>
           <View style={styles.badge}>
             <MaterialCommunityIcons name="check-circle" size={12} color={PRIMARY} />
-            <Text style={styles.badgeText}>{item.assignment_status}</Text>
+            <Text style={styles.badgeText}>{item.assignment_status === 'completed' ? 'Hoàn thành' : item.assignment_status === 'cancelled' ? 'Đã hủy' : item.assignment_status}</Text>
           </View>
         </View>
 
@@ -299,7 +301,7 @@ export default function OrdersScreen() {
             }
             return String((item as DriverOrder).assignment_id);
           }}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: insets.bottom + 120 }]}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
           onRefresh={onRefresh}
@@ -330,8 +332,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EEF2F7',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   headerTitle: {
     fontSize: 22,
@@ -398,13 +402,17 @@ const styles = StyleSheet.create({
 
   cardHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     marginBottom: 14,
   },
   orderIdRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
     gap: 8,
   },
   orderIconBox: {
@@ -419,6 +427,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#1A1A1A',
+    flexShrink: 1,
   },
   badge: {
     flexDirection: 'row',
@@ -428,6 +437,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
+    alignSelf: 'flex-start',
   },
   badgeText: {
     color: '#007A37',
@@ -482,8 +492,10 @@ const styles = StyleSheet.create({
 
   cardFooter: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
+    rowGap: 8,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#F1F5F9',
@@ -514,10 +526,12 @@ const styles = StyleSheet.create({
   actionsRow: {
     marginTop: 12,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
   actionBtn: {
     flex: 1,
+    minWidth: 132,
     height: 42,
     borderRadius: 10,
     alignItems: 'center',

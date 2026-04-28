@@ -203,7 +203,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const registerDriver = async (input: RegisterInput) => {
-    const { response, data } = await postAuth('/api/auth/register-driver', input);
+    const payload = {
+      ...input,
+      service: input.service?.length ? input.service : ['food', 'delivery'],
+    };
+
+    const { response, data } = await postAuth('/api/auth/register-driver', payload);
 
     if (!response.ok || !data.success || !data.user || !data.token) {
       throw new Error(parseErrors(data));

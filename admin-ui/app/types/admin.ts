@@ -78,6 +78,47 @@ export interface UsersResponse {
   };
 }
 
+/**
+ * ============================================
+ * DRIVERS
+ * ============================================
+ */
+export interface Driver {
+  id: number;
+  user_id: number;
+  full_name: string;
+  phone: string;
+  status: 'online' | 'offline' | 'busy' | string;
+  rating: number;
+  total_deliveries: number;
+  total_earnings: number;
+  total_orders: number;
+  completed_orders: number;
+  created_at: string;
+}
+
+export interface DriversSummary {
+  total_drivers: number;
+  online_drivers: number;
+  busy_drivers: number;
+  avg_rating: number;
+  total_deliveries: number;
+  total_orders: number;
+  completed_orders: number;
+  total_earnings: number;
+}
+
+export interface DriversResponse {
+  drivers: Driver[];
+  summary: DriversSummary;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 
 /* 
   update

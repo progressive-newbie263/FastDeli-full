@@ -98,7 +98,7 @@ export default function WalletScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Bảng công nợ</Text>
+        <Text style={styles.headerTitle}>Bảng thu nhập</Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -214,9 +214,9 @@ export default function WalletScreen() {
         </View>
 
         <View style={styles.chartCard}>
-          <Text style={styles.sectionTitle}>Sổ công nợ 7 ngày gần nhất</Text>
+          <Text style={styles.sectionTitle}>Thu nhập 7 ngày gần nhất</Text>
           {recentLedger.length === 0 ? (
-            <Text style={styles.loadingText}>Chưa có dữ liệu công nợ.</Text>
+            <Text style={styles.loadingText}>Chưa có dữ liệu.</Text>
           ) : (
             <View>
               {recentLedger.map((item) => (

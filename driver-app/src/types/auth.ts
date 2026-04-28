@@ -4,6 +4,7 @@ export type DriverUser = {
   email: string;
   full_name: string;
   role: string;
+  service?: Array<'food' | 'delivery'>;
 };
 
 export type AuthApiResponse = {
@@ -21,4 +22,5 @@ export type RegisterInput = {
   full_name: string;
   gender?: 'male' | 'female' | 'other';
   date_of_birth?: string;
+  service?: Array<'food' | 'delivery'>;
 };

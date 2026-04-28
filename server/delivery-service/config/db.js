@@ -33,9 +33,18 @@ const sharedPool = new Pool({
   port: Number.isFinite(dbPort) ? dbPort : 5432,
 });
 
+const deliveryPool = new Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DELIVERY_DB_NAME || 'db-express-deli',
+  password: process.env.DB_PASSWORD,
+  port: Number.isFinite(dbPort) ? dbPort : 5432,
+});
+
 module.exports = {
   foodPool,
   sharedPool,
-  query: (text, params) => foodPool.query(text, params),
-  pool: foodPool,
+  deliveryPool,
+  query: (text, params) => deliveryPool.query(text, params),
+  pool: deliveryPool,
 };
