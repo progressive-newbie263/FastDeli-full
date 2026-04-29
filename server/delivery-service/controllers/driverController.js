@@ -1,4 +1,5 @@
-const { foodPool, sharedPool } = require('../config/db');
+const { foodPool, deliveryPool, sharedPool } = require('../config/db');
+const pricing = require('../utils/pricing');
 
 const MAX_RADIUS_KM = 30;
 
@@ -208,7 +209,8 @@ exports.getAvailableOrders = async (req, res) => {
     try {
         await getDriverProfile(req.user.userId);
 
-        const result = await foodPool.query(
+        // 1. Fetch Food Orders
+        const foodResult = await foodPool.query(
             `WITH candidate_orders AS (
                  SELECT
                      o.id AS order_id,
@@ -247,19 +249,67 @@ exports.getAvailableOrders = async (req, res) => {
                      AND rl.longitude IS NOT NULL
                      AND da.id IS NULL
              )
-             SELECT *
+             SELECT *, 'food' as service_type
              FROM candidate_orders
              WHERE distance_km <= $3
-             ORDER BY distance_km ASC, order_id ASC
+             ORDER BY distance_km ASC
              LIMIT 50`,
             [latitude, longitude, radiusKm]
         );
 
+        // 2. Fetch Delivery Shipments
+        const deliveryResult = await deliveryPool.query(
+            `WITH candidate_shipments AS (
+                SELECT 
+                    s.id as order_id,
+                    'SHIP-' || s.id as order_code,
+                    0 as restaurant_id,
+                    'Lấy hàng: ' || p.address as restaurant_name,
+                    p.address as restaurant_address,
+                    d.contact_name as user_name,
+                    d.contact_phone as user_phone,
+                    d.address as delivery_address,
+                    s.price as delivery_fee,
+                    s.price as total_amount,
+                    s.status as order_status,
+                    p.lat as restaurant_latitude,
+                    p.lng as restaurant_longitude,
+                    (
+                        6371 * acos(
+                            LEAST(
+                                1,
+                                GREATEST(
+                                    -1,
+                                    cos(radians($1)) * cos(radians(p.lat)) * cos(radians(p.lng) - radians($2)) +
+                                    sin(radians($1)) * sin(radians(p.lat))
+                                )
+                            )
+                        )
+                    ) AS distance_km
+                FROM shipments s
+                JOIN stops p ON p.shipment_id = s.id AND p.type = 'pickup'
+                JOIN stops d ON d.shipment_id = s.id AND d.type = 'dropoff'
+                WHERE s.status = 'SEARCHING_DRIVER'
+                  AND s.driver_id IS NULL
+            )
+            SELECT *, 'delivery' as service_type
+            FROM candidate_shipments
+            WHERE distance_km <= $3
+            ORDER BY distance_km ASC
+            LIMIT 50`,
+            [latitude, longitude, radiusKm]
+        );
+
+        // Merge and Sort
+        const merged = [...foodResult.rows, ...deliveryResult.rows]
+            .sort((a, b) => a.distance_km - b.distance_km)
+            .slice(0, 50);
+
         return res.json({
             success: true,
             radius_km: radiusKm,
-            count: result.rowCount,
-            data: result.rows,
+            count: merged.length,
+            data: merged,
         });
     } catch (error) {
         const statusCode = error.statusCode || 500;
@@ -280,75 +330,88 @@ exports.acceptOrder = async (req, res) => {
         });
     }
 
-    const client = await foodPool.connect();
+    const clientFood = await foodPool.connect();
+    const clientDelivery = await deliveryPool.connect();
+    
     try {
-        await client.query('BEGIN');
+        await clientFood.query('BEGIN');
+        await clientDelivery.query('BEGIN');
 
-        const driver = await ensureDriverProfile(client, req.user.userId);
+        const driver = await ensureDriverProfile(clientFood, req.user.userId);
 
-        const orderResult = await client.query(
-            `SELECT id, order_status
-             FROM orders
-             WHERE id = $1
-             FOR UPDATE`,
+        // 1. Try to find in Delivery Shipments first
+        const shipResult = await clientDelivery.query(
+            `UPDATE shipments 
+             SET driver_id = $1, status = 'DRIVER_ACCEPTED', updated_at = NOW()
+             WHERE id = $2 AND status = 'SEARCHING_DRIVER' AND driver_id IS NULL
+             RETURNING id, 'SHIP-' || id as order_code, price as delivery_fee`,
+            [driver.id, orderId]
+        );
+
+        if (shipResult.rows.length > 0) {
+            await clientFood.query(
+                `UPDATE drivers SET status = 'busy', updated_at = NOW() WHERE id = $1`,
+                [driver.id]
+            );
+            await clientDelivery.query('COMMIT');
+            await clientFood.query('COMMIT');
+            
+            return res.json({
+                success: true,
+                message: 'Nhận đơn giao hàng thành công.',
+                data: shipResult.rows[0],
+            });
+        }
+
+        // 2. Try to find in Food Orders
+        const orderResult = await clientFood.query(
+            `SELECT id, order_status FROM orders WHERE id = $1 FOR UPDATE`,
             [orderId]
         );
 
-        if (orderResult.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({
-                success: false,
-                message: 'Không tìm thấy đơn hàng.',
-            });
+        if (orderResult.rows.length > 0 && orderResult.rows[0].order_status === 'processing') {
+            const insertAssignment = await clientFood.query(
+                `INSERT INTO delivery_assignments (order_id, driver_id, status, assigned_at)
+                 VALUES ($1, $2, 'accepted', NOW())
+                 ON CONFLICT (order_id) DO NOTHING
+                 RETURNING id, order_id, driver_id, status, assigned_at`,
+                [orderId, driver.id]
+            );
+
+            if (insertAssignment.rows.length > 0) {
+                await clientFood.query(
+                    `UPDATE drivers SET status = 'busy', updated_at = NOW() WHERE id = $1`,
+                    [driver.id]
+                );
+                await clientDelivery.query('COMMIT');
+                await clientFood.query('COMMIT');
+                
+                return res.json({
+                    success: true,
+                    message: 'Nhận đơn đồ ăn thành công.',
+                    data: insertAssignment.rows[0],
+                });
+            }
         }
 
-        if (orderResult.rows[0].order_status !== 'processing') {
-            await client.query('ROLLBACK');
-            return res.status(409).json({
-                success: false,
-                message: 'Đơn hàng không còn ở trạng thái processing.',
-            });
-        }
-
-        const insertAssignment = await client.query(
-            `INSERT INTO delivery_assignments (order_id, driver_id, status, assigned_at)
-             VALUES ($1, $2, 'accepted', NOW())
-             ON CONFLICT (order_id) DO NOTHING
-             RETURNING id, order_id, driver_id, status, assigned_at`,
-            [orderId, driver.id]
-        );
-
-        if (insertAssignment.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(409).json({
-                success: false,
-                message: 'Đơn hàng đã được tài xế khác nhận trước.',
-            });
-        }
-
-        await client.query(
-            `UPDATE drivers
-             SET status = 'busy',
-                     updated_at = NOW()
-             WHERE id = $1`,
-            [driver.id]
-        );
-
-        await client.query('COMMIT');
-        return res.json({
-            success: true,
-            message: 'Nhận đơn thành công.',
-            data: insertAssignment.rows[0],
+        await clientDelivery.query('ROLLBACK');
+        await clientFood.query('ROLLBACK');
+        return res.status(409).json({
+            success: false,
+            message: 'Đơn hàng không khả dụng hoặc đã có người nhận.',
         });
+
     } catch (error) {
-        await client.query('ROLLBACK');
+        await clientDelivery.query('ROLLBACK');
+        await clientFood.query('ROLLBACK');
         console.error('[driver][acceptOrder] error:', error);
         return res.status(500).json({
             success: false,
             message: 'Lỗi hệ thống khi nhận đơn.',
         });
     } finally {
-        client.release();
+        clientFood.release();
+        clientDelivery.release();
     }
 };
 
@@ -414,11 +477,13 @@ exports.getMyOrders = async (req, res) => {
 
     try {
         const driver = await getDriverProfile(req.user.userId);
-        const statusFilter = isHistory
+        
+        // 1. Fetch Food Orders
+        const foodStatusFilter = isHistory
             ? `da.status IN ('completed', 'cancelled')`
             : `da.status IN ('accepted', 'picking_up', 'delivering')`;
 
-        const result = await foodPool.query(
+        const foodResult = await foodPool.query(
             `SELECT
                  da.id AS assignment_id,
                  da.status AS assignment_status,
@@ -440,23 +505,69 @@ exports.getMyOrders = async (req, res) => {
                  r.address AS restaurant_address,
                  rl.latitude AS restaurant_latitude,
                  rl.longitude AS restaurant_longitude,
-                 (o.order_status = 'delivering' AND da.status IN ('accepted', 'picking_up', 'delivering')) AS can_mark_delivered
+                 (o.order_status = 'delivering' AND da.status IN ('accepted', 'picking_up', 'delivering')) AS can_mark_delivered,
+                 'food' as service_type
              FROM delivery_assignments da
              JOIN orders o ON o.id = da.order_id
              JOIN restaurants r ON r.id = o.restaurant_id
              LEFT JOIN restaurant_locations rl ON rl.restaurant_id = r.id
              WHERE da.driver_id = $1
-                 AND ${statusFilter}
-             ORDER BY COALESCE(da.completed_at, da.assigned_at) DESC
-             LIMIT 100`,
+                 AND ${foodStatusFilter}
+             ORDER BY COALESCE(da.completed_at, da.assigned_at) DESC`,
             [driver.id]
         );
+
+        // 2. Fetch Delivery Shipments
+        const shipStatusFilter = isHistory
+            ? `s.status = 'DELIVERED'`
+            : `s.status IN ('DRIVER_ACCEPTED', 'PICKED_UP')`;
+
+        const shipResult = await deliveryPool.query(
+            `SELECT 
+                s.id as assignment_id,
+                CASE 
+                    WHEN s.status = 'DRIVER_ACCEPTED' THEN 'accepted'
+                    WHEN s.status = 'PICKED_UP' THEN 'picking_up'
+                    WHEN s.status = 'DELIVERED' THEN 'completed'
+                    ELSE 'cancelled'
+                END as assignment_status,
+                s.updated_at as assigned_at,
+                CASE WHEN s.status = 'DELIVERED' THEN s.updated_at ELSE NULL END as completed_at,
+                s.id as order_id,
+                'SHIP-' || s.id as order_code,
+                s.status as order_status,
+                s.price as total_amount,
+                s.price as delivery_fee,
+                d.address as delivery_address,
+                d.lat as delivery_latitude,
+                d.lng as delivery_longitude,
+                d.contact_name as user_name,
+                d.contact_phone as user_phone,
+                s.created_at as order_created_at,
+                0 as restaurant_id,
+                'Lấy: ' || p.address as restaurant_name,
+                p.address as restaurant_address,
+                p.lat as restaurant_latitude,
+                p.lng as restaurant_longitude,
+                (s.status = 'PICKED_UP') as can_mark_delivered,
+                'delivery' as service_type
+            FROM shipments s
+            JOIN stops p ON p.shipment_id = s.id AND p.type = 'pickup'
+            JOIN stops d ON d.shipment_id = s.id AND d.type = 'dropoff'
+            WHERE s.driver_id = $1 AND ${shipStatusFilter}
+            ORDER BY s.updated_at DESC`,
+            [driver.id]
+        );
+
+        const merged = [...foodResult.rows, ...shipResult.rows]
+            .sort((a, b) => new Date(b.assigned_at) - new Date(a.assigned_at))
+            .slice(0, 100);
 
         return res.json({
             success: true,
             scope: isHistory ? 'history' : 'active',
-            count: result.rowCount,
-            data: result.rows,
+            count: merged.length,
+            data: merged,
         });
     } catch (error) {
         const statusCode = error.statusCode || 500;
@@ -477,100 +588,89 @@ exports.markAsDelivered = async (req, res) => {
         });
     }
 
-    const client = await foodPool.connect();
-    try {
-        await client.query('BEGIN');
-        const driver = await ensureDriverProfile(client, req.user.userId);
+    const clientFood = await foodPool.connect();
+    const clientDelivery = await deliveryPool.connect();
 
-        const assignmentResult = await client.query(
-            `SELECT da.id AS assignment_id,
-                            da.status AS assignment_status,
-                            o.id AS order_id,
-                            o.order_status,
-                            o.delivery_fee
-             FROM delivery_assignments da
-             JOIN orders o ON o.id = da.order_id
-             WHERE da.order_id = $1
-                 AND da.driver_id = $2
-             FOR UPDATE`,
+    try {
+        await clientFood.query('BEGIN');
+        await clientDelivery.query('BEGIN');
+        const driver = await ensureDriverProfile(clientFood, req.user.userId);
+
+        // 1. Check if it's a Delivery Shipment
+        const shipCheck = await clientDelivery.query(
+            `SELECT id, status, price FROM shipments WHERE id = $1 AND driver_id = $2 FOR UPDATE`,
             [orderId, driver.id]
         );
 
-        if (assignmentResult.rows.length === 0) {
-            await client.query('ROLLBACK');
-            return res.status(404).json({
-                success: false,
-                message: 'Bạn không có assignment cho đơn hàng này.',
-            });
+        if (shipCheck.rows.length > 0) {
+            const ship = shipCheck.rows[0];
+            if (ship.status !== 'PICKED_UP') {
+                 await clientDelivery.query('ROLLBACK');
+                 await clientFood.query('ROLLBACK');
+                 return res.status(409).json({ success: false, message: 'Đơn hàng phải ở trạng thái đã lấy hàng.' });
+            }
+
+            await clientDelivery.query(
+                `UPDATE shipments SET status = 'DELIVERED', updated_at = NOW() WHERE id = $1`,
+                [orderId]
+            );
+
+            // Record earnings
+            await clientFood.query(
+                `INSERT INTO driver_earnings (driver_id, assignment_id, amount, type, earned_at)
+                 VALUES ($1, $2, $3, 'delivery_fee', NOW())`,
+                [driver.id, orderId, ship.price]
+            );
+
+            await clientFood.query(
+                `UPDATE drivers SET status = 'online', total_deliveries = COALESCE(total_deliveries, 0) + 1, updated_at = NOW() WHERE id = $1`,
+                [driver.id]
+            );
+
+            await clientDelivery.query('COMMIT');
+            await clientFood.query('COMMIT');
+            return res.json({ success: true, message: 'Xác nhận giao hàng thành công.' });
         }
 
-        const assignment = assignmentResult.rows[0];
-        if (!['accepted', 'picking_up', 'delivering'].includes(assignment.assignment_status)) {
-            await client.query('ROLLBACK');
-            return res.status(409).json({
-                success: false,
-                message: 'Assignment hiện tại không thể chuyển sang hoàn tất.',
-            });
+        // 2. Check if it's a Food Order
+        const assignmentResult = await clientFood.query(
+            `SELECT da.id AS assignment_id, da.status AS assignment_status, o.id AS order_id, o.order_status, o.delivery_fee
+             FROM delivery_assignments da
+             JOIN orders o ON o.id = da.order_id
+             WHERE da.order_id = $1 AND da.driver_id = $2 FOR UPDATE`,
+            [orderId, driver.id]
+        );
+
+        if (assignmentResult.rows.length > 0) {
+            const assignment = assignmentResult.rows[0];
+            if (assignment.order_status === 'delivering') {
+                await clientFood.query(`UPDATE orders SET order_status = 'delivered', updated_at = NOW() WHERE id = $1`, [orderId]);
+                await clientFood.query(`UPDATE delivery_assignments SET status = 'completed', completed_at = NOW() WHERE id = $1`, [assignment.assignment_id]);
+                await clientFood.query(
+                    `INSERT INTO driver_earnings (driver_id, assignment_id, amount, type, earned_at)
+                     VALUES ($1, $2, $3, 'delivery_fee', NOW())`,
+                    [driver.id, assignment.assignment_id, assignment.delivery_fee]
+                );
+                await clientFood.query(`UPDATE drivers SET status = 'online', total_deliveries = COALESCE(total_deliveries, 0) + 1, updated_at = NOW() WHERE id = $1`, [driver.id]);
+                
+                await clientDelivery.query('COMMIT');
+                await clientFood.query('COMMIT');
+                return res.json({ success: true, message: 'Xác nhận giao hàng thành công.' });
+            }
         }
 
-        if (assignment.order_status !== 'delivering') {
-            await client.query('ROLLBACK');
-            return res.status(409).json({
-                success: false,
-                message: 'Đơn hàng phải ở trạng thái delivering trước khi xác nhận hoàn tất.',
-            });
-        }
+        await clientDelivery.query('ROLLBACK');
+        await clientFood.query('ROLLBACK');
+        return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng phù hợp.' });
 
-        await client.query(
-            `UPDATE orders
-             SET order_status = 'delivered',
-                     updated_at = NOW()
-             WHERE id = $1`,
-            [orderId]
-        );
-
-        await client.query(
-            `UPDATE delivery_assignments
-             SET status = 'completed',
-                     completed_at = NOW()
-             WHERE id = $1`,
-            [assignment.assignment_id]
-        );
-
-        await client.query(
-            `INSERT INTO driver_earnings (driver_id, assignment_id, amount, type, earned_at)
-             SELECT $1, $2, $3, 'delivery_fee', NOW()
-             WHERE NOT EXISTS (
-                 SELECT 1
-                 FROM driver_earnings
-                 WHERE assignment_id = $2
-             )`,
-            [driver.id, assignment.assignment_id, Number(assignment.delivery_fee || 0)]
-        );
-
-        await client.query(
-            `UPDATE drivers
-             SET status = 'online',
-                     total_deliveries = COALESCE(total_deliveries, 0) + 1,
-                     updated_at = NOW()
-             WHERE id = $1`,
-            [driver.id]
-        );
-
-        await client.query('COMMIT');
-        return res.json({
-            success: true,
-            message: 'Xác nhận giao hàng thành công.',
-        });
     } catch (error) {
-        await client.query('ROLLBACK');
+        await clientDelivery.query('ROLLBACK');
+        await clientFood.query('ROLLBACK');
         console.error('[driver][markAsDelivered] error:', error);
-        return res.status(500).json({
-            success: false,
-            message: 'Lỗi hệ thống khi xác nhận giao hàng.',
-        });
+        return res.status(500).json({ success: false, message: 'Lỗi hệ thống.' });
     } finally {
-        client.release();
+        clientFood.release();
+        clientDelivery.release();
     }
 };
 

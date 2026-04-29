@@ -30,14 +30,14 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Package size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Chào mừng trở lại</h1>
+          <h1 className="text-2xl font-semibold text-slate-800">Chào mừng trở lại</h1>
           <p className="text-slate-500">Đăng nhập để bắt đầu giao hàng cùng ExpressDeli</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 ml-1">Email</label>
+              <label className="text-sm font-medium text-slate-700 ml-1">Email</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors">
                   <Mail size={18} />
@@ -56,7 +56,7 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-sm font-bold text-slate-700 ml-1">Mật khẩu</label>
+              <label className="text-sm font-medium text-slate-700 ml-1">Mật khẩu</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors">
                   <Lock size={18} />
@@ -78,7 +78,7 @@ export default function LoginPage() {
           <button 
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 rounded-xl shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100"
           >
             {loading ? <Loader2 className="animate-spin" /> : "Đăng nhập"}
             {!loading && <ArrowRight size={20} />}
@@ -88,7 +88,7 @@ export default function LoginPage() {
         <div className="text-center">
           <p className="text-sm text-slate-500">
             Chưa có tài khoản?{" "}
-            <Link href="/delivery-service/auth/register" className="text-emerald-600 font-bold hover:underline underline-offset-4">
+            <Link href="/delivery-service/auth/register" className="text-emerald-600 font-medium hover:underline underline-offset-4">
               Đăng ký ngay
             </Link>
           </p>

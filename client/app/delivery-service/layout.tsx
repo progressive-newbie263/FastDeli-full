@@ -16,7 +16,7 @@ export default function DeliveryLayout({
 }) {
   return (
     <DeliveryAuthProvider>
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased">
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased text-slate-900">
         <DeliveryHeader />
         <main className="flex-grow">
           {children}

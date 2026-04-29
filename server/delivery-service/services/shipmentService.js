@@ -1,48 +1,51 @@
 const shipmentRepo = require('../repositories/shipmentRepo');
+const { calculatePrice } = require('../utils/pricing');
 
-const BASE_FEE = 15000;
-const PER_KM_FEE = 5000;
-
-// Giả lập tính khoảng cách P2P (đơn giản, trả về ngẫu nhiên km để demo)
-const calculateDistanceMock = (pickupLat, pickupLng, dropoffLat, dropoffLng) => {
-    return Math.floor(Math.random() * 8) + 2; // Từ 2 đến 10km
-};
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+}
 
 class ShipmentService {
     async create(userId, pickupStop, dropoffStop, itemInfo) {
-        const distance = calculateDistanceMock(pickupStop.lat, pickupStop.lng, dropoffStop.lat, dropoffStop.lng);
-        const price = BASE_FEE + (distance * PER_KM_FEE);
+        // Tính toán khoảng cách thực tế
+        const distance = getDistance(
+            pickupStop.lat, pickupStop.lng, 
+            dropoffStop.lat, dropoffStop.lng
+        );
+        
+        // Tính giá dựa trên khoảng cách và khối lượng
+        const price = calculatePrice(distance, itemInfo.weight);
 
         const shipment = await shipmentRepo.createShipment(userId, price, pickupStop, dropoffStop, itemInfo);
         
-        // Bắt đầu mô phỏng giao hàng ngay sau khi tạo đơn
-        this.startSimulation(shipment.id);
+        // Đơn hàng sẽ chờ tài xế nhận bên driver-app, không tự động mô phỏng nữa
+        // this.startSimulation(shipment.id); 
         
-        return shipment;
+        return { ...shipment, distance: parseFloat(distance.toFixed(2)) };
     }
 
-    // Mô phỏng luồng giao hàng tự động cho demo
+    // Giữ lại hàm mô phỏng để tham khảo hoặc dùng cho test thủ công nếu cần
     async startSimulation(shipmentId) {
         const delays = {
-            ASSIGN: 3000,   // 3 giây sau có tài xế nhận
-            PICKUP: 7000,   // 7 giây sau tài xế lấy hàng
-            COMPLETE: 15000 // 15 giây sau giao hàng thành công
+            ASSIGN: 3000,
+            PICKUP: 7000,
+            COMPLETE: 15000
         };
 
         setTimeout(async () => {
             console.log(`[Simulation] Shipment ${shipmentId}: Driver Assigned`);
-            await shipmentRepo.assignDriver(shipmentId, 888); // Mock driver 888
+            await shipmentRepo.assignDriver(shipmentId, 888); 
         }, delays.ASSIGN);
 
-        setTimeout(async () => {
-            console.log(`[Simulation] Shipment ${shipmentId}: Picked Up`);
-            await shipmentRepo.updateStatus(shipmentId, 'PICKED_UP');
-        }, delays.PICKUP);
-
-        setTimeout(async () => {
-            console.log(`[Simulation] Shipment ${shipmentId}: Delivered`);
-            await shipmentRepo.updateStatus(shipmentId, 'DELIVERED');
-        }, delays.COMPLETE);
+        // ... các bước tiếp theo tương tự
     }
 
     async getHistory(userId) {
@@ -65,3 +68,4 @@ class ShipmentService {
 }
 
 module.exports = new ShipmentService();
+

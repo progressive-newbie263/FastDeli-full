@@ -53,14 +53,14 @@ export default function RegisterPage() {
           <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Package size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800">Tạo tài khoản mới</h1>
-          <p className="text-slate-500 text-sm">Bắt đầu trải nghiệm dịch vụ giao hàng hiện đại nhất</p>
+          <h1 className="text-2xl font-semibold text-slate-800">Đăng ký tài khoản giao hàng</h1>
+          <p className="text-slate-500 text-sm">Vui lòng điền thông tin để tạo tài khoản và sử dụng dịch vụ.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Họ và tên</label>
+              <label className="ml-1 text-xs font-medium tracking-[0.08em] text-slate-500">Họ và tên</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors">
                   <User size={18} />
@@ -72,13 +72,13 @@ export default function RegisterPage() {
                   className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 
                   focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-sm text-gray-800
                   "
-                  placeholder="VD: Nguyễn Văn A"
+                  placeholder="Ví dụ: Nguyễn Văn A"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Số điện thoại</label>
+              <label className="ml-1 text-xs font-medium tracking-[0.08em] text-slate-500">Số điện thoại</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors">
                   <Phone size={18} />
@@ -97,7 +97,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email</label>
+            <label className="ml-1 text-xs font-medium tracking-[0.08em] text-slate-500">Email</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors">
                 <Mail size={18} />
@@ -109,13 +109,13 @@ export default function RegisterPage() {
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 
                 focus:border-emerald-500 transition-all text-sm text-gray-800
                 "
-                placeholder="name@example.com"
+                placeholder="ten@example.com"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Mật khẩu</label>
+            <label className="ml-1 text-xs font-medium tracking-[0.08em] text-slate-500">Mật khẩu</label>
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400 group-focus-within:text-emerald-500 transition-colors">
                 <Lock size={18} />
@@ -135,7 +135,7 @@ export default function RegisterPage() {
           <button 
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 mt-4"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-4 rounded-2xl shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 mt-4"
           >
             {loading ? <Loader2 className="animate-spin" /> : "Tạo tài khoản"}
             {!loading && <CheckCircle2 size={20} />}
@@ -145,7 +145,7 @@ export default function RegisterPage() {
         <div className="text-center pt-4">
           <p className="text-sm text-slate-500">
             Đã có tài khoản?{" "}
-            <Link href="/delivery-service/auth/login" className="text-emerald-600 font-bold hover:underline underline-offset-4">
+            <Link href="/delivery-service/auth/login" className="text-emerald-600 font-medium hover:underline underline-offset-4">
               Đăng nhập
             </Link>
           </p>
@@ -160,22 +160,22 @@ export default function RegisterPage() {
               <AlertCircle size={32} />
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold text-slate-800">Tài khoản đã tồn tại</h3>
+              <h3 className="text-xl font-semibold text-slate-800">Tài khoản đã tồn tại</h3>
               <p className="text-slate-500 text-sm leading-relaxed">{confirmMessage}</p>
             </div>
             <div className="flex gap-3 pt-2">
               <button 
                 onClick={() => setShowConfirmModal(false)}
-                className="flex-1 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                className="flex-1 py-3 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-colors"
               >
-                Hủy bỏ
+                Đóng
               </button>
               <button 
                 onClick={() => handleRegister(true)}
                 disabled={loading}
-                className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-emerald-600 text-white font-medium rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100 transition-all flex items-center justify-center gap-2"
               >
-                {loading ? <Loader2 size={18} className="animate-spin" /> : "Đồng ý, kết nối"}
+                {loading ? <Loader2 size={18} className="animate-spin" /> : "Liên kết tài khoản"}
               </button>
             </div>
           </div>

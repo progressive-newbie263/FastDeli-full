@@ -1,5 +1,13 @@
 import type { Metadata } from "next";
+import { Roboto } from 'next/font/google';
 import "./globals.css";
+
+const roboto = Roboto({
+  weight: ['100', '300', '400', '500', '700', '900'],
+  subsets: ['latin', 'vietnamese'],
+  display: 'swap',
+  variable: '--font-roboto',
+});
 
 export const metadata: Metadata = {
   title: {
@@ -30,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi">
+    <html lang="vi" className={roboto.className}>
       <body className="antialiased">
         {children}
       </body>
