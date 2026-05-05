@@ -1,0 +1,65 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0" version="29.3.6">
+  <diagram name="FastDeli ERD" id="fastdeli-erd">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1400" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="users" value="users&#xa;PK user_id&#xa;phone_number&#xa;email&#xa;password_hash&#xa;full_name&#xa;role&#xa;is_active&#xa;created_at&#xa;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="80" y="80" width="250" height="210" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="restaurants" value="restaurants&#xa;PK id&#xa;name&#xa;address&#xa;phone&#xa;email&#xa;status&#xa;owner_id (FK)&#xa;rating&#xa;total_reviews&#xa;created_at&#xa;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="410" y="80" width="270" height="250" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="foods" value="foods&#xa;PK food_id&#xa;restaurant_id (FK)&#xa;food_name&#xa;price&#xa;is_available&#xa;is_featured&#xa;primary_category_id&#xa;secondary_category_id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="760" y="80" width="250" height="220" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="orders" value="orders&#xa;PK id&#xa;order_code&#xa;user_id (FK)&#xa;restaurant_id (FK)&#xa;total_amount&#xa;delivery_fee&#xa;order_status&#xa;payment_status&#xa;payment_method&#xa;delivery_address&#xa;created_at&#xa;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="410" y="390" width="270" height="270" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="order_items" value="order_items&#xa;PK order_item_id&#xa;order_id (FK)&#xa;food_id (FK)&#xa;food_name&#xa;food_price&#xa;quantity&#xa;created_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="760" y="390" width="250" height="220" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="reviews" value="reviews&#xa;PK review_id&#xa;user_id (FK)&#xa;restaurant_id (FK)&#xa;rating&#xa;comment&#xa;created_at&#xa;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="80" y="390" width="250" height="210" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="drivers" value="drivers&#xa;PK id&#xa;user_id (FK)&#xa;full_name&#xa;phone&#xa;status&#xa;is_verified&#xa;rating&#xa;total_deliveries" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="80" y="690" width="250" height="210" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="driver_locations" value="driver_locations&#xa;PK driver_id (FK)&#xa;latitude&#xa;longitude&#xa;accuracy&#xa;updated_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="410" y="690" width="270" height="170" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="delivery_assignments" value="delivery_assignments&#xa;PK id&#xa;order_id (FK)&#xa;driver_id (FK)&#xa;status&#xa;assigned_at&#xa;completed_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="760" y="690" width="260" height="190" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="driver_earnings" value="driver_earnings&#xa;PK id&#xa;driver_id (FK)&#xa;assignment_id (FK)&#xa;amount&#xa;type&#xa;earned_at" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontColor=#000000;align=left;spacingLeft=10;spacingTop=8;" parent="1" vertex="1">
+          <mxGeometry x="1080" y="690" width="260" height="190" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r1" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="restaurants" target="users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r2" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="foods" target="restaurants" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r3" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="orders" target="users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r4" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="orders" target="restaurants" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r5" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="order_items" target="orders" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r6" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="order_items" target="foods" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r7" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="reviews" target="users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r8" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="reviews" target="restaurants" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r9" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="drivers" target="users" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r10" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="driver_locations" target="drivers" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r11" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="delivery_assignments" target="orders" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r12" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="delivery_assignments" target="drivers" edge="1"><mxGeometry relative="1;" as="geometry"/></mxCell>
+        <mxCell id="r13" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="driver_earnings" target="drivers" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="r14" style="endArrow=block;endSize=8;html=1;rounded=0;strokeColor=#000000;" parent="1" source="driver_earnings" target="delivery_assignments" edge="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -378,11 +378,11 @@ export default function DeliveryServicePage() {
               <div className="grid max-w-2xl grid-cols-1 gap-4 pt-4 sm:grid-cols-3">
                 <div className="rounded-3xl border border-white bg-white/75 p-5 shadow-lg shadow-slate-200/60 backdrop-blur">
                   <p className="mb-2 text-[11px] font-semibold tracking-normal text-slate-400">Thời gian trung bình</p>
-                  <p className="text-3xl font-semibold text-slate-900">30m</p>
+                  <p className="text-3xl font-semibold text-slate-900">30 phút</p>
                 </div>
                 <div className="rounded-3xl border border-white bg-white/75 p-5 shadow-lg shadow-slate-200/60 backdrop-blur">
                   <p className="mb-2 text-[11px] font-semibold tracking-normal text-slate-400">Tài xế</p>
-                  <p className="text-3xl font-semibold text-slate-900">5k+</p>
+                  <p className="text-3xl font-semibold text-slate-900">100+</p>
                 </div>
                 <div className="rounded-3xl border border-white bg-white/75 p-5 shadow-lg shadow-slate-200/60 backdrop-blur">
                   <p className="mb-2 text-[11px] font-semibold tracking-normal text-slate-400">Bảo hiểm</p>
@@ -395,7 +395,7 @@ export default function DeliveryServicePage() {
               <div className="absolute -inset-4 rounded-[3rem] bg-emerald-200/40 blur-3xl opacity-70 transition-opacity group-hover:opacity-100" />
               <div className="relative rounded-[2.5rem] border border-white bg-white/90 p-6 shadow-2xl backdrop-blur">
                 <img
-                  src="https://img.freepik.com/premium-photo/courier-delivering-packages-scooter-city-modern-delivery-service-concept-generative-ai_103070-3494.jpg"
+                  src="https://res.cloudinary.com/dpldznnma/image/upload/v1777488606/delivery-image.png"
                   alt="Express Delivery"
                   className="h-[400px] w-full rounded-3xl object-cover"
                 />
