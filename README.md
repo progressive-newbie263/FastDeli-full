@@ -27,3 +27,7 @@
 - `driver`: driver app + auth + delivery.
 - `all`: chay dong thoi tat ca web va backend services.
 
+[Giao diện trang chủ - food](https://github.com/progressive-newbie263/FastDeli-full/blob/main/img-showcase/trang-chu-food.png)
+[Giao diện trang chủ - driver](https://github.com/progressive-newbie263/FastDeli-full/blob/main/img-showcase/trang-chu-driver.jpg)
+[Giao diện nhà hàng - food](https://github.com/progressive-newbie263/FastDeli-full/blob/main/img-showcase/nh%C3%A0-h%C3%A0ng-food.png)
+[Giao diện đơn hàng - driver](https://github.com/progressive-newbie263/FastDeli-full/blob/main/img-showcase/don-hang-driver.jpg)
