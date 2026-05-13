@@ -138,6 +138,7 @@ const RestaurantClient = () => {
   const [onlyFreeShip, setOnlyFreeShip] = useState(false);
   const [minRating, setMinRating] = useState(0);
   const [onlyFeatured, setOnlyFeatured] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(12);
 
   const resolveUserCoordinates = async (): Promise<{ latitude: number; longitude: number } | null> => {
     const raw = localStorage.getItem('userLocation');
@@ -385,6 +386,10 @@ const RestaurantClient = () => {
     return next;
   }, [restaurants, localSearch, onlyFreeShip, minRating, onlyFeatured, sortBy]);
 
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [localSearch, onlyFreeShip, minRating, onlyFeatured, sortBy]);
+
   // Loading state
   if (loading) {
     return (
@@ -602,7 +607,20 @@ const RestaurantClient = () => {
           <p className="text-gray-500">Không có nhà hàng nào.</p>
         </div>
       ) : (
-        <RestaurantList restaurants={filteredRestaurants} />
+        <>
+          <RestaurantList restaurants={filteredRestaurants.slice(0, visibleCount)} />
+          {visibleCount < filteredRestaurants.length && (
+            <div className="flex justify-center mt-10">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + 12)}
+                className="px-6 py-2.5 rounded-full border border-green-500 text-green-600 font-medium hover:bg-green-50 transition"
+              >
+                Xem thêm
+              </button>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

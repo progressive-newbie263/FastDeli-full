@@ -1,0 +1,32 @@
+-- Chạy script này trên db-food-deli để cập nhật tọa độ thật cho các nhà hàng mới
+
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (201, 105.810865, 20.996565) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (202, 105.833715, 21.026015) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (203, 105.819875, 21.011675) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (204, 105.810295, 20.995995) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (205, 105.824460, 21.030060) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (206, 105.808510, 20.994210) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (207, 105.818550, 21.033450) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (208, 105.821150, 21.012950) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (209, 105.833645, 21.015245) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (210, 105.823365, 21.038565) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (211, 105.834210, 21.026510) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (212, 105.821395, 21.042995) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (213, 105.817515, 21.032415) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (214, 105.818640, 21.033540) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (215, 105.797000, 21.009600) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (216, 105.823325, 21.015125) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (217, 105.821410, 21.043010) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (218, 105.850635, 21.017835) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (219, 105.822235, 21.043835) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (220, 105.850770, 21.017970) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (221, 105.818955, 21.033855) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (222, 105.798170, 21.010770) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (223, 105.852000, 21.019200) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (224, 105.811570, 20.997270) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (225, 105.820460, 21.012260) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (226, 105.823325, 21.015125) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (227, 105.834975, 21.027275) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (228, 105.823190, 21.014990) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (229, 105.808270, 20.993970) ON CONFLICT DO NOTHING;
+INSERT INTO public.restaurant_locations (restaurant_id, longitude, latitude) VALUES (230, 105.835110, 21.027410) ON CONFLICT DO NOTHING;

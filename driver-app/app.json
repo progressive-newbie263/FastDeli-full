@@ -33,7 +33,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-location"
+      "expo-location",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

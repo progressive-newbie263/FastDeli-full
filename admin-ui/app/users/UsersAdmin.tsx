@@ -13,10 +13,11 @@ export default function UsersAdmin() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [sortFilter, setSortFilter] = useState('');
 
   useEffect(() => {
     fetchUsers();
-  }, [page, roleFilter]);
+  }, [page, roleFilter, sortFilter]);
 
   const fetchUsers = async () => {
     try {
@@ -25,7 +26,8 @@ export default function UsersAdmin() {
         page,
         limit: 20,
         search,
-        role: roleFilter
+        role: roleFilter,
+        sort: sortFilter
       });
       setData(result);
     } catch (error) {
@@ -87,6 +89,16 @@ export default function UsersAdmin() {
             <option value="restaurant_owner">Chủ nhà hàng</option>
             <option value="shipper">Shipper</option>
             <option value="admin">Admin</option>
+          </select>
+
+          <select
+            value={sortFilter}
+            onChange={(e) => setSortFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+          >
+            <option value="">Mới nhất</option>
+            <option value="orders">Nhiều đơn hàng nhất</option>
+            <option value="spent">Tiêu nhiều tiền nhất</option>
           </select>
 
           <button

@@ -36,4 +36,9 @@ export interface Food {
   description: string;
   price: string;
   image_url: string | null;
+  calories?: string | number | null;
+  protein?: string | number | null;
+  fat?: string | number | null;
+  sugar?: string | number | null;
+  serving_size?: string | null;
 }

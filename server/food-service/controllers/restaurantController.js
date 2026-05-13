@@ -168,8 +168,10 @@ class RestaurantController {
       }
 
       const foodsQuery = `
-        SELECT f.*
+        SELECT f.*, 
+               fn.calories, fn.protein, fn.fat, fn.sugar, fn.serving_size
         FROM foods f
+        LEFT JOIN food_nutrition fn ON f.food_id = fn.food_id
         WHERE f.restaurant_id = $1
         ORDER BY f.created_at DESC NULLS LAST, f.food_id DESC NULLS LAST
       `;

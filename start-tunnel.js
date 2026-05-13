@@ -192,6 +192,9 @@ function startTunnel({ port, envKey, label }) {
 
   lt.on('close', (code) => {
     console.log(`[${label}] localtunnel exited with code ${code}`);
+    console.log(`[${label}] Restarting tunnel in 2 seconds...`);
+    delete discoveredUrls[envKey];
+    setTimeout(() => startTunnel({ port, envKey, label }), 2000);
   });
 }
 

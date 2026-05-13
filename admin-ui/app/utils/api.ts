@@ -172,6 +172,7 @@ export const adminAPI = {
     limit?: number;
     search?: string;
     role?: string;
+    sort?: string;
   }) => {
     const query = new URLSearchParams();
     
@@ -179,6 +180,7 @@ export const adminAPI = {
     if (params?.limit) query.append('limit', params.limit.toString());
     if (params?.search) query.append('search', params.search);
     if (params?.role) query.append('role', params.role);
+    if (params?.sort) query.append('sort', params.sort);
     
     return fetchAPI(`/api/admin/users?${query.toString()}`);
   },

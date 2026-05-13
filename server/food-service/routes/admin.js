@@ -12,6 +12,7 @@ router.get('/users', async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const search = req.query.search || '';
     const role = req.query.role || ''; // 'customer', 'restaurant_owner', 'admin'
+    const sort = req.query.sort || 'created_at'; // 'created_at', 'orders', 'spent'
     const offset = (page - 1) * limit;
 
     let whereConditions = [];
@@ -38,56 +39,107 @@ router.get('/users', async (req, res) => {
     const countResult = await sharedPool.query(countQuery, queryParams);
     const total = parseInt(countResult.rows[0].total);
 
-    // Lấy danh sách users kèm theo thống kê đơn hàng từ database food
-    queryParams.push(limit, offset);
-    const usersQuery = `
-      SELECT 
-        u.user_id,
-        u.full_name,
-        u.email,
-        u.phone_number,
-        u.role,
-        u.is_active,
-        u.created_at
-      FROM users u
-      ${whereClause}
-      ORDER BY u.created_at DESC
-      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-    `;
-    
-    const usersResult = await sharedPool.query(usersQuery, queryParams);
-    const users = usersResult.rows;
+    let enrichedUsers = [];
 
-    // Get order stats for each user from food database
-    const userIds = users.map(u => u.user_id);
-    
-    let orderStats = {};
-    if (userIds.length > 0) {
-      const statsQuery = `
+    // Nếu cần sắp xếp theo đơn hàng/chi tiêu thì phải tính toán trên toàn bộ (do khác DB)
+    if (sort === 'orders' || sort === 'spent') {
+      const allUsersQuery = `
         SELECT 
-          user_id,
-          COUNT(*)::int as total_orders,
-          COALESCE(SUM(total_amount), 0)::float as total_spent
-        FROM orders
-        WHERE user_id = ANY($1)
-        GROUP BY user_id
+          u.user_id, u.full_name, u.email, u.phone_number, u.role, u.is_active, u.created_at
+        FROM users u
+        ${whereClause}
       `;
-      const statsResult = await foodPool.query(statsQuery, [userIds]);
-      
-      statsResult.rows.forEach(stat => {
-        orderStats[stat.user_id] = {
-          total_orders: stat.total_orders,
-          total_spent: stat.total_spent
-        };
-      });
-    }
+      const allUsersResult = await sharedPool.query(allUsersQuery, queryParams);
+      let allUsers = allUsersResult.rows;
 
-    // Enrich users with order stats
-    const enrichedUsers = users.map(user => ({
-      ...user,
-      total_orders: orderStats[user.user_id]?.total_orders || 0,
-      total_spent: orderStats[user.user_id]?.total_spent || 0
-    }));
+      if (allUsers.length > 0) {
+        const userIds = allUsers.map(u => u.user_id);
+        const statsQuery = `
+          SELECT 
+            user_id,
+            COUNT(*)::int as total_orders,
+            COALESCE(SUM(total_amount), 0)::float as total_spent
+          FROM orders
+          WHERE user_id = ANY($1)
+          GROUP BY user_id
+        `;
+        const statsResult = await foodPool.query(statsQuery, [userIds]);
+        
+        let orderStats = {};
+        statsResult.rows.forEach(stat => {
+          orderStats[stat.user_id] = {
+            total_orders: stat.total_orders,
+            total_spent: stat.total_spent
+          };
+        });
+
+        allUsers = allUsers.map(user => ({
+          ...user,
+          total_orders: orderStats[user.user_id]?.total_orders || 0,
+          total_spent: orderStats[user.user_id]?.total_spent || 0
+        }));
+
+        if (sort === 'orders') {
+          allUsers.sort((a, b) => b.total_orders - a.total_orders);
+        } else if (sort === 'spent') {
+          allUsers.sort((a, b) => b.total_spent - a.total_spent);
+        }
+      }
+
+      enrichedUsers = allUsers.slice(offset, offset + limit);
+    } else {
+      // Cách cũ: paginate ở DB users
+      queryParams.push(limit, offset);
+      const usersQuery = `
+        SELECT 
+          u.user_id,
+          u.full_name,
+          u.email,
+          u.phone_number,
+          u.role,
+          u.is_active,
+          u.created_at
+        FROM users u
+        ${whereClause}
+        ORDER BY u.created_at DESC
+        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+      `;
+      
+      const usersResult = await sharedPool.query(usersQuery, queryParams);
+      const users = usersResult.rows;
+
+      // Get order stats for each user from food database
+      const userIds = users.map(u => u.user_id);
+      
+      let orderStats = {};
+      if (userIds.length > 0) {
+        const statsQuery = `
+          SELECT 
+            user_id,
+            COUNT(*)::int as total_orders,
+            COALESCE(SUM(total_amount), 0)::float as total_spent
+          FROM orders
+          WHERE user_id = ANY($1)
+          GROUP BY user_id
+        `;
+        // ở đây vì queryParams đã push limit/offset, nên không trùng $1
+        const statsResult = await foodPool.query(statsQuery, [userIds]);
+        
+        statsResult.rows.forEach(stat => {
+          orderStats[stat.user_id] = {
+            total_orders: stat.total_orders,
+            total_spent: stat.total_spent
+          };
+        });
+      }
+
+      // Enrich users with order stats
+      enrichedUsers = users.map(user => ({
+        ...user,
+        total_orders: orderStats[user.user_id]?.total_orders || 0,
+        total_spent: orderStats[user.user_id]?.total_spent || 0
+      }));
+    }
 
     res.json({
       users: enrichedUsers,

@@ -92,6 +92,7 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
   const [editComment, setEditComment] = useState('');
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
+  const [visibleReviewsCount, setVisibleReviewsCount] = useState(5);
   const currentUserId = Number((currentUser as any)?.user_id || (currentUser as any)?.id || 0);
 
   // fix logic tiền
@@ -146,7 +147,7 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
 
     try {
       setReviewLoading(true);
-      const res = await fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/reviews?limit=20&_=${Date.now()}`, {
+      const res = await fetch(`${CLIENT_FOOD_URL}/api/restaurants/${id}/reviews?limit=1000&_=${Date.now()}`, {
         cache: 'no-store',
       });
       const data = await res.json();
@@ -468,8 +469,8 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {foods.map((food) => (
-            <div key={food.food_id} className="group">
-              <div className="flex flex-row px-4 pt-4 pb-10 rounded-lg shadow-sm bg-white hover:shadow-md hover:border hover:border-green-400 transition-all duration-200 relative">
+            <div key={food.food_id} className="group h-full">
+              <div className="flex flex-row px-4 pt-4 pb-10 rounded-lg shadow-sm bg-white hover:shadow-md hover:border hover:border-green-400 transition-all duration-200 relative h-full">
                 <div className="relative w-[120px] h-[120px] mr-4 flex-shrink-0">
                   <Image
                     src={food.image_url || 'https://via.placeholder.com/120?text=No+Image'}
@@ -489,13 +490,29 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
 
                 <div className="flex flex-col justify-between flex-1">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 mb-2">
                       {food.food_name}
                     </h3>
 
-                    <p className="text-sm text-gray-600 line-clamp-2">
+                    <p className="text-sm text-gray-600 line-clamp-2 mb-2">
                       {food.description || 'Không có mô tả'}
                     </p>
+
+                    {(food.calories || food.protein) && (
+                      <div className="flex flex-wrap gap-2 mb-2 items-center text-xs">
+                        {food.calories && (
+                          <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md" title="Mức năng lượng">
+                            🔥 {food.calories} kcal
+                          </span>
+                        )}
+                        {food.protein && (
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md" title="Chất đạm">
+                            🥩 {food.protein}g đạm
+                          </span>
+                        )}
+                        <span className="text-gray-400 italic">({food.serving_size || '100g'})</span>
+                      </div>
+                    )}
                   </div>
                   
                   <p className="text-red-500 font-bold text-lg mt-2">
@@ -610,7 +627,7 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
           <p className="text-sm text-gray-500">Chưa có đánh giá nào cho nhà hàng này.</p>
         ) : (
           <div className="space-y-3">
-            {reviews.map((review) => (
+            {reviews.slice(0, visibleReviewsCount).map((review) => (
               <div key={review.review_id} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <p className="font-semibold text-gray-800">{review.customer_name || 'Khách hàng'}</p>
@@ -688,6 +705,18 @@ export default function RestaurantDetailClient({ restaurantId }: { restaurantId:
                 )}
               </div>
             ))}
+
+            {visibleReviewsCount < reviews.length && (
+              <div className="flex justify-center mt-6">
+                <button
+                  type="button"
+                  onClick={() => setVisibleReviewsCount(prev => prev + 5)}
+                  className="px-6 py-2.5 rounded-full border border-green-500 text-green-600 font-medium hover:bg-green-50 transition"
+                >
+                  Xem thêm đánh giá
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>
